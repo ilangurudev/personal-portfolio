@@ -1,0 +1,111 @@
+---
+import BlogLayout from '../layouts/BlogLayout.astro';
+import { getEntry } from 'astro:content';
+
+const aboutEntry = await getEntry('blog', 'about');
+const { Content } = await aboutEntry.render();
+---
+
+<BlogLayout title="About" description="AI researcher and photographer">
+  <article class="about-content">
+    <div class="terminal-header">
+      <span class="command-prompt">$ cat about.md</span>
+    </div>
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+
+  <style>
+    .about-content {
+      max-width: 800px;
+    }
+
+    .terminal-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--slate-800);
+    }
+
+    .command-prompt {
+      color: var(--terminal-cyan);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .command-prompt::after {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--terminal-green);
+      margin-left: 4px;
+      animation: blink 1s step-end infinite;
+    }
+
+    /* Markdown Prose Styling */
+    .prose {
+      color: var(--terminal-gray);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .prose :global(h1) {
+      color: var(--terminal-green);
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 2rem 0 1rem;
+      text-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+    }
+
+    .prose :global(h2) {
+      color: var(--terminal-cyan);
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    .prose :global(p) {
+      margin: 1rem 0;
+    }
+
+    .prose :global(strong) {
+      color: var(--terminal-yellow);
+      font-weight: 700;
+    }
+
+    .prose :global(ul) {
+      list-style: none;
+      padding-left: 1.5rem;
+    }
+
+    .prose :global(li) {
+      position: relative;
+      margin: 0.5rem 0;
+    }
+
+    .prose :global(li::before) {
+      content: '>';
+      position: absolute;
+      left: -1.5rem;
+      color: var(--terminal-cyan);
+    }
+
+    .prose :global(a) {
+      color: var(--terminal-cyan);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .prose :global(a:hover) {
+      color: var(--terminal-yellow);
+      border-bottom-color: var(--terminal-yellow);
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+  </style>
+</BlogLayout>

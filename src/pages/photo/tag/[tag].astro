@@ -1,0 +1,163 @@
+---
+import PhotoLayout from '../../../layouts/PhotoLayout.astro';
+import { getPhotosWithExif } from '../../../utils/photo-helpers';
+import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
+
+export async function getStaticPaths() {
+  const allPhotos = await getPhotosWithExif();
+  
+  // Collect all unique tags from all photos (use original casing for URL)
+  const tagMap = new Map<string, string>(); // lowercase -> original
+  allPhotos.forEach(photo => {
+    photo.data.tags.forEach(tag => {
+      if (tag) {
+        const lowerTag = tag.toLowerCase();
+        // Store original casing if not already stored
+        if (!tagMap.has(lowerTag)) {
+          tagMap.set(lowerTag, tag);
+        }
+      }
+    });
+  });
+  
+  // Return paths for each unique tag (Astro handles URL encoding automatically)
+  return Array.from(tagMap.values()).map(tag => ({
+    params: { tag },
+  }));
+}
+
+const { tag } = Astro.params;
+const decodedTag = decodeURIComponent(tag || '');
+
+const allPhotos = await getPhotosWithExif();
+const filteredPhotos = allPhotos.filter(photo => 
+  photo.data.tags.some(t => t.toLowerCase() === decodedTag.toLowerCase())
+);
+const sortedPhotos = filteredPhotos.sort((a, b) => 
+  b.data.date.getTime() - a.data.date.getTime()
+);
+---
+
+<PhotoLayout title={`${decodedTag} Photos`} description={`Photos tagged with ${decodedTag}`}>
+  <div class="tag-page">
+    <div class="tag-header">
+      <h1 class="tag-title">#{decodedTag.toLowerCase()}</h1>
+      <p class="tag-count">{sortedPhotos.length} {sortedPhotos.length === 1 ? 'photo' : 'photos'}</p>
+    </div>
+
+    {sortedPhotos.length === 0 ? (
+      <p class="no-photos">No photos found with this tag.</p>
+    ) : (
+      <>
+        <div class="photos-grid">
+          {sortedPhotos.map((photo) => (
+            <div 
+              class="photo-card"
+              data-photo-id={photo.id}
+            >
+              <div class="photo-image">
+                <img 
+                  src={`/photos/${photo.data.filename}`} 
+                  alt={photo.data.title}
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        <PhotoLightbox photos={sortedPhotos} />
+      </>
+    )}
+  </div>
+
+  <style>
+    .tag-page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .tag-header {
+      text-align: center;
+      margin-bottom: 4rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid rgba(28, 25, 23, 0.1);
+    }
+
+    .tag-title {
+      font-family: 'Crimson Text', serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--charcoal);
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .tag-count {
+      color: var(--gray);
+      font-size: 1rem;
+      font-weight: 400;
+    }
+
+    .no-photos {
+      text-align: center;
+      color: var(--gray);
+      font-size: 1.125rem;
+      padding: 4rem 2rem;
+    }
+
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .photo-card {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--cream-dark);
+      cursor: pointer;
+    }
+
+    .photo-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .photo-image {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      overflow: hidden;
+      background: var(--cream);
+    }
+
+    .photo-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .photo-card:hover .photo-image img {
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+      .tag-title {
+        font-size: 2.5rem;
+      }
+
+      .photos-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+    }
+  </style>
+</PhotoLayout>
+

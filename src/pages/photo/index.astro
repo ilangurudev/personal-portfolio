@@ -1,0 +1,155 @@
+---
+import PhotoLayout from '../../layouts/PhotoLayout.astro';
+import { getFeaturedPhotosWithExif } from '../../utils/photo-helpers';
+import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
+import PhotoAbout from '../../components/photo/PhotoAbout.astro';
+
+const featuredPhotos = await getFeaturedPhotosWithExif();
+const sortedPhotos = featuredPhotos.sort((a, b) => 
+  b.data.date.getTime() - a.data.date.getTime()
+);
+---
+
+<PhotoLayout title="Best Photos" description="Featured photography by Guru">
+  <PhotoAbout />
+
+  <div class="photo-hero">
+    <h1 class="hero-title">Selected Works</h1>
+    <p class="hero-subtitle">
+      Street & landscape photography exploring light, shadow, and the spaces between
+    </p>
+  </div>
+
+  {sortedPhotos.length === 0 ? (
+    <div class="no-photos">
+      <p class="no-photos-text">
+        No featured photos yet. Mark photos as featured to see them here.
+      </p>
+    </div>
+  ) : (
+    <>
+      <div class="photos-grid">
+        {sortedPhotos.map((photo) => (
+          <div 
+            class="photo-card"
+            data-photo-id={photo.id}
+          >
+            <div class="photo-image">
+              <img 
+                src={`/photos/${photo.data.filename}`} 
+                alt={photo.data.title}
+                loading="lazy"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <PhotoLightbox photos={sortedPhotos} />
+    </>
+  )}
+
+  <style>
+    .photo-hero {
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto 4rem;
+      padding: 3rem 0;
+    }
+
+    .hero-title {
+      font-family: 'Crimson Text', serif;
+      font-size: 4.5rem;
+      font-weight: 700;
+      color: var(--charcoal);
+      margin: 0 0 1.5rem;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--gray);
+      font-weight: 300;
+      line-height: 1.6;
+      font-style: italic;
+      margin: 0;
+    }
+
+    .no-photos {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--cream-dark);
+      border-radius: 4px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .no-photos-text {
+      font-size: 1.125rem;
+      color: var(--charcoal);
+      margin: 0;
+      font-weight: 400;
+    }
+
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .photo-card {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--cream-dark);
+      cursor: pointer;
+    }
+
+    .photo-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .photo-image {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      overflow: hidden;
+      background: var(--cream);
+    }
+
+    .photo-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .photo-card:hover .photo-image img {
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 3rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1.125rem;
+      }
+
+      .photos-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .no-photos {
+        padding: 3rem 1.5rem;
+      }
+    }
+  </style>
+</PhotoLayout>

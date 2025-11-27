@@ -1,0 +1,154 @@
+---
+---
+
+<section class="about-section">
+  <div class="about-content">
+    <div class="about-main">
+      <h2 class="section-title">About Me</h2>
+      <div class="bio-text">
+        <p>
+          Hi, I'm Guru. I'm a photographer and AI engineer exploring the intersection of technology and art.
+        </p>
+        <p>
+          Photography is my way of slowing down. In a world that moves at the speed of algorithms, 
+          I use my camera to pause, observe, and appreciate the raw, unscripted beauty of the world around us.
+        </p>
+      </div>
+    </div>
+
+    <div class="about-details">
+      <div class="detail-block">
+        <h3 class="detail-title">Why I Shoot</h3>
+        <p>
+          To document the ephemeral. I'm drawn to the quiet moments in busy streets, 
+          the play of light on architecture, and the vastness of natural landscapes. 
+          Every shutter click is an attempt to preserve a feeling that words often fail to capture.
+        </p>
+      </div>
+
+      <div class="detail-block">
+        <h3 class="detail-title">Gear</h3>
+        <ul class="gear-list">
+          <li>Sony Alpha System</li>
+          <li>Prime Lenses (35mm, 85mm)</li>
+          <li>Ricoh GR III for street</li>
+          <li>Film when the mood strikes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .about-section {
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(28, 25, 23, 0.1);
+  }
+
+  .about-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .section-title {
+    font-family: 'Crimson Text', serif;
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--charcoal);
+    margin: 0 0 1.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .bio-text p {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: var(--charcoal);
+    margin-bottom: 1.5rem;
+    font-weight: 300;
+  }
+
+  .bio-text p:last-child {
+    margin-bottom: 0;
+  }
+
+  .about-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    padding-top: 1rem;
+  }
+
+  .detail-title {
+    font-family: 'Crimson Text', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--charcoal);
+    margin: 0 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .detail-title::after {
+    content: '';
+    height: 1px;
+    flex: 1;
+    background: var(--amber);
+    opacity: 0.3;
+  }
+
+  .detail-block p {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--gray);
+    margin: 0;
+  }
+
+  .gear-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .gear-list li {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.9375rem;
+    color: var(--gray);
+    position: relative;
+    padding-left: 1rem;
+  }
+
+  .gear-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--amber);
+  }
+
+  @media (max-width: 768px) {
+    .about-content {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+
+    .about-section {
+      padding: 2rem 0;
+      margin-bottom: 3rem;
+    }
+
+    .section-title {
+      font-size: 2rem;
+    }
+  }
+</style>
+

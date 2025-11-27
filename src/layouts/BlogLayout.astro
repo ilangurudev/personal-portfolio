@@ -1,0 +1,341 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title} | Guru</title>
+  {description && <meta name="description" content={description} />}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="blog-space">
+  <div class="scanlines"></div>
+
+  <header class="blog-header">
+    <div class="header-content">
+      <div class="terminal-prompt">
+        <span class="prompt-symbol">$</span>
+        <h1 class="site-title">
+          <a href="/">guru<span class="cursor">_</span></a>
+        </h1>
+      </div>
+      <nav class="blog-nav">
+        <a href="/" class="nav-link">
+          <span class="nav-symbol">&gt;</span> about
+        </a>
+        <a href="/blog" class="nav-link">
+          <span class="nav-symbol">&gt;</span> blog
+        </a>
+        <div class="space-toggle">
+          <span class="toggle-link toggle-active">Professional</span>
+          <a href="/photo" class="toggle-link toggle-inactive">Personal</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="blog-main">
+    <slot />
+  </main>
+
+  <footer class="blog-footer">
+    <p>
+      <span class="footer-symbol">~/guru $</span> echo "Built with curiosity and code" | figlet
+    </p>
+  </footer>
+
+  <style>
+    :root {
+      --slate-950: #020617;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --terminal-green: #22c55e;
+      --terminal-cyan: #06b6d4;
+      --terminal-yellow: #eab308;
+      --terminal-red: #ef4444;
+      --terminal-gray: #94a3b8;
+    }
+
+    body.blog-space {
+      background: var(--slate-950);
+      color: var(--terminal-green);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+      line-height: 1.8;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Scanlines Effect */
+    .scanlines {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+
+    /* Space Toggle - Rectangular Terminal Style */
+    .space-toggle {
+      display: flex;
+      align-items: center;
+      background: var(--slate-800);
+      border: 1px solid var(--terminal-cyan);
+      padding: 0;
+      gap: 0;
+    }
+
+    .toggle-link {
+      padding: 0.5rem 1rem;
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.2s ease;
+      color: var(--terminal-cyan);
+      border-right: 1px solid var(--terminal-cyan);
+    }
+
+    .toggle-link:last-child {
+      border-right: none;
+    }
+
+    .toggle-link.toggle-inactive {
+      color: var(--terminal-gray);
+    }
+
+    .toggle-link.toggle-inactive:hover {
+      background: var(--terminal-cyan);
+      color: var(--slate-950);
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+    }
+
+    .toggle-link.toggle-active {
+      background: var(--terminal-cyan);
+      color: var(--slate-950);
+      cursor: default;
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+    }
+
+    /* Header - Terminal Prompt Style */
+    .blog-header {
+      padding: 2rem 2rem 1.5rem;
+      border-bottom: 1px solid var(--slate-800);
+      background: var(--slate-900);
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .terminal-prompt {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .prompt-symbol {
+      color: var(--terminal-cyan);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .site-title {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .site-title a {
+      color: var(--terminal-green);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .site-title a:hover {
+      color: var(--terminal-yellow);
+      text-shadow: 0 0 10px var(--terminal-yellow);
+    }
+
+    .cursor {
+      display: inline-block;
+      animation: blink 1s step-end infinite;
+      color: var(--terminal-cyan);
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    /* Navigation - Command Style */
+    .blog-nav {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .nav-link {
+      color: var(--terminal-gray);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 400;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      padding: 0.5rem 0;
+    }
+
+    .nav-symbol {
+      color: var(--terminal-cyan);
+      transition: transform 0.3s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--terminal-green);
+    }
+
+    .nav-link:hover .nav-symbol {
+      transform: translateX(4px);
+      color: var(--terminal-yellow);
+    }
+
+    /* Main Content */
+    .blog-main {
+      flex: 1;
+      padding: 3rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Footer - Terminal Style */
+    .blog-footer {
+      padding: 2rem;
+      text-align: center;
+      border-top: 1px solid var(--slate-800);
+      background: var(--slate-900);
+      color: var(--terminal-gray);
+      font-size: 0.75rem;
+    }
+
+    .footer-symbol {
+      color: var(--terminal-cyan);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .blog-header {
+        padding: 1.5rem 1rem;
+      }
+
+      .header-content {
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: flex-start;
+      }
+
+      .site-title {
+        font-size: 1.5rem;
+      }
+
+      .blog-nav {
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .nav-link {
+        font-size: 0.85rem;
+      }
+
+      .space-toggle {
+        font-size: 0.65rem;
+      }
+
+      .toggle-link {
+        padding: 0.4rem 0.75rem;
+      }
+
+      .blog-main {
+        padding: 2rem 1rem;
+      }
+    }
+
+    /* Terminal Glow Effects */
+    .blog-space::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(6, 182, 212, 0.1) 0%,
+        transparent 50%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Animations */
+    @keyframes fadeInTerminal {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .blog-header,
+    .blog-main > * {
+      animation: fadeInTerminal 0.4s ease-out backwards;
+    }
+
+    .blog-header {
+      animation-delay: 0.05s;
+    }
+
+    .blog-main > *:nth-child(1) { animation-delay: 0.1s; }
+    .blog-main > *:nth-child(2) { animation-delay: 0.15s; }
+    .blog-main > *:nth-child(3) { animation-delay: 0.2s; }
+  </style>
+</body>
+</html>

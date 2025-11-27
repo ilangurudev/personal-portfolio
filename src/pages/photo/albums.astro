@@ -1,0 +1,151 @@
+---
+import PhotoLayout from '../../layouts/PhotoLayout.astro';
+import { getCollection } from 'astro:content';
+
+const albums = await getCollection('albums');
+const sortedAlbums = albums.sort((a, b) => {
+  // Sort by order field, then by date
+  if (a.data.order !== b.data.order) {
+    return a.data.order - b.data.order;
+  }
+  return b.data.date.getTime() - a.data.date.getTime();
+});
+---
+
+<PhotoLayout title="Albums" description="Photo albums by Guru">
+  <div class="albums-container">
+    <h1 class="albums-title">Albums</h1>
+    
+    {sortedAlbums.length === 0 ? (
+      <p class="no-albums">No albums yet. Check back soon!</p>
+    ) : (
+      <div class="albums-grid">
+        {sortedAlbums.map((album) => (
+          <a href={`/photo/album/${album.slug}`} class="album-card">
+            <div class="album-cover">
+              <img 
+                src={`/photos/${album.data.coverPhoto}`} 
+                alt={album.data.title}
+                loading="lazy"
+              />
+            </div>
+            <div class="album-info">
+              <h2 class="album-title">{album.data.title}</h2>
+              <p class="album-description">{album.data.description}</p>
+              <time class="album-date" datetime={album.data.date.toISOString()}>
+                {album.data.date.toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </time>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <style>
+    .albums-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    .albums-title {
+      font-family: 'Crimson Text', serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--charcoal);
+      margin: 0 0 3rem;
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+
+    .no-albums {
+      text-align: center;
+      color: var(--gray);
+      font-size: 1.125rem;
+      padding: 4rem 2rem;
+    }
+
+    .albums-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 2.5rem;
+      margin-top: 2rem;
+    }
+
+    .album-card {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--cream-dark);
+    }
+
+    .album-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .album-cover {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: var(--cream);
+    }
+
+    .album-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .album-card:hover .album-cover img {
+      transform: scale(1.05);
+    }
+
+    .album-info {
+      padding: 1.5rem;
+    }
+
+    .album-title {
+      font-family: 'Crimson Text', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--charcoal);
+      margin: 0 0 0.5rem;
+    }
+
+    .album-description {
+      color: var(--gray);
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      margin: 0 0 1rem;
+    }
+
+    .album-date {
+      color: var(--amber);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+      .albums-title {
+        font-size: 2.5rem;
+      }
+
+      .albums-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+  </style>
+</PhotoLayout>
+
