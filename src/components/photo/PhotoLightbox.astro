@@ -1,4 +1,6 @@
 ---
+import PhotoIcons from './PhotoIcons.astro';
+
 interface Props {
   photos: Array<{
     id: string;
@@ -6,6 +8,9 @@ interface Props {
       title: string;
       filename: string;
       tags?: string[];
+      camera?: string;
+      settings?: string;
+      location?: string;
     };
   }>;
   initialIndex?: number;
@@ -13,6 +18,8 @@ interface Props {
 
 const { photos, initialIndex = 0 } = Astro.props;
 ---
+
+<PhotoIcons />
 
 <div id="photo-lightbox" class="lightbox" style="display: none;">
   <div class="lightbox-backdrop"></div>
@@ -24,7 +31,10 @@ const { photos, initialIndex = 0 } = Astro.props;
       <img class="lightbox-image" src="" alt="" />
       <div class="lightbox-info">
         <div class="lightbox-tags"></div>
-        <div class="lightbox-counter"></div>
+        <div class="lightbox-metadata-row">
+          <div class="lightbox-metadata"></div>
+          <div class="lightbox-counter"></div>
+        </div>
       </div>
     </div>
     <button class="lightbox-nav lightbox-next" aria-label="Next photo">›</button>
@@ -38,6 +48,9 @@ const { photos, initialIndex = 0 } = Astro.props;
       title: string;
       filename: string;
       tags?: string[];
+      camera?: string;
+      settings?: string;
+      location?: string;
     };
   }
 
@@ -45,6 +58,7 @@ const { photos, initialIndex = 0 } = Astro.props;
     private lightbox: HTMLElement | null;
     private image: HTMLImageElement | null;
     private tags: HTMLElement | null;
+    private metadata: HTMLElement | null;
     private counter: HTMLElement | null;
     private photos: Photo[];
     private currentIndex: number;
@@ -56,6 +70,7 @@ const { photos, initialIndex = 0 } = Astro.props;
       this.lightbox = document.getElementById('photo-lightbox');
       this.image = this.lightbox?.querySelector('.lightbox-image') as HTMLImageElement;
       this.tags = this.lightbox?.querySelector('.lightbox-tags') as HTMLElement;
+      this.metadata = this.lightbox?.querySelector('.lightbox-metadata') as HTMLElement;
       this.counter = this.lightbox?.querySelector('.lightbox-counter') as HTMLElement;
 
       this.init();
@@ -203,10 +218,64 @@ const { photos, initialIndex = 0 } = Astro.props;
         }
       }
 
-      // Update counter
+      // Update metadata
+      if (this.metadata) {
+        const metadataItems: string[] = [];
+        
+        if (photo.data.camera) {
+          const cameraIcon = this.getIconSVG('icon-camera');
+          metadataItems.push(`<div class="lightbox-metadata-item">${cameraIcon}<span>${photo.data.camera}</span></div>`);
+        }
+        
+        if (photo.data.settings) {
+          // Parse settings to extract f-stop, shutter, ISO if possible
+          const settingsIcon = this.getIconSVG('icon-aperture');
+          metadataItems.push(`<div class="lightbox-metadata-item">${settingsIcon}<span>${photo.data.settings}</span></div>`);
+        }
+        
+        if (photo.data.location && photo.data.location.trim()) {
+          const locationIcon = this.getIconSVG('icon-location');
+          metadataItems.push(`<div class="lightbox-metadata-item">${locationIcon}<span>${photo.data.location}</span></div>`);
+        }
+        
+        if (metadataItems.length > 0) {
+          this.metadata.innerHTML = metadataItems.join('');
+          this.metadata.style.display = 'flex';
+        } else {
+          this.metadata.style.display = 'none';
+        }
+      }
+
+      // Update counter (styled like film frame number) - moved inline with metadata
       if (this.counter) {
         this.counter.textContent = `${this.currentIndex + 1} / ${this.photos.length}`;
       }
+    }
+
+    private getIconSVG(iconId: string): string {
+      const template = document.getElementById(iconId);
+      if (!template) {
+        console.warn(`Icon ${iconId} not found in DOM`);
+        return '';
+      }
+      
+      const clone = template.cloneNode(true) as SVGElement;
+      clone.removeAttribute('id');
+      clone.removeAttribute('style');
+      clone.classList.add('photo-icon-inline');
+      clone.setAttribute('width', '16');
+      clone.setAttribute('height', '16');
+      clone.setAttribute('fill', 'none');
+      clone.setAttribute('stroke', 'currentColor');
+      clone.style.display = 'inline-block';
+      clone.style.verticalAlign = 'middle';
+      clone.style.marginRight = '0.5rem';
+      clone.style.color = 'currentColor';
+      
+      // Get the SVG content as a string
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(clone);
+      return svgString;
     }
 
     private preloadAdjacent() {
@@ -270,7 +339,10 @@ const { photos, initialIndex = 0 } = Astro.props;
   data: {
     title: p.data.title,
     filename: p.data.filename,
-    tags: p.data.tags || []
+    tags: p.data.tags || [],
+    camera: p.data.camera,
+    settings: p.data.settings,
+    location: p.data.location
   }
 })))}></script>
 
@@ -303,6 +375,19 @@ const { photos, initialIndex = 0 } = Astro.props;
     height: 100%;
     background: rgba(28, 25, 23, 0.95);
     backdrop-filter: blur(8px);
+  }
+
+  /* Film grain texture */
+  .lightbox-backdrop::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    pointer-events: none;
   }
 
   .lightbox-close {
@@ -351,11 +436,12 @@ const { photos, initialIndex = 0 } = Astro.props;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0;
   }
 
   .lightbox-image {
     max-width: 100%;
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 140px);
     width: auto;
     height: auto;
     object-fit: contain;
@@ -376,7 +462,7 @@ const { photos, initialIndex = 0 } = Astro.props;
   }
 
   .lightbox-info {
-    margin-top: 2rem;
+    margin-top: 1.5rem;
     text-align: center;
     color: var(--cream);
     max-width: 800px;
@@ -384,6 +470,46 @@ const { photos, initialIndex = 0 } = Astro.props;
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 0.75rem;
+  }
+
+  .lightbox-metadata-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: rgba(255, 251, 245, 0.7);
+  }
+
+  .lightbox-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .lightbox-metadata-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .lightbox-metadata-item .photo-icon-inline {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+  }
+
+  .lightbox-metadata-item span {
+    font-weight: 400;
+    letter-spacing: 0.02em;
   }
 
   .lightbox-tags {
@@ -391,7 +517,6 @@ const { photos, initialIndex = 0 } = Astro.props;
     flex-wrap: wrap;
     gap: 0.5rem;
     justify-content: center;
-    margin-bottom: 1rem;
     visibility: visible !important;
     opacity: 1 !important;
     min-height: 1.5rem;
@@ -428,9 +553,15 @@ const { photos, initialIndex = 0 } = Astro.props;
 
   .lightbox-counter {
     font-size: 0.875rem;
-    color: rgba(255, 251, 245, 0.6);
+    color: rgba(255, 251, 245, 0.7);
     font-weight: 400;
     letter-spacing: 0.05em;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: inline-block;
   }
 
   .lightbox-nav {
