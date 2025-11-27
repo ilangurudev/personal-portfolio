@@ -56,7 +56,7 @@ tagsArray.forEach(item => {
       <div class="tags-list">
         {tagsArray.map(({ tag, count, displayTag }) => (
           <a 
-            href={`/photo/tag/${encodeURIComponent(displayTag)}`}
+            href={`/photography/tag/${encodeURIComponent(displayTag)}`}
             class="tag-item"
           >
             <span class="tag-name">#{displayTag.toLowerCase()}</span>

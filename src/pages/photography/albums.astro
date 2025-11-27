@@ -21,7 +21,7 @@ const sortedAlbums = albums.sort((a, b) => {
     ) : (
       <div class="albums-grid">
         {sortedAlbums.map((album) => (
-          <a href={`/photo/album/${album.slug}`} class="album-card">
+          <a href={`/photography/album/${album.slug}`} class="album-card">
             <div class="album-cover">
               <img 
                 src={`/photos/${album.data.coverPhoto}`} 

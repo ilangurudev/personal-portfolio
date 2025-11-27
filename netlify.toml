@@ -9,6 +9,12 @@
 [build.processing]
   skip_processing = false
 
+# Redirect old /photo URLs to /photography for backward compatibility
+[[redirects]]
+  from = "/photo/*"
+  to = "/photography/:splat"
+  status = 301
+
 # Redirect rules (optional - for SPA-like behavior)
 [[redirects]]
   from = "/*"

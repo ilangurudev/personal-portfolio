@@ -195,7 +195,7 @@ const { photos, initialIndex = 0 } = Astro.props;
                 e.preventDefault();
                 const tag = el.getAttribute('data-tag');
                 if (tag) {
-                  window.location.href = `/photo/tag/${tag}`;
+                  window.location.href = `/photography/tag/${tag}`;
                 }
               });
               el.addEventListener('mouseenter', () => {
