@@ -28,7 +28,7 @@ async function extractMetadata(photoPath) {
 
     return {
       filename,
-      title: exif?.Title || filenameWithoutExt,
+      title: exif?.Title || filenameWithoutExt.replace(/^_+/, ''), // Remove leading underscores from title
       tags: tags,
       date: exif?.DateTimeOriginal || new Date(),
       location: formatGPS(exif?.GPSLatitude, exif?.GPSLongitude),
@@ -43,7 +43,7 @@ async function extractMetadata(photoPath) {
 
     return {
       filename,
-      title: filenameWithoutExt,
+      title: filenameWithoutExt.replace(/^_+/, ''), // Remove leading underscores from title
       tags: [],
       date: new Date(),
       location: '',
@@ -205,9 +205,11 @@ async function main() {
   // Generate individual photo metadata files
   for (const photo of photos) {
     const filenameWithoutExt = basename(photo.filename, extname(photo.filename));
-    const photoPath = join(photosDir, `${filenameWithoutExt}.md`);
+    // Remove leading underscore from metadata filename (Astro excludes _*.md files)
+    const metadataFilename = filenameWithoutExt.replace(/^_+/, '');
+    const photoPath = join(photosDir, `${metadataFilename}.md`);
     await generatePhotoFile(albumSlug, photo, photoPath);
-    console.log(`  ✅ Created photo metadata: ${filenameWithoutExt}.md`);
+    console.log(`  ✅ Created photo metadata: ${metadataFilename}.md`);
   }
 
   // Summary
