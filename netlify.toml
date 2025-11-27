@@ -1,0 +1,17 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Increase timeout for image processing
+[build.processing]
+  skip_processing = false
+
+# Redirect rules (optional - for SPA-like behavior)
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
+
