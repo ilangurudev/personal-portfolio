@@ -31,10 +31,20 @@ const { tag } = Astro.params;
 const decodedTag = decodeURIComponent(tag || '');
 
 const allPhotos = await getPhotosWithExif();
-const filteredPhotos = allPhotos.filter(photo => 
+
+// Get all unique tags for the filter pills
+const allTagsSet = new Set<string>();
+allPhotos.forEach(photo => {
+  photo.data.tags.forEach(t => {
+    allTagsSet.add(t.toLowerCase());
+  });
+});
+const allTags = Array.from(allTagsSet).sort();
+
+const filteredPhotos = allPhotos.filter(photo =>
   photo.data.tags.some(t => t.toLowerCase() === decodedTag.toLowerCase())
 );
-const sortedPhotos = filteredPhotos.sort((a, b) => 
+const sortedPhotos = filteredPhotos.sort((a, b) =>
   b.data.date.getTime() - a.data.date.getTime()
 );
 ---
@@ -43,18 +53,38 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
   <div class="tag-page">
     <div class="tag-header">
       <h1 class="tag-title">#{decodedTag.toLowerCase()}</h1>
-      <p class="tag-count">{sortedPhotos.length} {sortedPhotos.length === 1 ? 'photo' : 'photos'}</p>
+      <p class="tag-count" id="photo-count">{sortedPhotos.length} {sortedPhotos.length === 1 ? 'photo' : 'photos'}</p>
+    </div>
+
+    <!-- Tag Filter Pills -->
+    <div class="tag-filter-bar">
+      <div class="tag-pills" id="tag-pills">
+        {allTags.map((t) => (
+          <button
+            class={`tag-pill ${t === decodedTag.toLowerCase() ? 'active' : ''}`}
+            data-tag={t}
+            type="button"
+          >
+            #{t}
+          </button>
+        ))}
+      </div>
+      <button class="clear-filters" id="clear-filters" style="display: none;">
+        Clear filters
+      </button>
     </div>
 
     {sortedPhotos.length === 0 ? (
       <p class="no-photos">No photos found with this tag.</p>
     ) : (
       <>
-        <div class="photos-grid">
-          {sortedPhotos.map((photo) => (
-            <div 
+        <div class="photos-grid" id="photos-grid">
+          {allPhotos.sort((a, b) => b.data.date.getTime() - a.data.date.getTime()).map((photo) => (
+            <div
               class="photo-card"
               data-photo-id={photo.id}
+              data-tags={photo.data.tags.map(t => t.toLowerCase()).join(',')}
+              style={photo.data.tags.some(t => t.toLowerCase() === decodedTag.toLowerCase()) ? '' : 'display: none;'}
             >
               <div class="photo-image">
                 <img 
@@ -89,9 +119,71 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
 
     .tag-header {
       text-align: center;
-      margin-bottom: 4rem;
+      margin-bottom: 2rem;
       padding-bottom: 2rem;
       border-bottom: 1px solid rgba(28, 25, 23, 0.1);
+    }
+
+    .tag-filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+      padding: 1.25rem;
+      background: var(--cream-dark);
+      border-radius: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    .tag-pill {
+      padding: 0.5rem 1rem;
+      border: 1.5px solid rgba(28, 25, 23, 0.2);
+      border-radius: 20px;
+      background: transparent;
+      color: var(--charcoal);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: inherit;
+    }
+
+    .tag-pill:hover {
+      border-color: var(--amber);
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+    }
+
+    .tag-pill.active {
+      background: var(--amber);
+      border-color: var(--amber);
+      color: white;
+    }
+
+    .clear-filters {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      color: var(--gray);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      font-family: inherit;
+      text-decoration: underline;
+      white-space: nowrap;
+    }
+
+    .clear-filters:hover {
+      color: var(--amber);
     }
 
     .tag-title {
@@ -212,11 +304,107 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
         font-size: 2.5rem;
       }
 
+      .tag-filter-bar {
+        padding: 1rem;
+      }
+
+      .tag-pills {
+        gap: 0.5rem;
+      }
+
+      .tag-pill {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+      }
+
       .photos-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
       }
     }
   </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tagPills = document.querySelectorAll('.tag-pill');
+      const photosGrid = document.getElementById('photos-grid');
+      const photoCards = document.querySelectorAll('.photo-card');
+      const photoCount = document.getElementById('photo-count');
+      const clearFiltersBtn = document.getElementById('clear-filters');
+      const initialTag = document.querySelector('.tag-pill.active')?.getAttribute('data-tag');
+
+      // Track active tags
+      let activeTags = new Set(initialTag ? [initialTag] : []);
+
+      function updatePhotos() {
+        let visibleCount = 0;
+
+        photoCards.forEach(card => {
+          const cardTags = (card.getAttribute('data-tags') || '').split(',');
+          // Show photo if it has ALL active tags (AND logic)
+          const hasAllTags = Array.from(activeTags).every(tag => cardTags.includes(tag));
+
+          if (hasAllTags && activeTags.size > 0) {
+            card.style.display = '';
+            visibleCount++;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+
+        // Update count
+        if (photoCount) {
+          photoCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'photo' : 'photos'}`;
+        }
+
+        // Show/hide clear filters button
+        if (clearFiltersBtn) {
+          clearFiltersBtn.style.display = activeTags.size > 1 ? 'block' : 'none';
+        }
+      }
+
+      // Tag pill click handler
+      tagPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          const tag = pill.getAttribute('data-tag');
+
+          if (activeTags.has(tag)) {
+            // Prevent removing the last tag
+            if (activeTags.size > 1) {
+              activeTags.delete(tag);
+              pill.classList.remove('active');
+            }
+          } else {
+            activeTags.add(tag);
+            pill.classList.add('active');
+          }
+
+          updatePhotos();
+        });
+      });
+
+      // Clear filters handler
+      if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', () => {
+          // Reset to initial tag only
+          activeTags = new Set(initialTag ? [initialTag] : []);
+
+          tagPills.forEach(pill => {
+            const tag = pill.getAttribute('data-tag');
+            if (tag === initialTag) {
+              pill.classList.add('active');
+            } else {
+              pill.classList.remove('active');
+            }
+          });
+
+          updatePhotos();
+        });
+      }
+
+      // Initial update
+      updatePhotos();
+    });
+  </script>
 </PhotoLayout>
 
