@@ -13,6 +13,25 @@ npm run import <album-slug> ~/path/to/source/photos
 npm run import street-sf ~/Desktop/sf-street-photos
 ```
 
+### 1b. Cleanly Remove Albums or Photos
+
+Use the removal CLI to delete assets and metadata together:
+
+```bash
+# Remove an entire album (photos, metadata, batch files)
+npm run remove -- --album pacific-northwest
+
+# Remove a single photo (metadata + image)
+npm run remove -- --photo new-york/AR53764
+```
+
+Options:
+- `--dry-run` — preview what would be deleted.
+- `--yes` — skip the confirmation prompt (useful for automation).
+- Photo identifiers accept either the metadata slug (`AR53764`) or the actual filename (`_AR53764.jpg`).
+
+When the last photo in an album is removed, the script automatically prunes the empty folders and album metadata so the content collections stay in sync.
+
 ### 2. Review Batch File
 
 Open `batch-import-{album-slug}.md` in the project root:
