@@ -1,138 +1,202 @@
 ---
 import BlogLayout from '../layouts/BlogLayout.astro';
-import { getEntry, getCollection } from 'astro:content';
-
-const aboutEntry = await getEntry('blog', 'about');
-const { Content } = await aboutEntry.render();
+import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('blog'))
   .filter(post => post.slug !== 'about')
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 5); // Show only last 5 posts
+
+const projects = (await getCollection('projects'))
+  .sort((a, b) => {
+    // Featured projects first, then by date
+    if (a.data.featured && !b.data.featured) return -1;
+    if (!a.data.featured && b.data.featured) return 1;
+    return b.data.date.valueOf() - a.data.date.valueOf();
+  })
+  .slice(0, 5); // Show only last 5 projects
 ---
 
-<BlogLayout title="About" description="AI researcher and photographer">
-  <article class="about-content">
+<BlogLayout title="Guru Ilangovan" description="AI researcher and photographer">
+  <!-- Hero Section -->
+  <section class="hero-section">
     <div class="terminal-header">
-      <span class="command-prompt">$ cat about.md</span>
+      <span class="command-prompt">$ whoami</span>
     </div>
-    <div class="profile-section">
+    <div class="hero-content">
       <div class="profile-image-wrapper">
         <img src="/guru.png" alt="Gurudev Ilangovan" class="profile-image" />
       </div>
-      <div class="profile-details">
-        <div class="location-badge">
-          <svg class="terminal-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="12" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-          </svg>
-          <span>Washington D.C</span>
+      <div class="hero-text">
+        <h1 class="hero-title">Gurudev "Guru" Ilangovan</h1>
+        <p class="hero-subtitle">AI/LLM Engineer @ Capital One</p>
+        <p class="hero-description">Building intelligent systems with LLMs and Generative AI</p>
+        <div class="hero-links">
+          <a href="/blog/about" class="hero-link">→ Read more about me</a>
+          <span class="separator">|</span>
+          <a href="/photography" class="hero-link">📸 Photography</a>
         </div>
       </div>
     </div>
-    <div class="prose">
-      <Content />
-    </div>
-  </article>
-
-  <section class="recent-posts">
-    <div class="terminal-header">
-      <span class="command-prompt">$ ls -la blog/</span>
-    </div>
-    
-    <div class="posts-list">
-      {posts.map(post => (
-        <article class="post-preview">
-          <div class="post-meta">
-            <span class="permissions">-rw-r--r--</span>
-            <span class="user">guru</span>
-            <span class="size">{Math.floor(post.body.length / 100)}k</span>
-            <time datetime={post.data.date.toISOString()}>
-              {post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </time>
-          </div>
-          <a href={`/blog/${post.slug}`} class="post-title">
-            {post.data.title}
-          </a>
-          <p class="post-description">// {post.data.description}</p>
-        </article>
-      ))}
-    </div>
   </section>
 
+  <!-- Two Column Layout -->
+  <div class="dashboard-grid">
+    <!-- Recent Blog Posts -->
+    <section class="dashboard-section">
+      <div class="terminal-header">
+        <span class="command-prompt">$ ls -la blog/ | tail -n 5</span>
+      </div>
+      <div class="content-list">
+        {posts.map(post => (
+          <article class="content-item">
+            <div class="item-meta">
+              <time datetime={post.data.date.toISOString()}>
+                {post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </time>
+            </div>
+            <a href={`/blog/${post.slug}`} class="item-title">
+              {post.data.title}
+            </a>
+            <p class="item-description">// {post.data.description}</p>
+          </article>
+        ))}
+      </div>
+      <a href="/blog" class="view-all">→ View all posts</a>
+    </section>
+
+    <!-- Featured Projects -->
+    <section class="dashboard-section">
+      <div class="terminal-header">
+        <span class="command-prompt">$ ls -la projects/ | tail -n 5</span>
+      </div>
+      <div class="content-list">
+        {projects.map(project => (
+          <article class="content-item">
+            <div class="item-meta">
+              {project.data.featured && <span class="featured-star">★</span>}
+              <time datetime={project.data.date.toISOString()}>
+                {project.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </time>
+            </div>
+            <a href={`/projects/${project.slug}`} class="item-title">
+              {project.data.title}
+            </a>
+            <p class="item-description">// {project.data.description}</p>
+          </article>
+        ))}
+      </div>
+      <a href="/projects" class="view-all">→ View all projects</a>
+    </section>
+  </div>
+
   <style>
-    .about-content {
-      max-width: 800px;
+    /* Hero Section */
+    .hero-section {
+      margin-bottom: 3rem;
     }
 
-    /* Recent Posts Section */
-    .recent-posts {
-      margin-top: 4rem;
-      max-width: 800px;
-    }
-
-    .posts-list {
+    .hero-content {
       display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
+      align-items: center;
+      gap: 2rem;
+      margin-top: 1.5rem;
     }
 
-    .post-preview {
-      font-family: 'Fira Code', monospace;
-      padding: 1rem;
-      border: 1px solid transparent;
-      border-radius: 8px;
-      transition: all 0.2s ease;
+    .profile-image-wrapper {
+      flex-shrink: 0;
+      width: 120px;
+      height: 120px;
+      border: 2px solid var(--terminal-cyan);
+      border-radius: 50%;
+      padding: 3px;
+      background: var(--slate-900);
+      box-shadow:
+        0 0 20px rgba(6, 182, 212, 0.3),
+        inset 0 0 20px rgba(6, 182, 212, 0.1);
+      transition: all 0.3s ease;
     }
 
-    .post-preview:hover {
-      background: rgba(255, 255, 255, 0.03);
-      border-color: rgba(255, 255, 255, 0.1);
+    .profile-image-wrapper:hover {
+      box-shadow:
+        0 0 30px rgba(6, 182, 212, 0.5),
+        inset 0 0 20px rgba(6, 182, 212, 0.2);
+      transform: scale(1.05);
     }
 
-    .post-meta {
-      display: flex;
-      gap: 1rem;
-      color: var(--terminal-gray);
-      font-size: 0.85rem;
-      margin-bottom: 0.5rem;
-      opacity: 0.7;
-    }
-
-    .post-title {
+    .profile-image {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
       display: block;
-      font-size: 1.25rem;
+    }
+
+    .hero-text {
+      flex: 1;
+    }
+
+    .hero-title {
       color: var(--terminal-green);
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+      text-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+      font-family: 'Fira Code', monospace;
+    }
+
+    .hero-subtitle {
+      color: var(--terminal-cyan);
+      font-size: 1.1rem;
+      margin: 0 0 0.5rem 0;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .hero-description {
+      color: var(--terminal-gray);
+      font-size: 1rem;
+      margin: 0 0 1rem 0;
+      opacity: 0.9;
+    }
+
+    .hero-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .hero-link {
+      color: var(--terminal-cyan);
       text-decoration: none;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
       transition: color 0.2s ease;
     }
 
-    .post-preview:hover .post-title {
-      color: var(--terminal-cyan);
+    .hero-link:hover {
+      color: var(--terminal-yellow);
     }
 
-    .post-description {
+    .separator {
       color: var(--terminal-gray);
-      font-size: 0.95rem;
-      margin: 0;
-      opacity: 0.8;
+      opacity: 0.5;
     }
 
-    @media (max-width: 640px) {
-      .post-meta {
-        flex-wrap: wrap;
-        gap: 0.5rem;
-      }
-      
-      .permissions, .user, .size {
-        display: none;
-      }
-    }
-
-    .terminal-header {
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
       margin-bottom: 2rem;
-      padding-bottom: 1rem;
+    }
+
+    .dashboard-section {
+      min-width: 0; /* Prevent grid overflow */
+    }
+
+    /* Terminal Header */
+    .terminal-header {
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
       border-bottom: 1px solid var(--slate-800);
     }
 
@@ -140,6 +204,7 @@ const posts = (await getCollection('blog'))
       color: var(--terminal-cyan);
       font-size: 0.9rem;
       font-weight: 500;
+      font-family: 'Fira Code', monospace;
     }
 
     .command-prompt::after {
@@ -152,144 +217,132 @@ const posts = (await getCollection('blog'))
       animation: blink 1s step-end infinite;
     }
 
-    /* Profile Image Section */
-    .profile-section {
+    /* Content List */
+    .content-list {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
-      gap: 1.5rem;
-      margin: 2rem 0 3rem;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
     }
 
-    .profile-details {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      align-items: flex-start;
+    .content-item {
+      padding: 0.75rem;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      transition: all 0.2s ease;
     }
 
-    .location-badge {
+    .content-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .item-meta {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      color: var(--terminal-cyan);
-      font-family: 'Fira Code', monospace;
-      font-size: 0.9rem;
-      padding: 0.25rem 0.75rem;
-      background: rgba(6, 182, 212, 0.1);
-      border-radius: 4px;
-      border: 1px solid rgba(6, 182, 212, 0.2);
-    }
-
-    .terminal-icon {
-      width: 16px;
-      height: 16px;
-      stroke: currentColor;
-    }
-
-    .profile-image-wrapper {
-      position: relative;
-      width: 200px;
-      height: 200px;
-      border: 2px solid var(--terminal-cyan);
-      border-radius: 50%;
-      padding: 4px;
-      background: var(--slate-900);
-      box-shadow: 
-        0 0 20px rgba(6, 182, 212, 0.3),
-        inset 0 0 20px rgba(6, 182, 212, 0.1);
-      transition: all 0.3s ease;
-    }
-
-    .profile-image-wrapper:hover {
-      box-shadow: 
-        0 0 30px rgba(6, 182, 212, 0.5),
-        inset 0 0 20px rgba(6, 182, 212, 0.2);
-      transform: scale(1.02);
-    }
-
-    .profile-image {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      display: block;
-    }
-
-    /* Markdown Prose Styling */
-    .prose {
       color: var(--terminal-gray);
-      font-size: 1rem;
-      line-height: 1.8;
+      font-size: 0.8rem;
+      margin-bottom: 0.4rem;
+      opacity: 0.7;
+      font-family: 'Fira Code', monospace;
     }
 
-    .prose :global(h1) {
-      color: var(--terminal-green);
-      font-size: 2rem;
-      font-weight: 700;
-      margin: 2rem 0 1rem;
-      text-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
-    }
-
-    .prose :global(h2) {
-      color: var(--terminal-cyan);
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin: 1.5rem 0 0.75rem;
-    }
-
-    .prose :global(p) {
-      margin: 1rem 0;
-    }
-
-    .prose :global(strong) {
+    .featured-star {
       color: var(--terminal-yellow);
-      font-weight: 700;
+      font-size: 0.9rem;
     }
 
-    .prose :global(ul) {
-      list-style: none;
-      padding-left: 1.5rem;
+    .item-title {
+      display: block;
+      font-size: 1.1rem;
+      color: var(--terminal-green);
+      text-decoration: none;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      transition: color 0.2s ease;
+      font-family: 'Fira Code', monospace;
+      line-height: 1.4;
     }
 
-    .prose :global(li) {
-      position: relative;
-      margin: 0.5rem 0;
-    }
-
-    .prose :global(li::before) {
-      content: '>';
-      position: absolute;
-      left: -1.5rem;
+    .content-item:hover .item-title {
       color: var(--terminal-cyan);
     }
 
-    .prose :global(a) {
+    .item-description {
+      color: var(--terminal-gray);
+      font-size: 0.9rem;
+      margin: 0;
+      opacity: 0.8;
+      line-height: 1.5;
+    }
+
+    .view-all {
+      display: inline-block;
       color: var(--terminal-cyan);
       text-decoration: none;
-      border-bottom: 1px solid transparent;
-      transition: all 0.3s ease;
+      font-size: 0.95rem;
+      font-family: 'Fira Code', monospace;
+      transition: color 0.2s ease;
+      padding: 0.5rem 0;
     }
 
-    .prose :global(a:hover) {
+    .view-all:hover {
       color: var(--terminal-yellow);
-      border-bottom-color: var(--terminal-yellow);
     }
 
+    /* Animations */
     @keyframes blink {
       0%, 50% { opacity: 1; }
       51%, 100% { opacity: 0; }
     }
 
-    /* Responsive Profile Image */
+    /* Responsive Design */
     @media (max-width: 768px) {
-      .profile-image-wrapper {
-        width: 150px;
-        height: 150px;
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
       }
 
-      .profile-section {
-        margin: 1.5rem 0 2rem;
+      .hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+      }
+
+      .profile-image-wrapper {
+        width: 100px;
+        height: 100px;
+      }
+
+      .hero-title {
+        font-size: 1.5rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1rem;
+      }
+
+      .hero-links {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero-title {
+        font-size: 1.25rem;
+      }
+
+      .hero-subtitle {
+        font-size: 0.95rem;
+      }
+
+      .item-title {
+        font-size: 1rem;
+      }
+
+      .item-description {
+        font-size: 0.85rem;
       }
     }
   </style>
