@@ -58,20 +58,28 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
 
     <!-- Tag Filter Pills -->
     <div class="tag-filter-bar">
-      <div class="tag-pills" id="tag-pills">
-        {allTags.map((t) => (
-          <button
-            class={`tag-pill ${t === decodedTag.toLowerCase() ? 'active' : ''}`}
-            data-tag={t}
-            type="button"
-          >
-            #{t}
-          </button>
-        ))}
-      </div>
-      <button class="clear-filters" id="clear-filters" style="display: none;">
-        Clear filters
+      <button class="filter-toggle" id="filter-toggle" type="button">
+        <span class="filter-toggle-text">Refine by tags</span>
+        <svg class="filter-toggle-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </button>
+      <div class="tag-pills-container" id="tag-pills-container">
+        <div class="tag-pills" id="tag-pills">
+          {allTags.map((t) => (
+            <button
+              class={`tag-pill ${t === decodedTag.toLowerCase() ? 'active' : ''}`}
+              data-tag={t}
+              type="button"
+            >
+              #{t}
+            </button>
+          ))}
+        </div>
+        <button class="clear-filters" id="clear-filters" style="display: none;">
+          Clear filters
+        </button>
+      </div>
     </div>
 
     {sortedPhotos.length === 0 ? (
@@ -125,14 +133,57 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
     }
 
     .tag-filter-bar {
+      margin-bottom: 3rem;
+      background: var(--cream-dark);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .filter-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1rem 1.25rem;
+      background: transparent;
+      border: none;
+      color: var(--charcoal);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .filter-toggle:hover {
+      color: var(--amber);
+    }
+
+    .filter-toggle-icon {
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .filter-toggle.expanded .filter-toggle-icon {
+      transform: rotate(180deg);
+    }
+
+    .tag-pills-container {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tag-pills-container.expanded {
+      max-height: 800px;
+    }
+
+    .tag-pills-container-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1.5rem;
-      margin-bottom: 3rem;
-      padding: 1.25rem;
-      background: var(--cream-dark);
-      border-radius: 8px;
+      padding: 0 1.25rem 1.25rem;
       flex-wrap: wrap;
     }
 
@@ -140,7 +191,7 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       display: flex;
       flex-wrap: wrap;
       gap: 0.75rem;
-      flex: 1;
+      padding: 0 1.25rem 1.25rem;
     }
 
     .tag-pill {
@@ -169,7 +220,7 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
     }
 
     .clear-filters {
-      padding: 0.5rem 1rem;
+      padding: 0.5rem 1.25rem 1.25rem;
       border: none;
       background: transparent;
       color: var(--gray);
@@ -180,6 +231,8 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       font-family: inherit;
       text-decoration: underline;
       white-space: nowrap;
+      text-align: left;
+      width: 100%;
     }
 
     .clear-filters:hover {
@@ -331,10 +384,20 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       const photoCards = document.querySelectorAll('.photo-card');
       const photoCount = document.getElementById('photo-count');
       const clearFiltersBtn = document.getElementById('clear-filters');
+      const filterToggle = document.getElementById('filter-toggle');
+      const tagPillsContainer = document.getElementById('tag-pills-container');
+      const tagTitle = document.querySelector('.tag-title');
       const initialTag = document.querySelector('.tag-pill.active')?.getAttribute('data-tag');
+      const initialTitle = tagTitle?.textContent || '';
 
       // Track active tags
       let activeTags = new Set(initialTag ? [initialTag] : []);
+
+      // Toggle filter bar
+      filterToggle?.addEventListener('click', () => {
+        filterToggle.classList.toggle('expanded');
+        tagPillsContainer?.classList.toggle('expanded');
+      });
 
       function updatePhotos() {
         let visibleCount = 0;
@@ -355,6 +418,18 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
         // Update count
         if (photoCount) {
           photoCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'photo' : 'photos'}`;
+        }
+
+        // Update title based on selected tags
+        if (tagTitle) {
+          if (activeTags.size > 1) {
+            const sortedTags = Array.from(activeTags).sort();
+            tagTitle.textContent = sortedTags.map(t => `#${t}`).join(' + ');
+          } else if (activeTags.size === 1) {
+            tagTitle.textContent = `#${Array.from(activeTags)[0]}`;
+          } else {
+            tagTitle.textContent = initialTitle;
+          }
         }
 
         // Show/hide clear filters button
