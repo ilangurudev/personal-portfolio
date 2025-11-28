@@ -15,8 +15,10 @@
     "test:visual": "cd /Users/ilangurudev/projects/personal-portfolio/.claude/skills/playwright-skill && node run.js /Users/ilangurudev/projects/personal-portfolio/tests/e2e/visual-aesthetics.spec.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.940.0",
     "@tailwindcss/vite": "^4.1.17",
     "astro": "^5.16.2",
+    "dotenv": "^17.2.3",
     "tailwindcss": "^4.1.17"
   },
   "devDependencies": {

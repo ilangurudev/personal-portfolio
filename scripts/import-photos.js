@@ -1,7 +1,24 @@
 import exifr from 'exifr';
-import { readdir, copyFile, mkdir, writeFile } from 'fs/promises';
+import { readdir, copyFile, mkdir, writeFile, readFile } from 'fs/promises';
 import { join, basename, extname, normalize } from 'path';
 import { existsSync } from 'fs';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import 'dotenv/config';
+
+// R2 Configuration
+const R2_ENABLED = process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET_NAME;
+
+let s3Client;
+if (R2_ENABLED) {
+  s3Client = new S3Client({
+    region: 'auto',
+    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    },
+  });
+}
 
 /**
  * Extract metadata from a photo using EXIF/IPTC data
@@ -138,6 +155,29 @@ location: "${photo.location || ''}"
 }
 
 /**
+ * Upload file to R2
+ * @param {string} filePath - Source file path
+ * @param {string} key - Destination key (path in bucket)
+ */
+async function uploadToR2(filePath, key) {
+  const fileContent = await readFile(filePath);
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME,
+    Key: key,
+    Body: fileContent,
+    ContentType: 'image/jpeg', // Assuming JPEGs as per filter
+  });
+
+  try {
+    await s3Client.send(command);
+    console.log(`  ☁️  Uploaded to R2: ${key}`);
+  } catch (error) {
+    console.error(`  ❌ R2 Upload failed for ${key}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Main function - CLI entry point
  */
 async function main() {
@@ -163,11 +203,20 @@ async function main() {
 
   console.log(`\n📸 Importing photos for album: ${albumSlug}`);
   console.log(`   Source: ${sourcePath}\n`);
+  
+  if (R2_ENABLED) {
+    console.log(`   ☁️  R2 Upload Enabled (Bucket: ${process.env.R2_BUCKET_NAME})`);
+  } else {
+    console.log(`   📂 Local Storage Mode (Check .env to enable R2)`);
+  }
+  console.log('');
 
-  // Create album folder in public/photos
+  // Create album folder in public/photos ONLY if not using R2
   const albumDir = join(process.cwd(), 'public', 'photos', albumSlug);
-  await mkdir(albumDir, { recursive: true });
-  console.log(`📁 Created album directory: public/photos/${albumSlug}/`);
+  if (!R2_ENABLED) {
+    await mkdir(albumDir, { recursive: true });
+    console.log(`📁 Created local album directory: public/photos/${albumSlug}/`);
+  }
 
   // Read source photos
   const files = await readdir(sourcePath);
@@ -184,15 +233,21 @@ async function main() {
   const photos = [];
   for (const file of jpegFiles) {
     const sourcePhotoPath = join(sourcePath, file);
-    const destPath = join(albumDir, file);
-
-    // Extract metadata
+    
+    // Extract metadata FIRST (from local file)
     const metadata = await extractMetadata(sourcePhotoPath);
     photos.push(metadata);
 
-    // Copy photo
-    await copyFile(sourcePhotoPath, destPath);
-    console.log(`  ✅ ${file}`);
+    if (R2_ENABLED) {
+      // Upload to R2
+      const r2Key = `${albumSlug}/${file}`;
+      await uploadToR2(sourcePhotoPath, r2Key);
+    } else {
+      // Copy locally
+      const destPath = join(albumDir, file);
+      await copyFile(sourcePhotoPath, destPath);
+      console.log(`  ✅ Copied locally: ${file}`);
+    }
   }
 
   // Create content directories
@@ -225,8 +280,13 @@ async function main() {
   console.log(`\n📝 Next steps:`);
   console.log(`   1. Review and edit album metadata: src/content/albums/${albumSlug}.md`);
   console.log(`   2. Review and edit photo metadata in: src/content/photos/${albumSlug}/`);
-  console.log(`   3. Add descriptive titles, refine tags, and add descriptions`);
-  console.log(`   4. Commit your changes`);
+  if (!R2_ENABLED) {
+    console.log(`   3. Add descriptive titles, refine tags, and add descriptions`);
+    console.log(`   4. Commit your changes`);
+  } else {
+    console.log(`   3. Verify photos appear on your R2 domain`);
+    console.log(`   4. Commit metadata changes (no binary files!)`);
+  }
 }
 
 main().catch(error => {

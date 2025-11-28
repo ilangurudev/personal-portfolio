@@ -1,6 +1,6 @@
 ---
-title: "Miami, Keys, & Orlando"
-description: "Photography from the winter of 2024"
+title: "Miami Keys Orlando"
+description: "A collection of photography"
 coverPhoto: "miami-keys-orlando/DSC08293.jpg"
 date: 2024-12-29
 featured: true

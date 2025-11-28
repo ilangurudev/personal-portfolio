@@ -1,6 +1,7 @@
 ---
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
 import { getFeaturedPhotosWithExif } from '../../utils/photo-helpers';
+import { getPhotoUrl } from '../../utils/url-helper';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
 import PhotoAbout from '../../components/photo/PhotoAbout.astro';
 import PhotoIcons from '../../components/photo/PhotoIcons.astro';
@@ -38,7 +39,7 @@ const sortedPhotos = featuredPhotos.sort((a, b) =>
           >
             <div class="photo-image">
               <img 
-                src={`/photos/${photo.data.filename}`} 
+                src={getPhotoUrl(photo.data.filename)} 
                 alt={photo.data.title}
                 loading="lazy"
               />
