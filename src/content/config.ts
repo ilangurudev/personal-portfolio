@@ -36,6 +36,8 @@ const photos = defineCollection({
     camera: z.string().optional(),
     /** Camera settings - extracted from EXIF (aperture, shutter, ISO) if not in frontmatter */
     settings: z.string().optional(),
+    /** Focal length in millimeters - extracted from EXIF if not in frontmatter */
+    focalLength: z.number().optional(),
   }),
 });
 
