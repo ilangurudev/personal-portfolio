@@ -69,6 +69,11 @@ const { photos, initialIndex = 0 } = Astro.props;
     private photos: Photo[];
     private currentIndex: number;
     private isOpen: boolean = false;
+    private touchStartX: number = 0;
+    private touchEndX: number = 0;
+    private touchStartY: number = 0;
+    private touchEndY: number = 0;
+    private isSwiping: boolean = false;
 
     constructor(photos: Photo[]) {
       this.photos = photos;
@@ -103,6 +108,14 @@ const { photos, initialIndex = 0 } = Astro.props;
       // Keyboard navigation
       document.addEventListener('keydown', (e) => this.handleKeydown(e));
 
+      // Touch navigation for swipe gestures
+      const imageContainer = this.lightbox.querySelector('.lightbox-image-container');
+      if (imageContainer) {
+        imageContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
+        imageContainer.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: true });
+        imageContainer.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
+      }
+
       // Prevent body scroll when open
       this.lightbox.addEventListener('transitionend', () => {
         if (this.isOpen) {
@@ -127,6 +140,56 @@ const { photos, initialIndex = 0 } = Astro.props;
           this.next();
           break;
       }
+    }
+
+    private handleTouchStart(e: TouchEvent) {
+      if (!this.isOpen) return;
+
+      this.touchStartX = e.touches[0].clientX;
+      this.touchStartY = e.touches[0].clientY;
+      this.isSwiping = false;
+    }
+
+    private handleTouchMove(e: TouchEvent) {
+      if (!this.isOpen) return;
+
+      this.touchEndX = e.touches[0].clientX;
+      this.touchEndY = e.touches[0].clientY;
+
+      // Calculate the distance moved
+      const deltaX = Math.abs(this.touchEndX - this.touchStartX);
+      const deltaY = Math.abs(this.touchEndY - this.touchStartY);
+
+      // If horizontal movement is greater than vertical, it's a swipe
+      if (deltaX > deltaY && deltaX > 10) {
+        this.isSwiping = true;
+      }
+    }
+
+    private handleTouchEnd(e: TouchEvent) {
+      if (!this.isOpen || !this.isSwiping) return;
+
+      const deltaX = this.touchEndX - this.touchStartX;
+      const deltaY = Math.abs(this.touchEndY - this.touchStartY);
+      const swipeThreshold = 50; // Minimum distance for a swipe
+
+      // Only trigger navigation if horizontal swipe is greater than vertical movement
+      if (Math.abs(deltaX) > swipeThreshold && Math.abs(deltaX) > deltaY) {
+        if (deltaX > 0) {
+          // Swipe right - go to previous photo
+          this.prev();
+        } else {
+          // Swipe left - go to next photo
+          this.next();
+        }
+      }
+
+      // Reset values
+      this.touchStartX = 0;
+      this.touchEndX = 0;
+      this.touchStartY = 0;
+      this.touchEndY = 0;
+      this.isSwiping = false;
     }
 
     public open(index: number) {
