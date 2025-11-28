@@ -32,6 +32,25 @@ Options:
 
 When the last photo in an album is removed, the script automatically prunes the empty folders and album metadata so the content collections stay in sync.
 
+#### Common removal scenarios
+
+```bash
+# Preview everything that would be deleted, but keep files untouched
+npm run remove -- --album pacific-northwest --dry-run
+
+# Remove the album immediately (confirm automatically)
+npm run remove -- --album pacific-northwest --yes
+
+# Delete a single photo by metadata slug (derived from md filename)
+npm run remove -- --photo pacific-northwest/20250708-_AR57924
+
+# Delete a single photo by the actual JPEG filename
+npm run remove -- --photo pacific-northwest/20250708-_AR57924.jpg
+
+# Chain with validation to confirm the album is now empty
+npm run remove -- --album new-york --yes && node scripts/validate-metadata.js new-york
+```
+
 ### 2. Review Batch File
 
 Open `batch-import-{album-slug}.md` in the project root:
