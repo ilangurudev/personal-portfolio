@@ -371,8 +371,14 @@ const { photos, initialIndex = 0 } = Astro.props;
         }
         
         if (photo.data.location && photo.data.location.trim()) {
-          const locationIcon = this.getIconSVG('icon-location');
-          metadataItems.push(`<div class="lightbox-metadata-item">${locationIcon}<span>${photo.data.location}</span></div>`);
+          const locationTrimmed = photo.data.location.trim();
+          const locationLower = locationTrimmed.toLowerCase();
+          // Don't show location if it contains NaN or is exactly "na" (invalid coordinates)
+          const hasInvalidCoords = locationLower.includes('nan') || locationLower === 'na';
+          if (!hasInvalidCoords) {
+            const locationIcon = this.getIconSVG('icon-location');
+            metadataItems.push(`<div class="lightbox-metadata-item">${locationIcon}<span>${locationTrimmed}</span></div>`);
+          }
         }
         
         if (metadataItems.length > 0) {
