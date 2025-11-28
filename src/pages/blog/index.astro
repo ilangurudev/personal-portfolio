@@ -1,0 +1,130 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog'))
+  .filter(post => post.slug !== 'about')
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BlogLayout title="Blog" description="Technical writing and thoughts on AI">
+  <section class="blog-index">
+    <div class="terminal-header">
+      <span class="command-prompt">$ ls -la blog/</span>
+    </div>
+    
+    <div class="posts-list">
+      {posts.map(post => (
+        <article class="post-preview">
+          <div class="post-meta">
+            <span class="permissions">-rw-r--r--</span>
+            <span class="user">guru</span>
+            <span class="size">{Math.floor(post.body.length / 100)}k</span>
+            <time datetime={post.data.date.toISOString()}>
+              {post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </time>
+          </div>
+          <a href={`/blog/${post.slug}`} class="post-title">
+            {post.data.title}
+          </a>
+          <p class="post-description">// {post.data.description}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+</BlogLayout>
+
+<style>
+  .blog-index {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .terminal-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--slate-800);
+  }
+
+  .command-prompt {
+    color: var(--terminal-cyan);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .command-prompt::after {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--terminal-green);
+    margin-left: 4px;
+    animation: blink 1s step-end infinite;
+  }
+
+  .posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .post-preview {
+    font-family: 'Fira Code', monospace;
+    padding: 1rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .post-preview:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .post-meta {
+    display: flex;
+    gap: 1rem;
+    color: var(--terminal-gray);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
+  }
+
+  .post-title {
+    display: block;
+    font-size: 1.25rem;
+    color: var(--terminal-green);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    transition: color 0.2s ease;
+  }
+
+  .post-preview:hover .post-title {
+    color: var(--terminal-cyan);
+  }
+
+  .post-description {
+    color: var(--terminal-gray);
+    font-size: 0.95rem;
+    margin: 0;
+    opacity: 0.8;
+  }
+
+  @media (max-width: 640px) {
+    .post-meta {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .permissions, .user, .size {
+      display: none;
+    }
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+</style>
+

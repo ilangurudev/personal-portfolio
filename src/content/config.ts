@@ -50,4 +50,18 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { albums, photos, blog };
+const projects = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    date: z.date(),
+    tags: z.array(z.string()),
+    image: z.string().optional(),
+    link: z.string().url().optional(),
+    repo: z.string().url().optional(),
+    featured: z.boolean().default(false),
+  }),
+});
+
+export const collections = { albums, photos, blog, projects };
