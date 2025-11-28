@@ -1,5 +1,5 @@
+---
 import '../styles/global.css';
-import DisableImageInteractions from '../components/DisableImageInteractions.astro';
 
 interface Props {
   title: string;
@@ -59,7 +59,46 @@ const { title, description } = Astro.props;
     </p>
   </footer>
 
-  <DisableImageInteractions />
+  <script is:inline>
+    (() => {
+      const isImageTarget = (target) => target instanceof Element && Boolean(target.closest('img'));
+
+      const blockImageEvent = (event) => {
+        if (isImageTarget(event.target)) {
+          event.preventDefault();
+        }
+      };
+
+      const markImagesUndraggable = () => {
+        document.querySelectorAll('img').forEach((img) => {
+          if (!img.hasAttribute('draggable')) {
+            img.setAttribute('draggable', 'false');
+          }
+        });
+      };
+
+      document.addEventListener('contextmenu', blockImageEvent);
+      document.addEventListener('dragstart', blockImageEvent);
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', markImagesUndraggable, { once: true });
+      } else {
+        markImagesUndraggable();
+      }
+
+      new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.addedNodes.length > 0) {
+            markImagesUndraggable();
+            break;
+          }
+        }
+      }).observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+    })();
+  </script>
 
   <style>
     :root {
