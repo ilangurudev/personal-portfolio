@@ -45,7 +45,7 @@ const projects = (await getCollection('projects'))
     <!-- Recent Blog Posts -->
     <section class="dashboard-section">
       <div class="terminal-header">
-        <span class="command-prompt">$ ls -la blog/</span>
+        <span class="command-prompt">$ ls -la blog/ | tail -n 5</span>
       </div>
       <div class="content-list">
         {posts.map(post => (
@@ -68,7 +68,7 @@ const projects = (await getCollection('projects'))
     <!-- Featured Projects -->
     <section class="dashboard-section">
       <div class="terminal-header">
-        <span class="command-prompt">$ cat projects/</span>
+        <span class="command-prompt">$ ls -la projects/ | tail -n 5</span>
       </div>
       <div class="content-list">
         {projects.map(project => (
