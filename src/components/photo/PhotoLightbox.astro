@@ -11,6 +11,7 @@ interface Props {
       tags?: string[];
       camera?: string;
       settings?: string;
+      focalLength?: number;
       location?: string;
     };
   }>;
@@ -47,6 +48,8 @@ const { photos, initialIndex = 0 } = Astro.props;
 </div>
 
 <script>
+  const STANDARD_FOCAL_LENGTHS = [10, 14, 16, 18, 20, 24, 28, 35, 40, 50, 60, 70, 100, 120, 150, 180, 200];
+
   interface Photo {
     id: string;
     data: {
@@ -56,6 +59,7 @@ const { photos, initialIndex = 0 } = Astro.props;
       tags?: string[];
       camera?: string;
       settings?: string;
+      focalLength?: number;
       location?: string;
     };
   }
@@ -359,10 +363,22 @@ const { photos, initialIndex = 0 } = Astro.props;
           const settingsIcon = this.getIconSVG('icon-aperture');
           metadataItems.push(`<div class="lightbox-metadata-item">${settingsIcon}<span>${photo.data.settings}</span></div>`);
         }
+
+        const focalLengthDisplay = this.getRoundedFocalLength(photo.data.focalLength);
+        if (focalLengthDisplay) {
+          const focalIcon = this.getIconSVG('icon-focal');
+          metadataItems.push(`<div class="lightbox-metadata-item">${focalIcon}<span>${focalLengthDisplay}</span></div>`);
+        }
         
         if (photo.data.location && photo.data.location.trim()) {
-          const locationIcon = this.getIconSVG('icon-location');
-          metadataItems.push(`<div class="lightbox-metadata-item">${locationIcon}<span>${photo.data.location}</span></div>`);
+          const locationTrimmed = photo.data.location.trim();
+          const locationLower = locationTrimmed.toLowerCase();
+          // Don't show location if it contains NaN or is exactly "na" (invalid coordinates)
+          const hasInvalidCoords = locationLower.includes('nan') || locationLower === 'na';
+          if (!hasInvalidCoords) {
+            const locationIcon = this.getIconSVG('icon-location');
+            metadataItems.push(`<div class="lightbox-metadata-item">${locationIcon}<span>${locationTrimmed}</span></div>`);
+          }
         }
         
         if (metadataItems.length > 0) {
@@ -421,6 +437,30 @@ const { photos, initialIndex = 0 } = Astro.props;
         const prevImg = new Image();
         prevImg.src = `/photos/${prevPhoto.data.filename}`;
       }
+    }
+
+    private getRoundedFocalLength(value?: number): string | null {
+      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        return null;
+      }
+
+      if (value > 200) {
+        const roundedHundreds = Math.round(value / 100) * 100;
+        return `${Math.max(200, roundedHundreds)}mm`;
+      }
+
+      let closest = STANDARD_FOCAL_LENGTHS[0];
+      let smallestDiff = Math.abs(value - closest);
+
+      for (const candidate of STANDARD_FOCAL_LENGTHS) {
+        const diff = Math.abs(value - candidate);
+        if (diff < smallestDiff || (diff === smallestDiff && candidate > closest)) {
+          closest = candidate;
+          smallestDiff = diff;
+        }
+      }
+
+      return `${closest}mm`;
     }
   }
 
@@ -484,6 +524,7 @@ const { photos, initialIndex = 0 } = Astro.props;
     tags: p.data.tags || [],
     camera: p.data.camera,
     settings: p.data.settings,
+    focalLength: p.data.focalLength,
     location: p.data.location
   }
 })))}></script>
