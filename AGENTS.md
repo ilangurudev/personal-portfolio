@@ -47,10 +47,11 @@ Dual-space portfolio for Guru:
 ### 1. Import Photos
 Run the import script to copy photos and extract initial EXIF/IPTC data.
 ```bash
-npm run import <album-slug> ~/path/to/photos
-# Example: npm run import street-sf ~/Desktop/new-photos
+npm run import ~/path/to/photos
+# Example: npm run import ~/Desktop/new-photos
+# Album slug will be extracted from the path: "new-photos"
 ```
-*Note: Album slug should be kebab-case (e.g., `tokyo-nights`).*
+*Note: The album slug is automatically extracted from the last component of the path. Use kebab-case folder names (e.g., `tokyo-nights`).*
 
 ### 1b. Remove Photos or Whole Albums
 Use the removal CLI whenever an image (and its metadata) needs to be deleted so files don't drift out of sync.

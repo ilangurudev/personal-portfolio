@@ -1,6 +1,6 @@
 import exifr from 'exifr';
 import { readdir, copyFile, mkdir, writeFile } from 'fs/promises';
-import { join, basename, extname } from 'path';
+import { join, basename, extname, normalize } from 'path';
 import { existsSync } from 'fs';
 
 /**
@@ -141,13 +141,14 @@ location: "${photo.location || ''}"
  * Main function - CLI entry point
  */
 async function main() {
-  const [albumSlug, sourcePath] = process.argv.slice(2);
+  const [sourcePath] = process.argv.slice(2);
 
   // Validate arguments
-  if (!albumSlug || !sourcePath) {
-    console.error('❌ Usage: npm run import <album-slug> <source-photos-path>');
+  if (!sourcePath) {
+    console.error('❌ Usage: npm run import <source-photos-path>');
     console.error('\nExample:');
-    console.error('  npm run import street-sf ~/Desktop/sf-street-photos');
+    console.error('  npm run import ~/Desktop/sf-street-photos');
+    console.error('  (Album slug will be extracted from the path: "sf-street-photos")');
     process.exit(1);
   }
 
@@ -156,6 +157,9 @@ async function main() {
     console.error(`❌ Source path not found: ${sourcePath}`);
     process.exit(1);
   }
+
+  // Extract album slug from the last component of the path
+  const albumSlug = basename(normalize(sourcePath));
 
   console.log(`\n📸 Importing photos for album: ${albumSlug}`);
   console.log(`   Source: ${sourcePath}\n`);
