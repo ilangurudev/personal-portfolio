@@ -4,10 +4,7 @@ import { getCollection } from 'astro:content';
 
 const albums = await getCollection('albums');
 const sortedAlbums = albums.sort((a, b) => {
-  // Sort by order field, then by date
-  if (a.data.order !== b.data.order) {
-    return a.data.order - b.data.order;
-  }
+  // Sort by date (latest first)
   return b.data.date.getTime() - a.data.date.getTime();
 });
 ---

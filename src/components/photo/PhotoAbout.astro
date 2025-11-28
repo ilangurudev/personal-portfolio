@@ -8,6 +8,21 @@
         <img src="/profile.jpg" alt="Guru" class="profile-avatar" />
       </div>
       <h2 class="section-title">About Me</h2>
+      <div class="location-info">
+        <svg class="location-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="12" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        <span class="location-text">Washington D.C</span>
+      </div>
+      <a href="https://www.instagram.com/ilangurudev/" target="_blank" rel="noopener noreferrer" class="instagram-link" aria-label="Follow on Instagram">
+        <svg class="instagram-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="17.5" cy="6.5" r="1" fill="currentColor"/>
+        </svg>
+        <span>Instagram</span>
+      </a>
     </aside>
     
     <div class="about-content">
@@ -90,8 +105,65 @@
     font-size: 2.5rem;
     font-weight: 600;
     color: var(--charcoal);
-    margin: 0;
+    margin: 0 0 1.5rem;
     letter-spacing: -0.02em;
+  }
+
+  .location-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.5rem 0;
+    color: var(--gray);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 400;
+  }
+
+  .location-icon {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    color: var(--amber);
+  }
+
+  .location-text {
+    color: var(--charcoal);
+  }
+
+  .instagram-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    color: var(--charcoal);
+    border: 1px solid rgba(28, 25, 23, 0.2);
+    border-radius: 2rem;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fff;
+  }
+
+  .instagram-link:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
+  }
+
+  .instagram-icon {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
   }
 
   .bio-text {
@@ -184,6 +256,11 @@
 
     .section-title {
       margin-bottom: 1rem;
+    }
+
+    .instagram-link {
+      width: 100%;
+      max-width: 200px;
     }
 
     .bio-text {
