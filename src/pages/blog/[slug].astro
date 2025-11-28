@@ -36,6 +36,31 @@ const { Content } = await entry.render();
           ))}
         </div>
       </div>
+      {entry.slug === 'about' && (
+        <div class="about-social">
+          <div class="location-info">
+            <svg class="location-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <span class="location-text">Washington D.C</span>
+          </div>
+          <div class="social-icons">
+            <a href="https://www.linkedin.com/in/gurudevilangovan" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn">
+              <svg class="social-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 8C17.5913 8 19.1174 8.63214 20.2426 9.75736C21.3679 10.8826 22 12.4087 22 14V21H18V14C18 13.4696 17.7893 12.9609 17.4142 12.5858C17.0391 12.2107 16.5304 12 16 12C15.4696 12 14.9609 12.2107 14.5858 12.5858C14.2107 12.9609 14 13.4696 14 14V21H10V14C10 12.4087 10.6321 10.8826 11.7574 9.75736C12.8826 8.63214 14.4087 8 16 8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 9H2V21H6V9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 6C5.10457 6 6 5.10457 6 4C6 2.89543 5.10457 2 4 2C2.89543 2 2 2.89543 2 4C2 5.10457 2.89543 6 4 6Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a href="https://scholar.google.com/citations?user=vUxjLj4AAAAJ&hl=en" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Google Scholar">
+              <svg class="social-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.242 13.769L0 9.5 12 1l12 8.5-5.242 4.269C17.548 12.249 14.978 12.5 12 12.5c-2.977 0-5.548-.269-6.758-.731zM12 14.082l4.758 2.876L12 22l-4.758-5.042L12 14.082z" stroke="currentColor" stroke-width="1.5" fill="currentColor"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      )}
     </header>
 
     <div class="prose">
@@ -99,6 +124,67 @@ const { Content } = await entry.render();
 
   .tag {
     color: var(--terminal-cyan);
+  }
+
+  /* About Page Social Links */
+  .about-social {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .location-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--terminal-gray);
+    font-size: 0.95rem;
+  }
+
+  .location-icon {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    color: var(--terminal-cyan);
+  }
+
+  .location-text {
+    color: var(--terminal-gray);
+  }
+
+  .social-icons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: var(--terminal-gray);
+    border: 1px solid var(--slate-800);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    background: var(--slate-900);
+  }
+
+  .social-link:hover {
+    color: var(--terminal-cyan);
+    border-color: var(--terminal-cyan);
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .social-icon {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: currentColor;
   }
 
   /* Markdown Prose Styling - Inherited from BlogLayout mostly, but ensuring specifics */
