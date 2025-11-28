@@ -52,6 +52,21 @@ npm run import <album-slug> ~/path/to/photos
 ```
 *Note: Album slug should be kebab-case (e.g., `tokyo-nights`).*
 
+### 1b. Remove Photos or Whole Albums
+Use the removal CLI whenever an image (and its metadata) needs to be deleted so files don't drift out of sync.
+```bash
+# Dry-run to preview deletions
+npm run remove -- --album pacific-northwest --dry-run
+
+# Force-delete album assets, metadata, and batch file with no prompt
+npm run remove -- --album pacific-northwest --yes
+
+# Remove a single photo by metadata slug or source filename
+npm run remove -- --photo new-york/AR53764
+npm run remove -- --photo new-york/_AR53764.jpg
+```
+The script automatically removes empty `src/content/photos/<album>` and `public/photos/<album>` folders; if the final photo in an album is deleted, the album metadata file is cleaned up too.
+
 ### 2. Review Batch File
 The script creates `batch-import-{album-slug}.md` in the project root.
 - **Titles:** Replace generic filenames with descriptive titles.
