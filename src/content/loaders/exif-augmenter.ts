@@ -6,6 +6,7 @@ interface PhotoData {
   filename: string;
   camera?: string;
   settings?: string;
+  focalLength?: number;
   date?: Date;
   [key: string]: any;
 }
@@ -13,6 +14,7 @@ interface PhotoData {
 interface ExifData {
   camera?: string;
   settings?: string;
+  focalLength?: number;
   date?: Date;
 }
 
@@ -28,7 +30,7 @@ async function extractTechnicalExif(photoPath: string): Promise<ExifData> {
   try {
     const exif = await exifr.parse(photoPath, {
       exif: true,
-      pick: ['Make', 'Model', 'FNumber', 'ExposureTime', 'ISO', 'DateTimeOriginal']
+      pick: ['Make', 'Model', 'FNumber', 'ExposureTime', 'ISO', 'FocalLength', 'DateTimeOriginal']
     });
 
     if (!exif) return {};
@@ -51,9 +53,12 @@ async function extractTechnicalExif(photoPath: string): Promise<ExifData> {
       settings = [aperture, shutter, iso].filter(Boolean).join(', ');
     }
 
+    const focalLength = parseFocalLength(exif.FocalLength);
+
     return {
       camera,
       settings,
+      focalLength,
       date: exif.DateTimeOriginal,
     };
   } catch (error) {
@@ -96,10 +101,10 @@ async function extractWithCache(photoPath: string): Promise<ExifData> {
  * @returns Augmented photo data with EXIF merged in
  */
 export async function augmentPhotoWithExif(photoData: PhotoData): Promise<PhotoData> {
-  const { filename, camera, settings, date } = photoData;
+  const { filename, camera, settings, focalLength, date } = photoData;
 
   // Skip if frontmatter already has all technical fields
-  if (camera && settings && date) {
+  if (camera && settings && focalLength && date) {
     return photoData;
   }
 
@@ -119,6 +124,7 @@ export async function augmentPhotoWithExif(photoData: PhotoData): Promise<PhotoD
     ...photoData,
     camera: camera || exifData.camera,
     settings: settings || exifData.settings,
+    focalLength: focalLength || exifData.focalLength,
     date: date || exifData.date || photoData.date,
   };
 }
@@ -152,4 +158,22 @@ export async function augmentPhotosWithExif(photos: PhotoData[]): Promise<PhotoD
  */
 export function clearExifCache(): void {
   exifCache.clear();
+}
+
+function parseFocalLength(value: unknown): number | undefined {
+  if (!value) return undefined;
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'object' && value !== null) {
+    const numerator = (value as { numerator?: number }).numerator;
+    const denominator = (value as { denominator?: number }).denominator ?? 1;
+    if (typeof numerator === 'number' && Number.isFinite(numerator) && Number.isFinite(denominator) && denominator !== 0) {
+      return numerator / denominator;
+    }
+  }
+
+  return undefined;
 }
