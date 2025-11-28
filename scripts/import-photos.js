@@ -21,6 +21,48 @@ if (R2_ENABLED) {
 }
 
 /**
+ * Extract technical EXIF data (camera, settings, focal length)
+ * @param {Object} exif - Parsed EXIF data
+ * @returns {Object} Technical EXIF data
+ */
+function extractTechnicalExif(exif) {
+  // Camera model
+  const camera = exif?.Make && exif?.Model
+    ? `${exif.Make} ${exif.Model}`.trim()
+    : undefined;
+
+  // Format settings as "f/2.8, 1/1000s, ISO 400"
+  let settings;
+  if (exif?.FNumber || exif?.ExposureTime || exif?.ISO) {
+    const aperture = exif.FNumber ? `f/${exif.FNumber}` : null;
+    const shutter = exif.ExposureTime
+      ? (exif.ExposureTime >= 1
+        ? `${exif.ExposureTime}s`
+        : `1/${Math.round(1 / exif.ExposureTime)}s`)
+      : null;
+    const iso = exif.ISO ? `ISO ${exif.ISO}` : null;
+
+    settings = [aperture, shutter, iso].filter(Boolean).join(', ');
+  }
+
+  // Focal length
+  let focalLength;
+  if (exif?.FocalLength) {
+    if (typeof exif.FocalLength === 'number' && Number.isFinite(exif.FocalLength)) {
+      focalLength = exif.FocalLength;
+    } else if (typeof exif.FocalLength === 'object' && exif.FocalLength !== null) {
+      const numerator = exif.FocalLength.numerator;
+      const denominator = exif.FocalLength.denominator ?? 1;
+      if (typeof numerator === 'number' && Number.isFinite(numerator) && Number.isFinite(denominator) && denominator !== 0) {
+        focalLength = numerator / denominator;
+      }
+    }
+  }
+
+  return { camera, settings, focalLength };
+}
+
+/**
  * Extract metadata from a photo using EXIF/IPTC data
  * @param {string} photoPath - Absolute path to the photo file
  * @returns {Promise<Object>} Extracted metadata object
@@ -43,12 +85,18 @@ async function extractMetadata(photoPath) {
     // Ensure it's an array
     const tags = Array.isArray(keywords) ? keywords : (keywords ? [keywords] : []);
 
+    // Extract technical EXIF data
+    const { camera, settings, focalLength } = extractTechnicalExif(exif);
+
     return {
       filename,
       title: exif?.Title || filenameWithoutExt.replace(/^_+/, ''), // Remove leading underscores from title
       tags: tags,
       date: exif?.DateTimeOriginal || new Date(),
       location: formatGPS(exif?.GPSLatitude, exif?.GPSLongitude),
+      camera,
+      settings,
+      focalLength,
       hasIPTC: !!(exif?.Title || tags.length > 0),
       hasGPS: !!(exif?.GPSLatitude && exif?.GPSLongitude),
     };
@@ -64,6 +112,9 @@ async function extractMetadata(photoPath) {
       tags: [],
       date: new Date(),
       location: '',
+      camera: undefined,
+      settings: undefined,
+      focalLength: undefined,
       hasIPTC: false,
       hasGPS: false,
     };
@@ -139,14 +190,37 @@ async function generatePhotoFile(albumSlug, photo, outputPath) {
     ? photo.tags.map(t => `"${t}"`).join(', ')
     : '';
 
+  // Build frontmatter with EXIF data
+  const frontmatterLines = [
+    `title: "${photo.title}"`,
+    `album: "${albumSlug}"`,
+    `filename: "${albumSlug}/${photo.filename}"`,
+    `tags: [${tagsFormatted}]`,
+    `date: ${dateStr}`,
+    `featured: false`,
+  ];
+
+  // Add optional EXIF fields if present
+  if (photo.location) {
+    frontmatterLines.push(`location: "${photo.location}"`);
+  } else {
+    frontmatterLines.push(`location: ""`);
+  }
+
+  if (photo.camera) {
+    frontmatterLines.push(`camera: "${photo.camera}"`);
+  }
+
+  if (photo.settings) {
+    frontmatterLines.push(`settings: "${photo.settings}"`);
+  }
+
+  if (photo.focalLength !== undefined && photo.focalLength !== null) {
+    frontmatterLines.push(`focalLength: ${photo.focalLength}`);
+  }
+
   const content = `---
-title: "${photo.title}"
-album: "${albumSlug}"
-filename: "${albumSlug}/${photo.filename}"
-tags: [${tagsFormatted}]
-date: ${dateStr}
-featured: false
-location: "${photo.location || ''}"
+${frontmatterLines.join('\n')}
 ---
 
 `;
@@ -272,20 +346,23 @@ async function main() {
   }
 
   // Summary
+  const photosWithExif = photos.filter(p => p.camera || p.settings || p.focalLength !== undefined).length;
   console.log(`\n✅ Summary:`);
   console.log(`   Photos imported: ${photos.length}`);
+  console.log(`   Photos with EXIF data: ${photosWithExif}/${photos.length}`);
   console.log(`   Photos with IPTC metadata: ${photos.filter(p => p.hasIPTC).length}/${photos.length}`);
   console.log(`   Photos with GPS data: ${photos.filter(p => p.hasGPS).length}/${photos.length}`);
   console.log(`\n🎉 Import complete!`);
   console.log(`\n📝 Next steps:`);
   console.log(`   1. Review and edit album metadata: src/content/albums/${albumSlug}.md`);
   console.log(`   2. Review and edit photo metadata in: src/content/photos/${albumSlug}/`);
+  console.log(`   3. EXIF data (camera, settings, focal length) has been saved to frontmatter`);
   if (!R2_ENABLED) {
-    console.log(`   3. Add descriptive titles, refine tags, and add descriptions`);
-    console.log(`   4. Commit your changes`);
+    console.log(`   4. Add descriptive titles, refine tags, and add descriptions`);
+    console.log(`   5. Commit your changes`);
   } else {
-    console.log(`   3. Verify photos appear on your R2 domain`);
-    console.log(`   4. Commit metadata changes (no binary files!)`);
+    console.log(`   4. Verify photos appear on your R2 domain`);
+    console.log(`   5. Commit metadata changes (no binary files!)`);
   }
 }
 

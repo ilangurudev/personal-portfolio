@@ -99,58 +99,28 @@ async function extractWithCache(photoPath: string): Promise<ExifData> {
  * Augment a single photo entry with EXIF data
  * @param photoData - Photo metadata from frontmatter
  * @returns Augmented photo data with EXIF merged in
+ * 
+ * NOTE: EXIF data is now stored in frontmatter during import.
+ * This function now only reads from frontmatter and no longer
+ * extracts from photo files. If frontmatter is missing EXIF data,
+ * it will remain undefined (no fallback to file extraction).
  */
 export async function augmentPhotoWithExif(photoData: PhotoData): Promise<PhotoData> {
-  const { filename, camera, settings, focalLength, date } = photoData;
-
-  // Skip if frontmatter already has all technical fields
-  if (camera && settings && focalLength && date) {
-    return photoData;
-  }
-
-  // Resolve photo path
-  const photoPath = join(process.cwd(), 'public', 'photos', filename);
-
-  if (!existsSync(photoPath)) {
-    console.warn(`Photo not found: ${photoPath}`);
-    return photoData;
-  }
-
-  // Extract EXIF (with caching)
-  const exifData = await extractWithCache(photoPath);
-
-  // Merge: frontmatter overrides EXIF
-  return {
-    ...photoData,
-    camera: camera || exifData.camera,
-    settings: settings || exifData.settings,
-    focalLength: focalLength || exifData.focalLength,
-    date: date || exifData.date || photoData.date,
-  };
+  // EXIF data is now stored in frontmatter during import.
+  // Just return the photo data as-is (frontmatter is the source of truth).
+  return photoData;
 }
 
 /**
  * Augment multiple photo entries with EXIF data in parallel
  * @param photos - Array of photo metadata objects
  * @returns Array of augmented photo data
+ * 
+ * NOTE: EXIF data is now read from frontmatter only.
  */
 export async function augmentPhotosWithExif(photos: PhotoData[]): Promise<PhotoData[]> {
-  console.log(`📷 EXIF Augmenter: Processing ${photos.length} photos...`);
-
-  const augmented = await Promise.all(
-    photos.map(photo => augmentPhotoWithExif(photo))
-  );
-
-  const augmentedCount = augmented.filter((photo, i) => {
-    const original = photos[i];
-    return (!original.camera && photo.camera) ||
-           (!original.settings && photo.settings) ||
-           (!original.date && photo.date);
-  }).length;
-
-  console.log(`✓ EXIF Augmenter: Augmented ${augmentedCount} photos`);
-
-  return augmented;
+  // EXIF data is now stored in frontmatter, so just return photos as-is
+  return photos;
 }
 
 /**
