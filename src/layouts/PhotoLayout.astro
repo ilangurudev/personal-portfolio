@@ -17,6 +17,7 @@ const { title, description } = Astro.props;
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title} | Guru's Photography</title>
   {description && <meta name="description" content={description} />}
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -26,10 +27,12 @@ const { title, description } = Astro.props;
   <header class="photo-header">
     <div class="header-content">
       <div class="header-title-section">
-        <h1 class="site-title">
-          <a href="/photography">Guru's Photography</a>
-        </h1>
-        <p class="theme-line">A visual diary of the world through my eyes...</p>
+        <div class="logo-title-wrapper">
+          <img src="/logo.svg" alt="Logo" class="site-logo" />
+          <h1 class="site-title">
+            <a href="/photography">Guru's Photography</a>
+          </h1>
+        </div>
       </div>
 
       <!-- Desktop Navigation -->
@@ -82,7 +85,7 @@ const { title, description } = Astro.props;
   </main>
 
   <footer class="photo-footer">
-    <p>&copy; 2026 Guru. All photographs rights reserved.</p>
+    <p>All images © 2026 Gurudev Ilangovan. All rights reserved. Images may not be reproduced without permission.</p>
   </footer>
 
   <script is:inline>
@@ -239,7 +242,7 @@ const { title, description } = Astro.props;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
     }
 
     .header-title-section {
@@ -248,21 +251,29 @@ const { title, description } = Astro.props;
       gap: 0.125rem;
     }
 
+    .logo-title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .site-logo {
+      height: 3rem;
+      width: auto;
+      opacity: 0.9;
+      transition: opacity 0.3s ease;
+    }
+
+    .site-logo:hover {
+      opacity: 1;
+    }
+
     .site-title {
       margin: 0;
       font-family: 'Crimson Text', serif;
       font-size: 3rem;
       font-weight: 700;
       letter-spacing: -0.02em;
-    }
-
-    .theme-line {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 300;
-      font-style: italic;
-      color: var(--gray);
-      font-family: 'Work Sans', sans-serif;
     }
 
     .site-title a {
@@ -512,12 +523,16 @@ const { title, description } = Astro.props;
         gap: 1rem;
       }
 
-      .site-title {
-        font-size: 1.5rem;
+      .logo-title-wrapper {
+        gap: 0.75rem;
       }
 
-      .theme-line {
-        font-size: 0.75rem;
+      .site-logo {
+        height: 1.5rem;
+      }
+
+      .site-title {
+        font-size: 1.5rem;
       }
 
       /* Hide desktop nav, show hamburger */

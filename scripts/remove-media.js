@@ -2,8 +2,25 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { readFile, readdir, rm } from 'fs/promises';
 import { createInterface } from 'readline/promises';
+import { S3Client, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import 'dotenv/config';
 
 const ROOT = process.cwd();
+
+// R2 Configuration
+const R2_ENABLED = process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET_NAME;
+
+let s3Client;
+if (R2_ENABLED) {
+  s3Client = new S3Client({
+    region: 'auto',
+    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    },
+  });
+}
 
 function printUsage() {
   console.log(`
@@ -84,6 +101,64 @@ async function confirmAction(message, skip) {
   return answer.trim().toLowerCase() === 'y';
 }
 
+/**
+ * Delete a single object from R2
+ */
+async function deleteFromR2(key) {
+  if (!R2_ENABLED) return;
+  
+  try {
+    await s3Client.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: key,
+      })
+    );
+    console.log(`  ☁️  Deleted from R2: ${key}`);
+  } catch (error) {
+    console.error(`  ❌ R2 deletion failed for ${key}:`, error.message);
+  }
+}
+
+/**
+ * List and delete all objects with a given prefix from R2
+ */
+async function deletePrefixFromR2(prefix) {
+  if (!R2_ENABLED) return [];
+
+  const keysToDelete = [];
+  let continuationToken;
+
+  try {
+    do {
+      const command = new ListObjectsV2Command({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      });
+
+      const response = await s3Client.send(command);
+
+      if (response.Contents) {
+        for (const object of response.Contents) {
+          keysToDelete.push(object.Key);
+        }
+      }
+
+      continuationToken = response.NextContinuationToken;
+    } while (continuationToken);
+
+    // Delete all objects
+    for (const key of keysToDelete) {
+      await deleteFromR2(key);
+    }
+  } catch (error) {
+    console.error(`  ❌ R2 list/delete failed for prefix "${prefix}":`, error.message);
+  }
+
+  return keysToDelete;
+}
+
 async function removeAlbum(albumSlug, options) {
   const albumPhotosDir = join(ROOT, 'public', 'photos', albumSlug);
   const albumContentDir = join(ROOT, 'src', 'content', 'photos', albumSlug);
@@ -115,6 +190,14 @@ async function removeAlbum(albumSlug, options) {
   console.log(`\n🧹 Preparing to remove album "${albumSlug}":`);
   targets.forEach(target => console.log(`  • ${target.label}: ${target.path}`));
 
+  // Check for R2 objects
+  if (R2_ENABLED) {
+    const r2Prefix = `${albumSlug}/`;
+    console.log(`  • R2 objects: ${r2Prefix}*`);
+  } else {
+    console.log(`  • R2: Not configured (skipping)`);
+  }
+
   if (options.dryRun) {
     console.log('\nDry run complete. No files were removed.');
     return;
@@ -126,6 +209,16 @@ async function removeAlbum(albumSlug, options) {
     return;
   }
 
+  // Delete from R2 first
+  if (R2_ENABLED) {
+    const r2Prefix = `${albumSlug}/`;
+    const deletedKeys = await deletePrefixFromR2(r2Prefix);
+    if (deletedKeys.length > 0) {
+      console.log(`  ☁️  Deleted ${deletedKeys.length} object(s) from R2`);
+    }
+  }
+
+  // Delete local files
   for (const target of targets) {
     await rm(target.path, {
       recursive: target.type === 'dir',
@@ -238,6 +331,14 @@ async function removePhoto(identifier, options) {
   console.log(`\n🗑️  Preparing to remove photo "${title}" from album "${albumSlug}":`);
   targets.forEach(target => console.log(`  • ${target.label}: ${target.path}`));
 
+  // Check for R2 object
+  const r2Key = normalizedFilename.replace(/^photos\//, ''); // Remove 'photos/' prefix if present
+  if (R2_ENABLED) {
+    console.log(`  • R2 object: ${r2Key}`);
+  } else {
+    console.log(`  • R2: Not configured (skipping)`);
+  }
+
   if (options.dryRun) {
     console.log('\nDry run complete. No files were removed.');
     return;
@@ -252,6 +353,12 @@ async function removePhoto(identifier, options) {
     return;
   }
 
+  // Delete from R2 first
+  if (R2_ENABLED) {
+    await deleteFromR2(r2Key);
+  }
+
+  // Delete local files
   for (const target of targets) {
     await rm(target.path, { force: true });
     console.log(`  ✅ Removed ${target.label}`);
