@@ -1,9 +1,11 @@
 import exifr from 'exifr';
+// import inquirer from 'inquirer'; // Replaced by custom UI
 import { readdir, copyFile, mkdir, writeFile, readFile } from 'fs/promises';
 import { join, basename, extname, normalize } from 'path';
 import { existsSync } from 'fs';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import 'dotenv/config';
+import { getAlbumDetails } from './import-ui.js';
 
 // R2 Configuration
 const R2_ENABLED = process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET_NAME;
@@ -141,27 +143,30 @@ function formatGPS(lat, lon) {
  * @param {string} albumSlug - Album slug identifier
  * @param {Array<Object>} photos - Array of photo metadata objects
  * @param {string} outputPath - Output file path
+ * @param {Object} options - Album options (title, description, coverPhoto)
  */
-async function generateAlbumFile(albumSlug, photos, outputPath) {
-  // Use first photo as cover, or first photo filename
-  const coverPhoto = photos.length > 0 
-    ? `${albumSlug}/${photos[0].filename}`
-    : `${albumSlug}/cover.jpg`;
+async function generateAlbumFile(albumSlug, photos, outputPath, options = {}) {
+  // Use provided cover photo or first photo
+  const coverPhoto = options.coverPhoto 
+    ? `${albumSlug}/${options.coverPhoto}`
+    : (photos.length > 0 ? `${albumSlug}/${photos[0].filename}` : `${albumSlug}/cover.jpg`);
   
   // Use date from first photo, or today's date
   const albumDate = photos.length > 0 && photos[0].date
     ? photos[0].date.toISOString().split('T')[0]
     : new Date().toISOString().split('T')[0];
 
-  // Generate album title from slug (capitalize and add spaces)
-  const albumTitle = albumSlug
+  // Use provided title or generate from slug
+  const albumTitle = options.title || albumSlug
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
+  const description = options.description || "A collection of photography";
+
   const content = `---
 title: "${albumTitle}"
-description: "A collection of photography"
+description: "${description}"
 coverPhoto: "${coverPhoto}"
 date: ${albumDate}
 featured: true
@@ -180,8 +185,9 @@ A collection of photography from ${albumTitle}.
  * @param {string} albumSlug - Album slug identifier
  * @param {Object} photo - Photo metadata object
  * @param {string} outputPath - Output file path
+ * @param {Object} options - Photo options (isFeatured)
  */
-async function generatePhotoFile(albumSlug, photo, outputPath) {
+async function generatePhotoFile(albumSlug, photo, outputPath, options = {}) {
   const filenameWithoutExt = basename(photo.filename, extname(photo.filename));
   const dateStr = photo.date.toISOString().split('T')[0];
   
@@ -197,7 +203,7 @@ async function generatePhotoFile(albumSlug, photo, outputPath) {
     `filename: "${albumSlug}/${photo.filename}"`,
     `tags: [${tagsFormatted}]`,
     `date: ${dateStr}`,
-    `featured: false`,
+    `featured: ${!!options.isFeatured}`,
   ];
 
   // Add optional EXIF fields if present
@@ -303,7 +309,7 @@ async function main() {
 
   console.log(`\n📷 Found ${jpegFiles.length} photos. Processing...\n`);
 
-  // Process photos
+  // Process photos (upload/copy + extract metadata) FIRST
   const photos = [];
   for (const file of jpegFiles) {
     const sourcePhotoPath = join(sourcePath, file);
@@ -324,6 +330,14 @@ async function main() {
     }
   }
 
+  // Interactive UI Selection
+  console.log('✨ Launching selection UI...');
+  const defaultTitle = albumSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  // Use sourcePath for serving images in the UI regardless of R2/local mode
+  const answers = await getAlbumDetails(sourcePath, photos, defaultTitle);
+  console.log('✅ Selection received:', answers);
+
+
   // Create content directories
   const albumsDir = join(process.cwd(), 'src', 'content', 'albums');
   const photosDir = join(process.cwd(), 'src', 'content', 'photos', albumSlug);
@@ -333,7 +347,11 @@ async function main() {
 
   // Generate album metadata file
   const albumPath = join(albumsDir, `${albumSlug}.md`);
-  await generateAlbumFile(albumSlug, photos, albumPath);
+  await generateAlbumFile(albumSlug, photos, albumPath, {
+    title: answers.displayName,
+    description: answers.description,
+    coverPhoto: answers.coverImage
+  });
 
   // Generate individual photo metadata files
   for (const photo of photos) {
@@ -341,7 +359,8 @@ async function main() {
     // Remove leading underscore from metadata filename (Astro excludes _*.md files)
     const metadataFilename = filenameWithoutExt.replace(/^_+/, '');
     const photoPath = join(photosDir, `${metadataFilename}.md`);
-    await generatePhotoFile(albumSlug, photo, photoPath);
+    const isFeatured = answers.featuredImages.includes(photo.filename);
+    await generatePhotoFile(albumSlug, photo, photoPath, { isFeatured });
     console.log(`  ✅ Created photo metadata: ${metadataFilename}.md`);
   }
 
