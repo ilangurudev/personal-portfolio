@@ -672,8 +672,15 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       localStorage.setItem('filterPanelCollapsed', panel.classList.contains('collapsed'));
     });
 
-    // Restore filter panel state
-    const panelCollapsed = localStorage.getItem('filterPanelCollapsed') === 'true';
+    // Restore filter panel state (collapsed by default on mobile)
+    const savedState = localStorage.getItem('filterPanelCollapsed');
+    const isMobile = window.innerWidth < 1024;
+
+    // Default to collapsed on mobile, or use saved state
+    const panelCollapsed = savedState !== null
+      ? savedState === 'true'
+      : isMobile; // Collapsed by default on mobile
+
     if (panelCollapsed) {
       document.getElementById('filter-panel').classList.add('collapsed');
     }
@@ -809,6 +816,11 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       grid-template-columns: 320px 1fr;
       gap: 2rem;
       align-items: start;
+      transition: grid-template-columns 0.3s ease;
+    }
+
+    .content-wrapper:has(.filter-panel.collapsed) {
+      grid-template-columns: 0px 1fr;
     }
 
     .filter-panel {
@@ -819,7 +831,7 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       padding: 1.5rem;
       max-height: calc(100vh - 4rem);
       overflow-y: auto;
-      transition: transform 0.3s ease, opacity 0.3s ease;
+      transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
       border: 1px solid rgba(28, 25, 23, 0.1);
     }
 
@@ -827,7 +839,9 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       transform: translateX(-100%);
       opacity: 0;
       pointer-events: none;
-      position: absolute;
+      width: 0;
+      padding: 0;
+      overflow: hidden;
     }
 
     .filter-panel-header {
