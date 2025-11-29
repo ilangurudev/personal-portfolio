@@ -663,27 +663,22 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       applyFilters();
     }
 
+    // Initialize filter panel state - collapsed by default
+    const savedState = localStorage.getItem('filterPanelCollapsed');
+    const panelCollapsed = savedState !== null ? savedState === 'true' : true; // Default to collapsed
+
+    const filterPanel = document.getElementById('filter-panel');
+    if (panelCollapsed) {
+      filterPanel.classList.add('collapsed');
+    }
+
     // Toggle filter panel
     document.getElementById('toggle-filters').addEventListener('click', () => {
-      const panel = document.getElementById('filter-panel');
-      panel.classList.toggle('collapsed');
+      filterPanel.classList.toggle('collapsed');
 
       // Save state to localStorage
-      localStorage.setItem('filterPanelCollapsed', panel.classList.contains('collapsed'));
+      localStorage.setItem('filterPanelCollapsed', filterPanel.classList.contains('collapsed'));
     });
-
-    // Restore filter panel state (collapsed by default on mobile)
-    const savedState = localStorage.getItem('filterPanelCollapsed');
-    const isMobile = window.innerWidth < 1024;
-
-    // Default to collapsed on mobile, or use saved state
-    const panelCollapsed = savedState !== null
-      ? savedState === 'true'
-      : isMobile; // Collapsed by default on mobile
-
-    if (panelCollapsed) {
-      document.getElementById('filter-panel').classList.add('collapsed');
-    }
 
     // Filter event listeners
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
@@ -739,8 +734,10 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
     document.getElementById('clear-filters').addEventListener('click', clearAllFilters);
     document.getElementById('reset-filters').addEventListener('click', clearAllFilters);
 
-    // Initial load
-    loadNextBatch();
+    // Initial load - ensure DOM is ready and layout is settled
+    requestAnimationFrame(() => {
+      loadNextBatch();
+    });
   </script>
 
   <style>
@@ -818,15 +815,10 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
     }
 
     .content-wrapper {
-      display: grid;
-      grid-template-columns: 320px 1fr;
+      display: flex;
       gap: 2rem;
       align-items: start;
-      transition: grid-template-columns 0.3s ease;
-    }
-
-    .content-wrapper:has(.filter-panel.collapsed) {
-      grid-template-columns: 0px 1fr;
+      position: relative;
     }
 
     .filter-panel {
@@ -837,17 +829,18 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       padding: 1.5rem;
       max-height: calc(100vh - 4rem);
       overflow-y: auto;
-      transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+      transition: transform 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
       border: 1px solid rgba(28, 25, 23, 0.1);
+      width: 320px;
+      flex-shrink: 0;
     }
 
     .filter-panel.collapsed {
       transform: translateX(-100%);
       opacity: 0;
       pointer-events: none;
-      width: 0;
-      padding: 0;
-      overflow: hidden;
+      margin-left: -320px;
+      margin-right: -2rem;
     }
 
     .filter-panel-header {
@@ -1034,6 +1027,8 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
 
     .photos-main {
       min-height: 600px;
+      flex: 1;
+      width: 100%;
     }
 
     .photos-status {
@@ -1197,7 +1192,7 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
 
     @media (max-width: 1024px) {
       .content-wrapper {
-        grid-template-columns: 1fr;
+        flex-direction: column;
       }
 
       .filter-panel {
@@ -1214,6 +1209,8 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
 
       .filter-panel.collapsed {
         transform: translateX(-100%);
+        margin-left: 0;
+        margin-right: 0;
       }
 
       .toggle-filters-btn {
