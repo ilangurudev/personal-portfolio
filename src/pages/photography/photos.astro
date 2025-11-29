@@ -21,7 +21,11 @@ const sortedAlbums = albums.sort((a, b) => a.data.title.localeCompare(b.data.tit
 // Extract unique tags
 const allTags = new Set<string>();
 allPhotos.forEach(photo => {
-  photo.data.tags.forEach(tag => allTags.add(tag.toLowerCase()));
+  photo.data.tags.forEach(tag => {
+    if (tag) {
+      allTags.add(tag.toLowerCase().trim());
+    }
+  });
 });
 const uniqueTags = Array.from(allTags).sort();
 
@@ -123,6 +127,18 @@ if (!Number.isFinite(exifRanges.iso.min)) {
 if (!Number.isFinite(exifRanges.focalLength.min)) {
   exifRanges.focalLength = { min: 10, max: 600 };
 }
+
+// Format shutter speed for display in template
+function formatShutterSpeedTemplate(seconds: number): string {
+  if (seconds < 1) {
+    // Fractional shutter speed (e.g., 1/1000s)
+    const denominator = Math.round(1 / seconds);
+    return `1/${denominator}s`;
+  } else {
+    // Whole number shutter speed (e.g., 2s)
+    return `${seconds.toFixed(1)}s`;
+  }
+}
 ---
 
 <PhotoLayout title="All Photos" description="Browse all photos with advanced filters">
@@ -169,7 +185,7 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
             <div id="albums-filter" class="filter-checkboxes">
               {sortedAlbums.map(album => (
                 <label class="filter-checkbox-label">
-                  <input type="checkbox" name="album" value={album.id} />
+                  <input type="checkbox" name="album" value={album.slug} />
                   <span>{album.data.title}</span>
                 </label>
               ))}
@@ -244,6 +260,36 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
                 <span id="aperture-min-value">f/{exifRanges.aperture.min}</span>
                 <span>—</span>
                 <span id="aperture-max-value">f/{exifRanges.aperture.max}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shutter Speed Filter -->
+          <div class="filter-section">
+            <h3 class="filter-section-title">Shutter Speed</h3>
+            <div class="filter-range-group">
+              <div class="filter-range-slider">
+                <input
+                  type="range"
+                  id="shutter-min"
+                  min={exifRanges.shutterSpeed.min}
+                  max={exifRanges.shutterSpeed.max}
+                  step="0.0001"
+                  value={exifRanges.shutterSpeed.min}
+                />
+                <input
+                  type="range"
+                  id="shutter-max"
+                  min={exifRanges.shutterSpeed.min}
+                  max={exifRanges.shutterSpeed.max}
+                  step="0.0001"
+                  value={exifRanges.shutterSpeed.max}
+                />
+              </div>
+              <div class="filter-range-values">
+                <span id="shutter-min-value">{formatShutterSpeedTemplate(exifRanges.shutterSpeed.min)}</span>
+                <span>—</span>
+                <span id="shutter-max-value">{formatShutterSpeedTemplate(exifRanges.shutterSpeed.max)}</span>
               </div>
             </div>
           </div>
@@ -343,7 +389,7 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
         title: p.data.title,
         filename: p.data.filename,
         album: p.data.album,
-        tags: p.data.tags || [],
+        tags: (p.data.tags || []).map(t => (t || '').trim()).filter(t => t),
         camera: p.data.camera,
         settings: p.data.settings,
         focalLength: p.data.focalLength,
@@ -367,6 +413,12 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
     let currentBatchIndex = 0;
     let filteredPhotos = [...allPhotosData];
     let displayedPhotos = [];
+
+    // Normalize tag for consistent comparison
+    function normalizeTag(tag) {
+      if (!tag) return '';
+      return String(tag).toLowerCase().trim();
+    }
 
     // Parse settings helper
     function parseSettings(settings) {
@@ -396,10 +448,23 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       return result;
     }
 
+    // Format shutter speed for display
+    function formatShutterSpeed(seconds) {
+      if (seconds < 1) {
+        // Fractional shutter speed (e.g., 1/1000s)
+        const denominator = Math.round(1 / seconds);
+        return `1/${denominator}s`;
+      } else {
+        // Whole number shutter speed (e.g., 2s)
+        return `${seconds.toFixed(1)}s`;
+      }
+    }
+
     // Get current filter state
     function getFilterState() {
       const tags = Array.from(document.querySelectorAll('input[name="tag"]:checked'))
-        .map(el => el.value);
+        .map(el => normalizeTag(el.value))
+        .filter(t => t);
 
       const albums = Array.from(document.querySelectorAll('input[name="album"]:checked'))
         .map(el => el.value);
@@ -413,6 +478,9 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
 
       const apertureMin = parseFloat(document.getElementById('aperture-min').value);
       const apertureMax = parseFloat(document.getElementById('aperture-max').value);
+
+      const shutterMin = parseFloat(document.getElementById('shutter-min').value);
+      const shutterMax = parseFloat(document.getElementById('shutter-max').value);
 
       const isoMin = parseInt(document.getElementById('iso-min').value);
       const isoMax = parseInt(document.getElementById('iso-max').value);
@@ -428,6 +496,8 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
         dateMax,
         apertureMin,
         apertureMax,
+        shutterMin,
+        shutterMax,
         isoMin,
         isoMax,
         focalMin,
@@ -438,19 +508,26 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
     // Apply filters
     function applyFilters() {
       const filters = getFilterState();
+      console.log('Active filters:', filters);
 
       filteredPhotos = allPhotosData.filter(photo => {
         // Tag filter
         if (filters.tags.length > 0) {
-          const photoTags = photo.data.tags.map(t => t.toLowerCase());
-          const hasTag = filters.tags.some(tag => photoTags.includes(tag));
+          const photoTags = photo.data.tags.map(t => normalizeTag(t)).filter(t => t);
+          const hasTag = filters.tags.some(tag => {
+            const normalizedTag = normalizeTag(tag);
+            const isMatch = photoTags.includes(normalizedTag);
+            if (normalizedTag === 'risque') {
+               console.log(`Checking photo ${photo.id} with tags [${photoTags}] against filter '${normalizedTag}' -> Match: ${isMatch}`);
+            }
+            return isMatch;
+          });
           if (!hasTag) return false;
         }
 
         // Album filter
         if (filters.albums.length > 0) {
-          const albumSlug = `${photo.data.album}/${photo.id.split('/')[1]}`;
-          const hasAlbum = filters.albums.some(album => albumSlug.startsWith(album));
+          const hasAlbum = filters.albums.includes(photo.data.album);
           if (!hasAlbum) return false;
         }
 
@@ -472,6 +549,12 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
 
         if (exif.aperture !== undefined) {
           if (exif.aperture < filters.apertureMin || exif.aperture > filters.apertureMax) {
+            return false;
+          }
+        }
+
+        if (exif.shutterSpeed !== undefined) {
+          if (exif.shutterSpeed < filters.shutterMin || exif.shutterSpeed > filters.shutterMax) {
             return false;
           }
         }
@@ -614,6 +697,8 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       // Check if EXIF ranges are modified
       if (filters.apertureMin !== exifRangesData.aperture.min ||
           filters.apertureMax !== exifRangesData.aperture.max) count++;
+      if (filters.shutterMin !== exifRangesData.shutterSpeed.min ||
+          filters.shutterMax !== exifRangesData.shutterSpeed.max) count++;
       if (filters.isoMin !== exifRangesData.iso.min ||
           filters.isoMax !== exifRangesData.iso.max) count++;
       if (filters.focalMin !== exifRangesData.focalLength.min ||
@@ -649,6 +734,13 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       document.getElementById('aperture-max').value = exifRangesData.aperture.max;
       document.getElementById('aperture-min-value').textContent = `f/${exifRangesData.aperture.min}`;
       document.getElementById('aperture-max-value').textContent = `f/${exifRangesData.aperture.max}`;
+
+      document.getElementById('shutter-min').value = exifRangesData.shutterSpeed.min;
+      document.getElementById('shutter-max').value = exifRangesData.shutterSpeed.max;
+      const shutterMinFormatted = formatShutterSpeed(exifRangesData.shutterSpeed.min);
+      const shutterMaxFormatted = formatShutterSpeed(exifRangesData.shutterSpeed.max);
+      document.getElementById('shutter-min-value').textContent = shutterMinFormatted;
+      document.getElementById('shutter-max-value').textContent = shutterMaxFormatted;
 
       document.getElementById('iso-min').value = exifRangesData.iso.min;
       document.getElementById('iso-max').value = exifRangesData.iso.max;
@@ -689,7 +781,7 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
     document.getElementById('date-max').addEventListener('change', applyFilters);
 
     // Range slider event listeners with live updates
-    ['aperture', 'iso', 'focal'].forEach(type => {
+    ['aperture', 'shutter', 'iso', 'focal'].forEach(type => {
       const minSlider = document.getElementById(`${type}-min`);
       const maxSlider = document.getElementById(`${type}-max`);
       const minValue = document.getElementById(`${type}-min-value`);
@@ -705,9 +797,15 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
           minSlider.value = max;
         }
 
-        const prefix = type === 'aperture' ? 'f/' : '';
-        const suffix = type === 'focal' ? 'mm' : '';
-        minValue.textContent = `${prefix}${type === 'focal' ? Math.round(minSlider.value) : minSlider.value}${suffix}`;
+        if (type === 'aperture') {
+          minValue.textContent = `f/${minSlider.value}`;
+        } else if (type === 'shutter') {
+          minValue.textContent = formatShutterSpeed(parseFloat(minSlider.value));
+        } else if (type === 'focal') {
+          minValue.textContent = `${Math.round(minSlider.value)}mm`;
+        } else {
+          minValue.textContent = minSlider.value;
+        }
 
         clearTimeout(updateTimeout);
         updateTimeout = setTimeout(applyFilters, 300);
@@ -721,9 +819,15 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
           maxSlider.value = min;
         }
 
-        const prefix = type === 'aperture' ? 'f/' : '';
-        const suffix = type === 'focal' ? 'mm' : '';
-        maxValue.textContent = `${prefix}${type === 'focal' ? Math.round(maxSlider.value) : maxSlider.value}${suffix}`;
+        if (type === 'aperture') {
+          maxValue.textContent = `f/${maxSlider.value}`;
+        } else if (type === 'shutter') {
+          maxValue.textContent = formatShutterSpeed(parseFloat(maxSlider.value));
+        } else if (type === 'focal') {
+          maxValue.textContent = `${Math.round(maxSlider.value)}mm`;
+        } else {
+          maxValue.textContent = maxSlider.value;
+        }
 
         clearTimeout(updateTimeout);
         updateTimeout = setTimeout(applyFilters, 300);
@@ -744,7 +848,7 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
     .photos-page {
       max-width: 1800px;
       margin: 0 auto;
-      padding: 2rem 1.5rem;
+      padding: 0 1.5rem 2rem;
     }
 
     .page-header {
@@ -757,7 +861,7 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       position: sticky;
       top: 0;
       background: var(--cream);
-      padding: 2rem 1.5rem 1rem;
+      padding: 1rem 1.5rem 1rem;
       z-index: 50;
       border-bottom: 1px solid rgba(28, 25, 23, 0.1);
     }
@@ -1045,7 +1149,8 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       gap: 2rem;
     }
 
-    .photo-card {
+    /* Dynamic content styles need :global because they are created by JS */
+    :global(.photo-card) {
       display: flex;
       flex-direction: column;
       text-decoration: none;
@@ -1058,12 +1163,12 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       position: relative;
     }
 
-    .photo-card:hover {
+    :global(.photo-card:hover) {
       transform: translateY(-4px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
 
-    .photo-image {
+    :global(.photo-image) {
       width: 100%;
       aspect-ratio: 3 / 2;
       overflow: hidden;
@@ -1071,18 +1176,18 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       position: relative;
     }
 
-    .photo-image img {
+    :global(.photo-image img) {
       width: 100%;
       height: 100%;
       object-fit: cover;
       transition: transform 0.3s ease;
     }
 
-    .photo-card:hover .photo-image img {
+    :global(.photo-card:hover .photo-image img) {
       transform: scale(1.05);
     }
 
-    .viewfinder-overlay {
+    :global(.viewfinder-overlay) {
       position: absolute;
       top: 0;
       left: 0;
@@ -1096,11 +1201,11 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
       transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .photo-card:hover .viewfinder-overlay {
+    :global(.photo-card:hover .viewfinder-overlay) {
       opacity: 1;
     }
 
-    .viewfinder-corners {
+    :global(.viewfinder-corners) {
       width: 85%;
       height: 85%;
       color: rgba(255, 255, 255, 0.85);
@@ -1109,7 +1214,7 @@ if (!Number.isFinite(exifRanges.focalLength.min)) {
     }
 
     :global(.viewfinder-corners.focus-locked) {
-      color: #f59e0b !important;
+      color: #22c55e !important;
       transform: scale(0.95);
       opacity: 1 !important;
     }
