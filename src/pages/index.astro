@@ -24,9 +24,11 @@ const projects = (await getCollection('projects'))
       <span class="command-prompt">$ whoami</span>
     </div>
     <div class="hero-content">
-      <div class="profile-image-wrapper">
-        <img src="/guru.png" alt="Gurudev Ilangovan" class="profile-image" />
-      </div>
+      <aside class="hero-sidebar">
+        <div class="profile-image-wrapper">
+          <img src="/guru.png" alt="Gurudev Ilangovan" class="profile-image" />
+        </div>
+      </aside>
       <div class="hero-text">
         <h1 class="hero-title">Gurudev "Guru" Ilangovan</h1>
         <p class="hero-subtitle">AI/LLM Engineer @ Capital One</p>
@@ -97,19 +99,26 @@ const projects = (await getCollection('projects'))
     }
 
     .hero-content {
-      display: flex;
-      align-items: center;
-      gap: 2rem;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 4rem;
+      align-items: start;
       margin-top: 1.5rem;
     }
 
+    .hero-sidebar {
+      position: sticky;
+      top: 2rem;
+      text-align: center;
+    }
+
     .profile-image-wrapper {
-      flex-shrink: 0;
-      width: 120px;
-      height: 120px;
+      width: 180px;
+      height: 180px;
+      margin: 0 auto;
       border: 2px solid var(--terminal-cyan);
       border-radius: 50%;
-      padding: 3px;
+      padding: 6px;
       background: var(--slate-900);
       box-shadow:
         0 0 20px rgba(6, 182, 212, 0.3),
@@ -305,14 +314,19 @@ const projects = (await getCollection('projects'))
       }
 
       .hero-content {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1.5rem;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+
+      .hero-sidebar {
+        position: static;
+        display: flex;
+        justify-content: center;
       }
 
       .profile-image-wrapper {
-        width: 100px;
-        height: 100px;
+        width: 180px;
+        height: 180px;
       }
 
       .hero-title {
