@@ -118,6 +118,23 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
     )}
   </div>
 
+  <script define:vars={{
+    allPhotosData: allPhotos.map(p => ({
+      id: p.id,
+      url: getPhotoUrl(p.data.filename),
+      data: {
+        title: p.data.title,
+        filename: p.data.filename,
+        album: p.data.album,
+        tags: (p.data.tags || []).map(t => (t || '').trim()).filter(t => t),
+        camera: p.data.camera,
+        settings: p.data.settings,
+        focalLength: p.data.focalLength,
+        location: p.data.location
+      }
+    }))
+  }}></script>
+
   <style>
     .tag-page {
       max-width: 1400px;
@@ -393,6 +410,26 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       // Track active tags
       let activeTags = new Set(initialTag ? [initialTag] : []);
 
+      // Update lightbox when filters change
+      function updateLightboxPhotos() {
+        if (!window.photoLightbox) return;
+        
+        // Get all visible photo cards
+        const visibleCards = Array.from(document.querySelectorAll('.photo-card'))
+          .filter(card => card.style.display !== 'none');
+        
+        // Get photo IDs from visible cards
+        const visiblePhotoIds = visibleCards.map(card => card.getAttribute('data-photo-id'));
+        
+        // Filter photos data to only include visible photos
+        const visiblePhotos = allPhotosData.filter(photo => 
+          visiblePhotoIds.includes(photo.id)
+        );
+        
+        // Update lightbox with visible photos
+        window.photoLightbox.updatePhotos(visiblePhotos);
+      }
+
       // Toggle filter bar
       filterToggle?.addEventListener('click', () => {
         filterToggle.classList.toggle('expanded');
@@ -436,6 +473,9 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
         if (clearFiltersBtn) {
           clearFiltersBtn.style.display = activeTags.size > 1 ? 'block' : 'none';
         }
+
+        // Update lightbox with visible photos
+        updateLightboxPhotos();
       }
 
       // Tag pill click handler

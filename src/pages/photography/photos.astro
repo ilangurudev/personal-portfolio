@@ -661,6 +661,11 @@ function formatShutterSpeedTemplate(seconds: number): string {
       displayedPhotos = [];
       document.getElementById('photos-grid').innerHTML = '';
 
+      // Update lightbox with filtered photos
+      if (window.photoLightbox) {
+        window.photoLightbox.updatePhotos(filteredPhotos);
+      }
+
       // Update counts
       updateFilterCount();
       updatePhotoCount();

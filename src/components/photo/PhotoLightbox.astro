@@ -93,7 +93,7 @@ const { photos, initialIndex = 0 } = Astro.props;
     private album: HTMLElement | null;
     private metadata: HTMLElement | null;
     private counter: HTMLElement | null;
-    private photos: Photo[];
+    public photos: Photo[]; // Made public so it can be accessed for finding indices
     private currentIndex: number;
     private isOpen: boolean = false;
     private touchStartX: number = 0;
@@ -296,6 +296,20 @@ const { photos, initialIndex = 0 } = Astro.props;
       document.body.style.overflow = '';
       if (this.slideshowDropdown) {
         this.slideshowDropdown.style.display = 'none';
+      }
+    }
+
+    public updatePhotos(newPhotos: Photo[]) {
+      // Update the photos array
+      this.photos = newPhotos;
+      
+      // If currently open, ensure currentIndex is still valid
+      if (this.isOpen && this.currentIndex >= this.photos.length) {
+        // If current photo is no longer in the list, close the lightbox
+        this.close();
+      } else if (this.isOpen) {
+        // Update the display to reflect the current photo
+        this.updateImage();
       }
     }
 
@@ -593,10 +607,13 @@ const { photos, initialIndex = 0 } = Astro.props;
 
     const lightbox = new PhotoLightbox(photosData);
 
-    // Make lightbox accessible globally for photo cards
+    // Make lightbox accessible globally for photo cards and filter updates
     (window as any).photoLightbox = lightbox;
+    
+    // Store initial photos data for reference
+    (window as any).allPhotosData = photosData;
 
-    // Handle photo card clicks
+    // Handle photo card clicks - find index in current filtered list
     document.addEventListener('click', (e) => {
       const card = (e.target as HTMLElement).closest('.photo-card[data-photo-id]');
       if (!card) return;
@@ -616,7 +633,8 @@ const { photos, initialIndex = 0 } = Astro.props;
       const photoId = card.getAttribute('data-photo-id');
       if (!photoId) return;
 
-      const index = photosData.findIndex(p => p.id === photoId);
+      // Find index in the current filtered photos array (not the full list)
+      const index = lightbox.photos.findIndex(p => p.id === photoId);
       if (index !== -1) {
         // Small delay to let the focus lock animation be seen before lightbox opens
         setTimeout(() => {
