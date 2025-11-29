@@ -37,7 +37,7 @@ const { title, description } = Astro.props;
     }
 
     /* Disable long-press context menu on images (iOS) */
-    img {
+    :global(img) {
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
