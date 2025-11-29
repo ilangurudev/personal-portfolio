@@ -233,18 +233,22 @@ const { title, description } = Astro.props;
       border: 1px solid var(--terminal-cyan);
       padding: 0;
       gap: 0;
+      height: fit-content;
+      line-height: 1;
     }
 
     .toggle-link {
       padding: 0.5rem 1rem;
       text-decoration: none;
-      font-size: 0.75rem;
+      font-size: 0.875rem;
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       transition: all 0.2s ease;
       color: var(--terminal-cyan);
       border-right: 1px solid var(--terminal-cyan);
+      display: inline-block;
+      line-height: 1.5;
     }
 
     .toggle-link:last-child {
