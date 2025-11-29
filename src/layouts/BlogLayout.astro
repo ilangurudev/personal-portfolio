@@ -193,6 +193,13 @@ const { title, description } = Astro.props;
       --terminal-gray: #94a3b8;
     }
 
+    /* Disable long-press context menu on images (iOS) */
+    img {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
     body.blog-space {
       background: var(--slate-950);
       color: var(--terminal-green);

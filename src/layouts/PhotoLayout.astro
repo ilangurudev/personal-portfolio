@@ -85,7 +85,7 @@ const { title, description } = Astro.props;
   </main>
 
   <footer class="photo-footer">
-    <p>All images © 2026 Gurudev Ilangovan. All rights reserved. Images may not be reproduced without permission.</p>
+    <p>All images © 2025 Gurudev Ilangovan. All rights reserved. Images may not be reproduced without permission.</p>
   </footer>
 
   <script is:inline>
@@ -172,6 +172,13 @@ const { title, description } = Astro.props;
       --terracotta: #C2410C;
       --charcoal: #1C1917;
       --gray: #78716C;
+    }
+
+    /* Disable long-press context menu on images (iOS) */
+    img {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     body.photo-space {

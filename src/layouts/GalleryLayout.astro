@@ -36,6 +36,13 @@ const { title, description } = Astro.props;
       --terracotta: #C2410C;
     }
 
+    /* Disable long-press context menu on images (iOS) */
+    img {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
     body.gallery-space {
       background: var(--charcoal);
       color: var(--cream);
