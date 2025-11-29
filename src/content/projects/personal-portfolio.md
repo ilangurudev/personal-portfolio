@@ -5,7 +5,7 @@ date: 2024-11-28
 tags: ["astro", "typescript", "ai"]
 image: "/projects/dual-portfolio.png"
 featured: true
-repo: "https://github.com/guru/portfolio"
+repo: "https://github.com/ilangurudev/personal-portfolio/"
 ---
 
 # Personal Portfolio

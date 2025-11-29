@@ -77,6 +77,36 @@ function parseSettings(settings?: string): { aperture?: number; shutterSpeed?: n
   return result;
 }
 
+function getDecimalPlaces(step: number): number {
+  if (!Number.isFinite(step) || step <= 0) {
+    return 0;
+  }
+
+  const stepString = step.toString();
+  if (stepString.includes('e-')) {
+    const [, exponent] = stepString.split('e-');
+    return parseInt(exponent || '0', 10);
+  }
+
+  const decimalSegment = stepString.split('.')[1];
+  return decimalSegment ? decimalSegment.length : 0;
+}
+
+function alignRangeToStep(range: { min: number; max: number }, step: number): { min: number; max: number } {
+  if (!Number.isFinite(range.min) || !Number.isFinite(range.max) || step <= 0) {
+    return range;
+  }
+
+  const decimals = getDecimalPlaces(step);
+  const minAligned = Number((Math.floor(range.min / step) * step).toFixed(decimals));
+  const maxAligned = Number((Math.ceil(range.max / step) * step).toFixed(decimals));
+
+  return {
+    min: minAligned,
+    max: Math.max(maxAligned, minAligned)
+  };
+}
+
 const exifRanges: ExifRanges = {
   aperture: { min: Infinity, max: -Infinity },
   shutterSpeed: { min: Infinity, max: -Infinity },
@@ -104,8 +134,8 @@ allPhotos.forEach(photo => {
   }
 
   if (photo.data.focalLength !== undefined) {
-    exifRanges.focalLength.min = Math.min(exifRanges.focalLength.min, photo.data.focalLength);
-    exifRanges.focalLength.max = Math.max(exifRanges.focalLength.max, photo.data.focalLength);
+    exifRanges.focalLength.min = Math.floor(Math.min(exifRanges.focalLength.min, photo.data.focalLength));
+    exifRanges.focalLength.max = Math.ceil(Math.max(exifRanges.focalLength.max, photo.data.focalLength));
   }
 
   if (photo.data.date) {
@@ -127,6 +157,23 @@ if (!Number.isFinite(exifRanges.iso.min)) {
 if (!Number.isFinite(exifRanges.focalLength.min)) {
   exifRanges.focalLength = { min: 10, max: 600 };
 }
+
+// Ensure max is at least min
+if (exifRanges.focalLength.max < exifRanges.focalLength.min) {
+  exifRanges.focalLength.max = exifRanges.focalLength.min;
+}
+
+const RANGE_STEPS = {
+  aperture: 0.1,
+  shutterSpeed: 0.0001,
+  iso: 100,
+  focalLength: 1,
+};
+
+exifRanges.aperture = alignRangeToStep(exifRanges.aperture, RANGE_STEPS.aperture);
+exifRanges.shutterSpeed = alignRangeToStep(exifRanges.shutterSpeed, RANGE_STEPS.shutterSpeed);
+exifRanges.iso = alignRangeToStep(exifRanges.iso, RANGE_STEPS.iso);
+exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.focalLength);
 
 // Format shutter speed for display in template
 function formatShutterSpeedTemplate(seconds: number): string {
@@ -168,7 +215,29 @@ function formatShutterSpeedTemplate(seconds: number): string {
         <div class="filter-sections">
           <!-- Tags Filter -->
           <div class="filter-section">
-            <h3 class="filter-section-title">Tags</h3>
+            <div class="filter-section-header">
+              <h3 class="filter-section-title">Tags</h3>
+              <div class="tag-logic-toggle" id="tag-logic-toggle">
+                <button 
+                  type="button" 
+                  class="toggle-option" 
+                  data-mode="or"
+                  id="toggle-or"
+                  aria-pressed="true"
+                >
+                  OR
+                </button>
+                <button 
+                  type="button" 
+                  class="toggle-option" 
+                  data-mode="and"
+                  id="toggle-and"
+                  aria-pressed="false"
+                >
+                  AND
+                </button>
+              </div>
+            </div>
             <div id="tags-filter" class="filter-checkboxes">
               {uniqueTags.map(tag => (
                 <label class="filter-checkbox-label">
@@ -410,6 +479,7 @@ function formatShutterSpeedTemplate(seconds: number): string {
   }}>
     // Photo filtering and progressive loading
     const BATCH_SIZE = 20;
+    console.log('EXIF Ranges:', exifRangesData);
     let currentBatchIndex = 0;
     let filteredPhotos = [...allPhotosData];
     let displayedPhotos = [];
@@ -466,6 +536,10 @@ function formatShutterSpeedTemplate(seconds: number): string {
         .map(el => normalizeTag(el.value))
         .filter(t => t);
 
+      // Get tag logic mode (AND or OR)
+      const activeToggle = document.querySelector('.tag-logic-toggle .toggle-option[aria-pressed="true"]');
+      const tagLogic = activeToggle?.getAttribute('data-mode') || 'or';
+
       const albums = Array.from(document.querySelectorAll('input[name="album"]:checked'))
         .map(el => el.value);
 
@@ -490,6 +564,7 @@ function formatShutterSpeedTemplate(seconds: number): string {
 
       return {
         tags,
+        tagLogic,
         albums,
         cameras,
         dateMin,
@@ -508,20 +583,27 @@ function formatShutterSpeedTemplate(seconds: number): string {
     // Apply filters
     function applyFilters() {
       const filters = getFilterState();
-      console.log('Active filters:', filters);
 
       filteredPhotos = allPhotosData.filter(photo => {
         // Tag filter
+        let hasTag = true;
         if (filters.tags.length > 0) {
           const photoTags = photo.data.tags.map(t => normalizeTag(t)).filter(t => t);
-          const hasTag = filters.tags.some(tag => {
-            const normalizedTag = normalizeTag(tag);
-            const isMatch = photoTags.includes(normalizedTag);
-            if (normalizedTag === 'risque') {
-               console.log(`Checking photo ${photo.id} with tags [${photoTags}] against filter '${normalizedTag}' -> Match: ${isMatch}`);
-            }
-            return isMatch;
-          });
+          
+          if (filters.tagLogic === 'and') {
+            // AND logic: photo must have ALL selected tags
+            hasTag = filters.tags.every(tag => {
+              const normalizedTag = normalizeTag(tag);
+              return photoTags.includes(normalizedTag);
+            });
+          } else {
+            // OR logic: photo must have ANY selected tag (default)
+            hasTag = filters.tags.some(tag => {
+              const normalizedTag = normalizeTag(tag);
+              return photoTags.includes(normalizedTag);
+            });
+          }
+          
           if (!hasTag) return false;
         }
 
@@ -686,23 +768,32 @@ function formatShutterSpeedTemplate(seconds: number): string {
       count += filters.albums.length;
       count += filters.cameras.length;
 
-      // Check if date range is modified
+      // Check if date range is narrowed (actually filtering)
       const dateMin = new Date(exifRangesData.date.min);
       const dateMax = new Date(exifRangesData.date.max);
-      if (filters.dateMin.getTime() !== dateMin.getTime() ||
-          filters.dateMax.getTime() !== dateMax.getTime()) {
+      if (filters.dateMin.getTime() > dateMin.getTime() ||
+          filters.dateMax.getTime() < dateMax.getTime()) {
         count++;
       }
 
-      // Check if EXIF ranges are modified
-      if (filters.apertureMin !== exifRangesData.aperture.min ||
-          filters.apertureMax !== exifRangesData.aperture.max) count++;
-      if (filters.shutterMin !== exifRangesData.shutterSpeed.min ||
-          filters.shutterMax !== exifRangesData.shutterSpeed.max) count++;
-      if (filters.isoMin !== exifRangesData.iso.min ||
-          filters.isoMax !== exifRangesData.iso.max) count++;
-      if (filters.focalMin !== exifRangesData.focalLength.min ||
-          filters.focalMax !== exifRangesData.focalLength.max) count++;
+      // Check if EXIF ranges are narrowed (actually filtering)
+      // Only count if the range is narrower than the full range
+      if (filters.apertureMin > exifRangesData.aperture.min ||
+          filters.apertureMax < exifRangesData.aperture.max) {
+        count++;
+      }
+      if (filters.shutterMin > exifRangesData.shutterSpeed.min ||
+          filters.shutterMax < exifRangesData.shutterSpeed.max) {
+        count++;
+      }
+      if (filters.isoMin > exifRangesData.iso.min ||
+          filters.isoMax < exifRangesData.iso.max) {
+        count++;
+      }
+      if (filters.focalMin > exifRangesData.focalLength.min ||
+          filters.focalMax < exifRangesData.focalLength.max) {
+        count++;
+      }
 
       const badge = document.getElementById('filter-count');
       if (count > 0) {
@@ -833,6 +924,24 @@ function formatShutterSpeedTemplate(seconds: number): string {
         updateTimeout = setTimeout(applyFilters, 300);
       });
     });
+
+    // Tag logic toggle handlers
+    const toggleOr = document.getElementById('toggle-or');
+    const toggleAnd = document.getElementById('toggle-and');
+    
+    function setTagLogic(mode) {
+      if (mode === 'or') {
+        toggleOr.setAttribute('aria-pressed', 'true');
+        toggleAnd.setAttribute('aria-pressed', 'false');
+      } else {
+        toggleOr.setAttribute('aria-pressed', 'false');
+        toggleAnd.setAttribute('aria-pressed', 'true');
+      }
+      applyFilters();
+    }
+    
+    toggleOr.addEventListener('click', () => setTagLogic('or'));
+    toggleAnd.addEventListener('click', () => setTagLogic('and'));
 
     // Clear filters button
     document.getElementById('clear-filters').addEventListener('click', clearAllFilters);
@@ -993,6 +1102,13 @@ function formatShutterSpeedTemplate(seconds: number): string {
       gap: 0.75rem;
     }
 
+    .filter-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
     .filter-section-title {
       font-size: 0.875rem;
       font-weight: 600;
@@ -1000,6 +1116,37 @@ function formatShutterSpeedTemplate(seconds: number): string {
       margin: 0;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+    }
+
+    .tag-logic-toggle {
+      display: flex;
+      background: rgba(28, 25, 23, 0.05);
+      border-radius: 20px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .tag-logic-toggle .toggle-option {
+      padding: 0.25rem 0.75rem;
+      border: none;
+      background: transparent;
+      color: var(--gray);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 18px;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .tag-logic-toggle .toggle-option:hover {
+      color: var(--charcoal);
+    }
+
+    .tag-logic-toggle .toggle-option[aria-pressed="true"] {
+      background: var(--amber);
+      color: white;
     }
 
     .filter-checkboxes {

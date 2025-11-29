@@ -40,7 +40,27 @@ const { photos, initialIndex = 0 } = Astro.props;
         </div>
         <div class="lightbox-metadata-row">
           <div class="lightbox-metadata"></div>
-          <div class="lightbox-counter"></div>
+          <div class="lightbox-counter-controls">
+            <div class="lightbox-counter"></div>
+            <div class="lightbox-slideshow-container">
+              <button class="lightbox-slideshow-btn" aria-label="Slideshow settings" title="Slideshow">
+                <svg class="lightbox-slideshow-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="5" width="16" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M4 6H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M10 15L14 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M8 19L16 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <div class="lightbox-slideshow-dropdown" style="display: none;">
+                <button class="slideshow-option" data-interval="0">Off</button>
+                <button class="slideshow-option" data-interval="1000">1s</button>
+                <button class="slideshow-option" data-interval="3000">3s</button>
+                <button class="slideshow-option" data-interval="5000">5s</button>
+                <button class="slideshow-option" data-interval="10000">10s</button>
+                <button class="slideshow-option" data-interval="60000">60s</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -82,6 +102,10 @@ const { photos, initialIndex = 0 } = Astro.props;
     private touchEndY: number = 0;
     private isSwiping: boolean = false;
     private shutterOverlay: HTMLElement | null;
+    private slideshowInterval: number | null = null;
+    private slideshowIntervalMs: number = 0;
+    private slideshowBtn: HTMLElement | null;
+    private slideshowDropdown: HTMLElement | null;
 
     constructor(photos: Photo[]) {
       this.photos = photos;
@@ -93,6 +117,8 @@ const { photos, initialIndex = 0 } = Astro.props;
       this.album = this.lightbox?.querySelector('.lightbox-album') as HTMLElement;
       this.metadata = this.lightbox?.querySelector('.lightbox-metadata') as HTMLElement;
       this.counter = this.lightbox?.querySelector('.lightbox-counter') as HTMLElement;
+      this.slideshowBtn = this.lightbox?.querySelector('.lightbox-slideshow-btn') as HTMLElement;
+      this.slideshowDropdown = this.lightbox?.querySelector('.lightbox-slideshow-dropdown') as HTMLElement;
 
       this.init();
     }
@@ -131,6 +157,37 @@ const { photos, initialIndex = 0 } = Astro.props;
           document.body.style.overflow = 'hidden';
         } else {
           document.body.style.overflow = '';
+        }
+      });
+
+      // Slideshow button
+      this.slideshowBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.slideshowDropdown) {
+          const isVisible = this.slideshowDropdown.style.display !== 'none';
+          this.slideshowDropdown.style.display = isVisible ? 'none' : 'block';
+        }
+      });
+
+      // Slideshow dropdown options
+      this.slideshowDropdown?.querySelectorAll('.slideshow-option').forEach(option => {
+        option.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const interval = parseInt((option as HTMLElement).getAttribute('data-interval') || '0');
+          this.setSlideshowInterval(interval);
+          if (this.slideshowDropdown) {
+            this.slideshowDropdown.style.display = 'none';
+          }
+        });
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (this.isOpen && this.slideshowDropdown && this.slideshowBtn) {
+          const target = e.target as HTMLElement;
+          if (!this.slideshowDropdown.contains(target) && !this.slideshowBtn.contains(target)) {
+            this.slideshowDropdown.style.display = 'none';
+          }
         }
       });
     }
@@ -226,6 +283,7 @@ const { photos, initialIndex = 0 } = Astro.props;
 
     public close() {
       this.isOpen = false;
+      this.stopSlideshow();
       if (this.lightbox) {
         this.lightbox.classList.remove('active');
         // Hide after animation
@@ -236,16 +294,75 @@ const { photos, initialIndex = 0 } = Astro.props;
         }, 300);
       }
       document.body.style.overflow = '';
+      if (this.slideshowDropdown) {
+        this.slideshowDropdown.style.display = 'none';
+      }
     }
 
     public next() {
+      // Restart slideshow timer on manual navigation
+      if (this.slideshowIntervalMs > 0) {
+        this.stopSlideshow();
+        this.startSlideshow();
+      }
       const nextIndex = (this.currentIndex + 1) % this.photos.length;
       this.open(nextIndex);
     }
 
     public prev() {
+      // Restart slideshow timer on manual navigation
+      if (this.slideshowIntervalMs > 0) {
+        this.stopSlideshow();
+        this.startSlideshow();
+      }
       const prevIndex = (this.currentIndex - 1 + this.photos.length) % this.photos.length;
       this.open(prevIndex);
+    }
+
+    private setSlideshowInterval(intervalMs: number) {
+      this.slideshowIntervalMs = intervalMs;
+      this.stopSlideshow();
+      
+      if (intervalMs > 0) {
+        this.startSlideshow();
+      }
+      
+      // Update active state in dropdown
+      this.slideshowDropdown?.querySelectorAll('.slideshow-option').forEach(option => {
+        const optionInterval = parseInt((option as HTMLElement).getAttribute('data-interval') || '0');
+        if (optionInterval === intervalMs) {
+          option.classList.add('active');
+        } else {
+          option.classList.remove('active');
+        }
+      });
+    }
+
+    private startSlideshow() {
+      if (this.slideshowIntervalMs > 0 && !this.slideshowInterval) {
+        this.slideshowInterval = window.setInterval(() => {
+          if (this.isOpen) {
+            this.next();
+          } else {
+            this.stopSlideshow();
+          }
+        }, this.slideshowIntervalMs);
+        
+        if (this.slideshowBtn) {
+          this.slideshowBtn.classList.add('active');
+        }
+      }
+    }
+
+    private stopSlideshow() {
+      if (this.slideshowInterval !== null) {
+        clearInterval(this.slideshowInterval);
+        this.slideshowInterval = null;
+      }
+      
+      if (this.slideshowBtn) {
+        this.slideshowBtn.classList.remove('active');
+      }
     }
 
     private updateImage() {
@@ -787,6 +904,12 @@ const { photos, initialIndex = 0 } = Astro.props;
     transform: translateY(0);
   }
 
+  .lightbox-counter-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .lightbox-counter {
     font-size: 0.875rem;
     color: rgba(255, 251, 245, 0.7);
@@ -798,6 +921,82 @@ const { photos, initialIndex = 0 } = Astro.props;
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     display: inline-block;
+  }
+
+  .lightbox-slideshow-container {
+    position: relative;
+  }
+
+  .lightbox-slideshow-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 251, 245, 0.7);
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .lightbox-slideshow-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 251, 245, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .lightbox-slideshow-btn.active {
+    background: rgba(245, 158, 11, 0.2);
+    color: rgba(245, 158, 11, 0.9);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+
+  .lightbox-slideshow-icon {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+  }
+
+  .lightbox-slideshow-dropdown {
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    right: 0;
+    background: rgba(28, 25, 23, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 0.25rem;
+    min-width: 80px;
+    z-index: 10002;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .slideshow-option {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    color: rgba(255, 251, 245, 0.7);
+    font-size: 0.875rem;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 2px;
+  }
+
+  .slideshow-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 251, 245, 0.9);
+  }
+
+  .slideshow-option.active {
+    background: rgba(245, 158, 11, 0.2);
+    color: rgba(245, 158, 11, 0.9);
   }
 
   .lightbox-nav {
@@ -878,6 +1077,16 @@ const { photos, initialIndex = 0 } = Astro.props;
       font-size: 1.5rem;
     }
 
+    .lightbox-counter-controls {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .lightbox-slideshow-dropdown {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+    }
   }
 </style>
 
