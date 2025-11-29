@@ -60,6 +60,32 @@ const sortedPhotos = featuredPhotos.sort((a, b) =>
     </>
   )}
 
+  <!-- Navigation links after photos -->
+  <div class="photo-nav-section">
+    <h2 class="nav-section-title">Explore More</h2>
+    <div class="photo-nav-links">
+      <a href="/photography/photos" class="photo-nav-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+        </svg>
+        <span>Browse All Photos</span>
+      </a>
+      <a href="/photography/albums" class="photo-nav-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>View Albums</span>
+      </a>
+      <a href="/photography/tags" class="photo-nav-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+        <span>Browse by Tag</span>
+      </a>
+    </div>
+  </div>
+
   <style>
     .photo-hero {
       text-align: center;
@@ -85,6 +111,57 @@ const sortedPhotos = featuredPhotos.sort((a, b) =>
       line-height: 1.6;
       font-style: italic;
       margin: 0;
+    }
+
+    .photo-nav-section {
+      max-width: 900px;
+      margin: 4rem auto;
+      padding: 3rem 0;
+      text-align: center;
+      border-top: 1px solid rgba(28, 25, 23, 0.1);
+    }
+
+    .nav-section-title {
+      font-family: 'Crimson Text', serif;
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--charcoal);
+      margin: 0 0 2rem;
+      letter-spacing: -0.02em;
+    }
+
+    .photo-nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .photo-nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: white;
+      color: var(--charcoal);
+      text-decoration: none;
+      border: 1px solid rgba(28, 25, 23, 0.2);
+      border-radius: 4px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .photo-nav-link:hover {
+      background: var(--amber);
+      color: white;
+      border-color: var(--amber);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .photo-nav-link svg {
+      flex-shrink: 0;
     }
 
     .no-photos {

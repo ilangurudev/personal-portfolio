@@ -1,0 +1,1269 @@
+---
+import PhotoLayout from '../../layouts/PhotoLayout.astro';
+import { getPhotosWithExif } from '../../utils/photo-helpers';
+import { getCollection } from 'astro:content';
+import { getPhotoUrl } from '../../utils/url-helper';
+import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
+import PhotoIcons from '../../components/photo/PhotoIcons.astro';
+
+// Get all photos with EXIF data
+const allPhotos = await getPhotosWithExif();
+
+// Sort by date descending
+const sortedPhotos = allPhotos.sort((a, b) =>
+  b.data.date.getTime() - a.data.date.getTime()
+);
+
+// Get all albums for filter
+const albums = await getCollection('albums');
+const sortedAlbums = albums.sort((a, b) => a.data.title.localeCompare(b.data.title));
+
+// Extract unique tags
+const allTags = new Set<string>();
+allPhotos.forEach(photo => {
+  photo.data.tags.forEach(tag => allTags.add(tag.toLowerCase()));
+});
+const uniqueTags = Array.from(allTags).sort();
+
+// Extract unique cameras
+const allCameras = new Set<string>();
+allPhotos.forEach(photo => {
+  if (photo.data.camera) allCameras.add(photo.data.camera);
+});
+const uniqueCameras = Array.from(allCameras).sort();
+
+// Parse EXIF ranges
+interface ExifRanges {
+  aperture: { min: number; max: number };
+  shutterSpeed: { min: number; max: number };
+  iso: { min: number; max: number };
+  focalLength: { min: number; max: number };
+  date: { min: Date; max: Date };
+}
+
+function parseSettings(settings?: string): { aperture?: number; shutterSpeed?: number; iso?: number } {
+  if (!settings) return {};
+
+  const result: { aperture?: number; shutterSpeed?: number; iso?: number } = {};
+
+  // Parse aperture (f/2.8 -> 2.8)
+  const apertureMatch = settings.match(/f\/([\d.]+)/);
+  if (apertureMatch) {
+    result.aperture = parseFloat(apertureMatch[1]);
+  }
+
+  // Parse shutter speed (1/1000s -> 0.001, 2s -> 2)
+  const shutterMatch = settings.match(/(\d+)\/(\d+)s|(\d+(?:\.\d+)?)s/);
+  if (shutterMatch) {
+    if (shutterMatch[1] && shutterMatch[2]) {
+      // Fractional shutter speed
+      result.shutterSpeed = parseInt(shutterMatch[1]) / parseInt(shutterMatch[2]);
+    } else if (shutterMatch[3]) {
+      // Whole number shutter speed
+      result.shutterSpeed = parseFloat(shutterMatch[3]);
+    }
+  }
+
+  // Parse ISO (ISO 400 -> 400)
+  const isoMatch = settings.match(/ISO\s*(\d+)/);
+  if (isoMatch) {
+    result.iso = parseInt(isoMatch[1]);
+  }
+
+  return result;
+}
+
+const exifRanges: ExifRanges = {
+  aperture: { min: Infinity, max: -Infinity },
+  shutterSpeed: { min: Infinity, max: -Infinity },
+  iso: { min: Infinity, max: -Infinity },
+  focalLength: { min: Infinity, max: -Infinity },
+  date: { min: new Date(8640000000000000), max: new Date(-8640000000000000) }
+};
+
+allPhotos.forEach(photo => {
+  const parsed = parseSettings(photo.data.settings);
+
+  if (parsed.aperture !== undefined) {
+    exifRanges.aperture.min = Math.min(exifRanges.aperture.min, parsed.aperture);
+    exifRanges.aperture.max = Math.max(exifRanges.aperture.max, parsed.aperture);
+  }
+
+  if (parsed.shutterSpeed !== undefined) {
+    exifRanges.shutterSpeed.min = Math.min(exifRanges.shutterSpeed.min, parsed.shutterSpeed);
+    exifRanges.shutterSpeed.max = Math.max(exifRanges.shutterSpeed.max, parsed.shutterSpeed);
+  }
+
+  if (parsed.iso !== undefined) {
+    exifRanges.iso.min = Math.min(exifRanges.iso.min, parsed.iso);
+    exifRanges.iso.max = Math.max(exifRanges.iso.max, parsed.iso);
+  }
+
+  if (photo.data.focalLength !== undefined) {
+    exifRanges.focalLength.min = Math.min(exifRanges.focalLength.min, photo.data.focalLength);
+    exifRanges.focalLength.max = Math.max(exifRanges.focalLength.max, photo.data.focalLength);
+  }
+
+  if (photo.data.date) {
+    exifRanges.date.min = new Date(Math.min(exifRanges.date.min.getTime(), photo.data.date.getTime()));
+    exifRanges.date.max = new Date(Math.max(exifRanges.date.max.getTime(), photo.data.date.getTime()));
+  }
+});
+
+// Handle infinity values (no data available)
+if (!Number.isFinite(exifRanges.aperture.min)) {
+  exifRanges.aperture = { min: 1.4, max: 22 };
+}
+if (!Number.isFinite(exifRanges.shutterSpeed.min)) {
+  exifRanges.shutterSpeed = { min: 0.0001, max: 30 };
+}
+if (!Number.isFinite(exifRanges.iso.min)) {
+  exifRanges.iso = { min: 100, max: 12800 };
+}
+if (!Number.isFinite(exifRanges.focalLength.min)) {
+  exifRanges.focalLength = { min: 10, max: 600 };
+}
+---
+
+<PhotoLayout title="All Photos" description="Browse all photos with advanced filters">
+  <PhotoIcons />
+
+  <div class="photos-page">
+    <div class="page-header">
+      <h1 class="page-title">All Photos</h1>
+      <p class="page-subtitle">{sortedPhotos.length} photos · Advanced filtering</p>
+      <button id="toggle-filters" class="toggle-filters-btn" aria-label="Toggle filters">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+        </svg>
+        <span>Filters</span>
+        <span id="filter-count" class="filter-count" style="display: none;">0</span>
+      </button>
+    </div>
+
+    <div class="content-wrapper">
+      <!-- Filter Panel -->
+      <aside id="filter-panel" class="filter-panel">
+        <div class="filter-panel-header">
+          <h2 class="filter-panel-title">Filters</h2>
+          <button id="clear-filters" class="clear-filters-btn">Clear All</button>
+        </div>
+
+        <div class="filter-sections">
+          <!-- Tags Filter -->
+          <div class="filter-section">
+            <h3 class="filter-section-title">Tags</h3>
+            <div id="tags-filter" class="filter-checkboxes">
+              {uniqueTags.map(tag => (
+                <label class="filter-checkbox-label">
+                  <input type="checkbox" name="tag" value={tag} />
+                  <span>#{tag}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <!-- Albums Filter -->
+          <div class="filter-section">
+            <h3 class="filter-section-title">Albums</h3>
+            <div id="albums-filter" class="filter-checkboxes">
+              {sortedAlbums.map(album => (
+                <label class="filter-checkbox-label">
+                  <input type="checkbox" name="album" value={album.id} />
+                  <span>{album.data.title}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <!-- Date Range Filter -->
+          <div class="filter-section">
+            <h3 class="filter-section-title">Date Range</h3>
+            <div class="filter-range-inputs">
+              <div class="filter-input-group">
+                <label for="date-min">From</label>
+                <input
+                  type="date"
+                  id="date-min"
+                  name="date-min"
+                  value={exifRanges.date.min.toISOString().split('T')[0]}
+                  min={exifRanges.date.min.toISOString().split('T')[0]}
+                  max={exifRanges.date.max.toISOString().split('T')[0]}
+                />
+              </div>
+              <div class="filter-input-group">
+                <label for="date-max">To</label>
+                <input
+                  type="date"
+                  id="date-max"
+                  name="date-max"
+                  value={exifRanges.date.max.toISOString().split('T')[0]}
+                  min={exifRanges.date.min.toISOString().split('T')[0]}
+                  max={exifRanges.date.max.toISOString().split('T')[0]}
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Camera Filter -->
+          <div class="filter-section">
+            <h3 class="filter-section-title">Camera</h3>
+            <div id="cameras-filter" class="filter-checkboxes">
+              {uniqueCameras.map(camera => (
+                <label class="filter-checkbox-label">
+                  <input type="checkbox" name="camera" value={camera} />
+                  <span>{camera}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <!-- Aperture Filter -->
+          <div class="filter-section">
+            <h3 class="filter-section-title">Aperture (f-stop)</h3>
+            <div class="filter-range-group">
+              <div class="filter-range-slider">
+                <input
+                  type="range"
+                  id="aperture-min"
+                  min={exifRanges.aperture.min}
+                  max={exifRanges.aperture.max}
+                  step="0.1"
+                  value={exifRanges.aperture.min}
+                />
+                <input
+                  type="range"
+                  id="aperture-max"
+                  min={exifRanges.aperture.min}
+                  max={exifRanges.aperture.max}
+                  step="0.1"
+                  value={exifRanges.aperture.max}
+                />
+              </div>
+              <div class="filter-range-values">
+                <span id="aperture-min-value">f/{exifRanges.aperture.min}</span>
+                <span>—</span>
+                <span id="aperture-max-value">f/{exifRanges.aperture.max}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ISO Filter -->
+          <div class="filter-section">
+            <h3 class="filter-section-title">ISO</h3>
+            <div class="filter-range-group">
+              <div class="filter-range-slider">
+                <input
+                  type="range"
+                  id="iso-min"
+                  min={exifRanges.iso.min}
+                  max={exifRanges.iso.max}
+                  step="100"
+                  value={exifRanges.iso.min}
+                />
+                <input
+                  type="range"
+                  id="iso-max"
+                  min={exifRanges.iso.min}
+                  max={exifRanges.iso.max}
+                  step="100"
+                  value={exifRanges.iso.max}
+                />
+              </div>
+              <div class="filter-range-values">
+                <span id="iso-min-value">{exifRanges.iso.min}</span>
+                <span>—</span>
+                <span id="iso-max-value">{exifRanges.iso.max}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Focal Length Filter -->
+          <div class="filter-section">
+            <h3 class="filter-section-title">Focal Length (mm)</h3>
+            <div class="filter-range-group">
+              <div class="filter-range-slider">
+                <input
+                  type="range"
+                  id="focal-min"
+                  min={exifRanges.focalLength.min}
+                  max={exifRanges.focalLength.max}
+                  step="1"
+                  value={exifRanges.focalLength.min}
+                />
+                <input
+                  type="range"
+                  id="focal-max"
+                  min={exifRanges.focalLength.min}
+                  max={exifRanges.focalLength.max}
+                  step="1"
+                  value={exifRanges.focalLength.max}
+                />
+              </div>
+              <div class="filter-range-values">
+                <span id="focal-min-value">{Math.round(exifRanges.focalLength.min)}mm</span>
+                <span>—</span>
+                <span id="focal-max-value">{Math.round(exifRanges.focalLength.max)}mm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Photos Grid -->
+      <main class="photos-main">
+        <div id="photos-status" class="photos-status">
+          <span id="visible-count">{Math.min(20, sortedPhotos.length)}</span> of <span id="total-count">{sortedPhotos.length}</span> photos
+        </div>
+
+        <div id="photos-grid" class="photos-grid">
+          <!-- Photos will be rendered progressively by JavaScript -->
+        </div>
+
+        <div id="loading-indicator" class="loading-indicator" style="display: none;">
+          <div class="loading-spinner"></div>
+          <p>Loading more photos...</p>
+        </div>
+
+        <div id="no-results" class="no-results" style="display: none;">
+          <p>No photos match your filters.</p>
+          <button id="reset-filters" class="reset-filters-btn">Reset Filters</button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <PhotoLightbox photos={sortedPhotos} />
+
+  <script define:vars={{
+    allPhotosData: sortedPhotos.map(p => ({
+      id: p.id,
+      url: getPhotoUrl(p.data.filename),
+      data: {
+        title: p.data.title,
+        filename: p.data.filename,
+        album: p.data.album,
+        tags: p.data.tags || [],
+        camera: p.data.camera,
+        settings: p.data.settings,
+        focalLength: p.data.focalLength,
+        location: p.data.location,
+        date: p.data.date.toISOString(),
+      }
+    })),
+    exifRangesData: {
+      aperture: { min: exifRanges.aperture.min, max: exifRanges.aperture.max },
+      shutterSpeed: { min: exifRanges.shutterSpeed.min, max: exifRanges.shutterSpeed.max },
+      iso: { min: exifRanges.iso.min, max: exifRanges.iso.max },
+      focalLength: { min: exifRanges.focalLength.min, max: exifRanges.focalLength.max },
+      date: {
+        min: exifRanges.date.min.toISOString(),
+        max: exifRanges.date.max.toISOString()
+      }
+    }
+  }}>
+    // Photo filtering and progressive loading
+    const BATCH_SIZE = 20;
+    let currentBatchIndex = 0;
+    let filteredPhotos = [...allPhotosData];
+    let displayedPhotos = [];
+
+    // Parse settings helper
+    function parseSettings(settings) {
+      if (!settings) return {};
+
+      const result = {};
+
+      const apertureMatch = settings.match(/f\/([\d.]+)/);
+      if (apertureMatch) {
+        result.aperture = parseFloat(apertureMatch[1]);
+      }
+
+      const shutterMatch = settings.match(/(\d+)\/(\d+)s|(\d+(?:\.\d+)?)s/);
+      if (shutterMatch) {
+        if (shutterMatch[1] && shutterMatch[2]) {
+          result.shutterSpeed = parseInt(shutterMatch[1]) / parseInt(shutterMatch[2]);
+        } else if (shutterMatch[3]) {
+          result.shutterSpeed = parseFloat(shutterMatch[3]);
+        }
+      }
+
+      const isoMatch = settings.match(/ISO\s*(\d+)/);
+      if (isoMatch) {
+        result.iso = parseInt(isoMatch[1]);
+      }
+
+      return result;
+    }
+
+    // Get current filter state
+    function getFilterState() {
+      const tags = Array.from(document.querySelectorAll('input[name="tag"]:checked'))
+        .map(el => el.value);
+
+      const albums = Array.from(document.querySelectorAll('input[name="album"]:checked'))
+        .map(el => el.value);
+
+      const cameras = Array.from(document.querySelectorAll('input[name="camera"]:checked'))
+        .map(el => el.value);
+
+      const dateMin = new Date(document.getElementById('date-min').value);
+      const dateMax = new Date(document.getElementById('date-max').value);
+      dateMax.setHours(23, 59, 59, 999); // Include entire last day
+
+      const apertureMin = parseFloat(document.getElementById('aperture-min').value);
+      const apertureMax = parseFloat(document.getElementById('aperture-max').value);
+
+      const isoMin = parseInt(document.getElementById('iso-min').value);
+      const isoMax = parseInt(document.getElementById('iso-max').value);
+
+      const focalMin = parseInt(document.getElementById('focal-min').value);
+      const focalMax = parseInt(document.getElementById('focal-max').value);
+
+      return {
+        tags,
+        albums,
+        cameras,
+        dateMin,
+        dateMax,
+        apertureMin,
+        apertureMax,
+        isoMin,
+        isoMax,
+        focalMin,
+        focalMax
+      };
+    }
+
+    // Apply filters
+    function applyFilters() {
+      const filters = getFilterState();
+
+      filteredPhotos = allPhotosData.filter(photo => {
+        // Tag filter
+        if (filters.tags.length > 0) {
+          const photoTags = photo.data.tags.map(t => t.toLowerCase());
+          const hasTag = filters.tags.some(tag => photoTags.includes(tag));
+          if (!hasTag) return false;
+        }
+
+        // Album filter
+        if (filters.albums.length > 0) {
+          const albumSlug = `${photo.data.album}/${photo.id.split('/')[1]}`;
+          const hasAlbum = filters.albums.some(album => albumSlug.startsWith(album));
+          if (!hasAlbum) return false;
+        }
+
+        // Camera filter
+        if (filters.cameras.length > 0) {
+          if (!photo.data.camera || !filters.cameras.includes(photo.data.camera)) {
+            return false;
+          }
+        }
+
+        // Date filter
+        const photoDate = new Date(photo.data.date);
+        if (photoDate < filters.dateMin || photoDate > filters.dateMax) {
+          return false;
+        }
+
+        // EXIF filters
+        const exif = parseSettings(photo.data.settings);
+
+        if (exif.aperture !== undefined) {
+          if (exif.aperture < filters.apertureMin || exif.aperture > filters.apertureMax) {
+            return false;
+          }
+        }
+
+        if (exif.iso !== undefined) {
+          if (exif.iso < filters.isoMin || exif.iso > filters.isoMax) {
+            return false;
+          }
+        }
+
+        if (photo.data.focalLength !== undefined) {
+          if (photo.data.focalLength < filters.focalMin || photo.data.focalLength > filters.focalMax) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      // Reset batch index and clear grid
+      currentBatchIndex = 0;
+      displayedPhotos = [];
+      document.getElementById('photos-grid').innerHTML = '';
+
+      // Update counts
+      updateFilterCount();
+      updatePhotoCount();
+
+      // Load first batch
+      loadNextBatch();
+    }
+
+    // Load next batch of photos
+    function loadNextBatch() {
+      const grid = document.getElementById('photos-grid');
+      const loadingIndicator = document.getElementById('loading-indicator');
+      const noResults = document.getElementById('no-results');
+
+      // Hide no results message
+      noResults.style.display = 'none';
+
+      if (currentBatchIndex >= filteredPhotos.length) {
+        loadingIndicator.style.display = 'none';
+
+        // Show no results if no photos
+        if (filteredPhotos.length === 0) {
+          noResults.style.display = 'flex';
+        }
+
+        return;
+      }
+
+      const batch = filteredPhotos.slice(
+        currentBatchIndex,
+        currentBatchIndex + BATCH_SIZE
+      );
+
+      batch.forEach(photo => {
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+        card.setAttribute('data-photo-id', photo.id);
+
+        card.innerHTML = `
+          <div class="photo-image">
+            <img
+              src="${photo.url}"
+              alt="${photo.data.title}"
+              loading="lazy"
+            />
+            <div class="viewfinder-overlay">
+              <svg class="viewfinder-corners" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 15 L15 25 L25 25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M85 15 L85 25 L75 25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M15 85 L15 75 L25 75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M85 85 L85 75 L75 75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+        displayedPhotos.push(photo);
+      });
+
+      currentBatchIndex += BATCH_SIZE;
+      updatePhotoCount();
+
+      // Set up intersection observer for the last photo
+      if (currentBatchIndex < filteredPhotos.length) {
+        const lastCard = grid.lastElementChild;
+        if (lastCard) {
+          observeLastCard(lastCard);
+        }
+      }
+    }
+
+    // Intersection observer for progressive loading
+    let observer;
+    function observeLastCard(card) {
+      if (observer) {
+        observer.disconnect();
+      }
+
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            loadingIndicator.style.display = 'flex';
+
+            setTimeout(() => {
+              loadNextBatch();
+              loadingIndicator.style.display = 'none';
+            }, 300);
+          }
+        });
+      }, {
+        rootMargin: '200px'
+      });
+
+      observer.observe(card);
+    }
+
+    // Update filter count badge
+    function updateFilterCount() {
+      const filters = getFilterState();
+      let count = 0;
+
+      count += filters.tags.length;
+      count += filters.albums.length;
+      count += filters.cameras.length;
+
+      // Check if date range is modified
+      const dateMin = new Date(exifRangesData.date.min);
+      const dateMax = new Date(exifRangesData.date.max);
+      if (filters.dateMin.getTime() !== dateMin.getTime() ||
+          filters.dateMax.getTime() !== dateMax.getTime()) {
+        count++;
+      }
+
+      // Check if EXIF ranges are modified
+      if (filters.apertureMin !== exifRangesData.aperture.min ||
+          filters.apertureMax !== exifRangesData.aperture.max) count++;
+      if (filters.isoMin !== exifRangesData.iso.min ||
+          filters.isoMax !== exifRangesData.iso.max) count++;
+      if (filters.focalMin !== exifRangesData.focalLength.min ||
+          filters.focalMax !== exifRangesData.focalLength.max) count++;
+
+      const badge = document.getElementById('filter-count');
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // Update photo count display
+    function updatePhotoCount() {
+      document.getElementById('visible-count').textContent =
+        Math.min(displayedPhotos.length, filteredPhotos.length);
+      document.getElementById('total-count').textContent = filteredPhotos.length;
+    }
+
+    // Clear all filters
+    function clearAllFilters() {
+      // Uncheck all checkboxes
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+      // Reset date range
+      document.getElementById('date-min').value = exifRangesData.date.min.split('T')[0];
+      document.getElementById('date-max').value = exifRangesData.date.max.split('T')[0];
+
+      // Reset EXIF ranges
+      document.getElementById('aperture-min').value = exifRangesData.aperture.min;
+      document.getElementById('aperture-max').value = exifRangesData.aperture.max;
+      document.getElementById('aperture-min-value').textContent = `f/${exifRangesData.aperture.min}`;
+      document.getElementById('aperture-max-value').textContent = `f/${exifRangesData.aperture.max}`;
+
+      document.getElementById('iso-min').value = exifRangesData.iso.min;
+      document.getElementById('iso-max').value = exifRangesData.iso.max;
+      document.getElementById('iso-min-value').textContent = exifRangesData.iso.min;
+      document.getElementById('iso-max-value').textContent = exifRangesData.iso.max;
+
+      document.getElementById('focal-min').value = exifRangesData.focalLength.min;
+      document.getElementById('focal-max').value = exifRangesData.focalLength.max;
+      document.getElementById('focal-min-value').textContent = `${Math.round(exifRangesData.focalLength.min)}mm`;
+      document.getElementById('focal-max-value').textContent = `${Math.round(exifRangesData.focalLength.max)}mm`;
+
+      applyFilters();
+    }
+
+    // Initialize filter panel state - collapsed by default
+    const savedState = localStorage.getItem('filterPanelCollapsed');
+    const panelCollapsed = savedState !== null ? savedState === 'true' : true; // Default to collapsed
+
+    const filterPanel = document.getElementById('filter-panel');
+    if (panelCollapsed) {
+      filterPanel.classList.add('collapsed');
+    }
+
+    // Toggle filter panel
+    document.getElementById('toggle-filters').addEventListener('click', () => {
+      filterPanel.classList.toggle('collapsed');
+
+      // Save state to localStorage
+      localStorage.setItem('filterPanelCollapsed', filterPanel.classList.contains('collapsed'));
+    });
+
+    // Filter event listeners
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', applyFilters);
+    });
+
+    document.getElementById('date-min').addEventListener('change', applyFilters);
+    document.getElementById('date-max').addEventListener('change', applyFilters);
+
+    // Range slider event listeners with live updates
+    ['aperture', 'iso', 'focal'].forEach(type => {
+      const minSlider = document.getElementById(`${type}-min`);
+      const maxSlider = document.getElementById(`${type}-max`);
+      const minValue = document.getElementById(`${type}-min-value`);
+      const maxValue = document.getElementById(`${type}-max-value`);
+
+      let updateTimeout;
+
+      minSlider.addEventListener('input', () => {
+        const min = parseFloat(minSlider.value);
+        const max = parseFloat(maxSlider.value);
+
+        if (min > max) {
+          minSlider.value = max;
+        }
+
+        const prefix = type === 'aperture' ? 'f/' : '';
+        const suffix = type === 'focal' ? 'mm' : '';
+        minValue.textContent = `${prefix}${type === 'focal' ? Math.round(minSlider.value) : minSlider.value}${suffix}`;
+
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(applyFilters, 300);
+      });
+
+      maxSlider.addEventListener('input', () => {
+        const min = parseFloat(minSlider.value);
+        const max = parseFloat(maxSlider.value);
+
+        if (max < min) {
+          maxSlider.value = min;
+        }
+
+        const prefix = type === 'aperture' ? 'f/' : '';
+        const suffix = type === 'focal' ? 'mm' : '';
+        maxValue.textContent = `${prefix}${type === 'focal' ? Math.round(maxSlider.value) : maxSlider.value}${suffix}`;
+
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(applyFilters, 300);
+      });
+    });
+
+    // Clear filters button
+    document.getElementById('clear-filters').addEventListener('click', clearAllFilters);
+    document.getElementById('reset-filters').addEventListener('click', clearAllFilters);
+
+    // Initial load - ensure DOM is ready and layout is settled
+    requestAnimationFrame(() => {
+      loadNextBatch();
+    });
+  </script>
+
+  <style>
+    .photos-page {
+      max-width: 1800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      background: var(--cream);
+      padding: 2rem 1.5rem 1rem;
+      z-index: 50;
+      border-bottom: 1px solid rgba(28, 25, 23, 0.1);
+    }
+
+    .page-title {
+      font-family: 'Crimson Text', serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--charcoal);
+      margin: 0;
+      letter-spacing: -0.03em;
+    }
+
+    .page-subtitle {
+      font-size: 1.125rem;
+      color: var(--gray);
+      margin: 0;
+      font-weight: 400;
+    }
+
+    .toggle-filters-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--amber);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .toggle-filters-btn:hover {
+      background: var(--orange);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .filter-count {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--orange);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 12px;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .content-wrapper {
+      display: flex;
+      gap: 2rem;
+      align-items: start;
+      position: relative;
+    }
+
+    .filter-panel {
+      position: sticky;
+      top: 2rem;
+      background: var(--cream-dark);
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 4rem);
+      overflow-y: auto;
+      transition: transform 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+      border: 1px solid rgba(28, 25, 23, 0.1);
+      width: 320px;
+      flex-shrink: 0;
+    }
+
+    .filter-panel.collapsed {
+      transform: translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+      margin-left: -320px;
+      margin-right: -2rem;
+    }
+
+    .filter-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--amber);
+    }
+
+    .filter-panel-title {
+      font-family: 'Crimson Text', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--charcoal);
+      margin: 0;
+    }
+
+    .clear-filters-btn {
+      background: none;
+      border: none;
+      color: var(--amber);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .clear-filters-btn:hover {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--orange);
+    }
+
+    .filter-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .filter-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .filter-section-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--charcoal);
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .filter-checkboxes {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .filter-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: var(--charcoal);
+      transition: color 0.2s ease;
+    }
+
+    .filter-checkbox-label:hover {
+      color: var(--amber);
+    }
+
+    .filter-checkbox-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--amber);
+    }
+
+    .filter-range-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .filter-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .filter-input-group label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .filter-input-group input[type="date"] {
+      padding: 0.5rem;
+      border: 1px solid rgba(28, 25, 23, 0.2);
+      border-radius: 4px;
+      font-size: 0.875rem;
+      background: white;
+      color: var(--charcoal);
+    }
+
+    .filter-range-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .filter-range-slider {
+      position: relative;
+      height: 40px;
+    }
+
+    .filter-range-slider input[type="range"] {
+      position: absolute;
+      width: 100%;
+      height: 4px;
+      background: transparent;
+      pointer-events: none;
+      -webkit-appearance: none;
+    }
+
+    .filter-range-slider input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      pointer-events: all;
+      width: 16px;
+      height: 16px;
+      background: var(--amber);
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .filter-range-slider input[type="range"]::-moz-range-thumb {
+      pointer-events: all;
+      width: 16px;
+      height: 16px;
+      background: var(--amber);
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .filter-range-slider input[type="range"]:first-child {
+      z-index: 1;
+    }
+
+    .filter-range-slider::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(28, 25, 23, 0.2);
+      border-radius: 2px;
+    }
+
+    .filter-range-values {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--charcoal);
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    .photos-main {
+      min-height: 600px;
+      flex: 1;
+      width: 100%;
+    }
+
+    .photos-status {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--gray);
+      font-weight: 500;
+    }
+
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .photo-card {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--cream-dark);
+      cursor: crosshair;
+      position: relative;
+    }
+
+    .photo-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .photo-image {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      overflow: hidden;
+      background: var(--cream);
+      position: relative;
+    }
+
+    .photo-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .photo-card:hover .photo-image img {
+      transform: scale(1.05);
+    }
+
+    .viewfinder-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .photo-card:hover .viewfinder-overlay {
+      opacity: 1;
+    }
+
+    .viewfinder-corners {
+      width: 85%;
+      height: 85%;
+      color: rgba(255, 255, 255, 0.85);
+      animation: viewfinderFocus 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: color 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    :global(.viewfinder-corners.focus-locked) {
+      color: #f59e0b !important;
+      transform: scale(0.95);
+      opacity: 1 !important;
+    }
+
+    :global(.photo-card .viewfinder-overlay:has(.focus-locked)) {
+      opacity: 1 !important;
+    }
+
+    @keyframes viewfinderFocus {
+      from {
+        opacity: 0;
+        transform: scale(1.1);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .loading-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      gap: 1rem;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(28, 25, 23, 0.1);
+      border-top-color: var(--amber);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-indicator p {
+      color: var(--gray);
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    .no-results {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      text-align: center;
+      gap: 1.5rem;
+    }
+
+    .no-results p {
+      font-size: 1.125rem;
+      color: var(--gray);
+      margin: 0;
+    }
+
+    .reset-filters-btn {
+      padding: 0.75rem 1.5rem;
+      background: var(--amber);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .reset-filters-btn:hover {
+      background: var(--orange);
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 1024px) {
+      .content-wrapper {
+        flex-direction: column;
+      }
+
+      .filter-panel {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        max-height: 100vh;
+        border-radius: 0;
+        width: 320px;
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .filter-panel.collapsed {
+        transform: translateX(-100%);
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      .toggle-filters-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 100;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        padding: 0;
+        justify-content: center;
+      }
+
+      .toggle-filters-btn span:not(.filter-count) {
+        display: none;
+      }
+
+      .toggle-filters-btn svg {
+        margin: 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .page-title {
+        font-size: 2rem;
+      }
+
+      .page-subtitle {
+        font-size: 0.875rem;
+      }
+
+      .page-header {
+        padding: 1.5rem 1rem 1rem;
+      }
+
+      .photos-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .filter-panel {
+        width: 100%;
+        max-width: 320px;
+      }
+
+      .toggle-filters-btn {
+        width: 56px;
+        height: 56px;
+        bottom: 1.5rem;
+        right: 1.5rem;
+      }
+    }
+  </style>
+</PhotoLayout>

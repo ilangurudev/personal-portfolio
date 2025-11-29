@@ -33,7 +33,9 @@ const { title, description } = Astro.props;
           <a href="/">guru.dev<span class="cursor">_</span></a>
         </h1>
       </div>
-      <nav class="blog-nav">
+
+      <!-- Desktop Navigation -->
+      <nav class="blog-nav desktop-nav">
         <a href="/about" class="nav-link">
           <span class="nav-symbol">&gt;</span> about
         </a>
@@ -48,8 +50,48 @@ const { title, description } = Astro.props;
           <a href="/photography" class="toggle-link toggle-inactive">Personal</a>
         </div>
       </nav>
+
+      <!-- Mobile Hamburger -->
+      <button class="hamburger-btn" id="blog-hamburger-btn" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </header>
+
+  <!-- Mobile Menu Drawer -->
+  <div class="mobile-menu" id="blog-mobile-menu">
+    <div class="mobile-menu-overlay" id="blog-mobile-menu-overlay"></div>
+    <nav class="mobile-menu-content">
+      <div class="mobile-menu-header">
+        <h2>$ menu</h2>
+        <button class="mobile-menu-close" id="blog-mobile-menu-close" aria-label="Close menu">×</button>
+      </div>
+      <div class="mobile-menu-links">
+        <a href="/" class="mobile-menu-link">
+          <span class="nav-symbol">&gt;</span> home
+        </a>
+        <a href="/about" class="mobile-menu-link">
+          <span class="nav-symbol">&gt;</span> about
+        </a>
+        <a href="/projects" class="mobile-menu-link">
+          <span class="nav-symbol">&gt;</span> projects
+        </a>
+        <a href="/blog" class="mobile-menu-link">
+          <span class="nav-symbol">&gt;</span> blog
+        </a>
+      </div>
+      <div class="mobile-menu-divider"></div>
+      <div class="mobile-space-toggle">
+        <p class="mobile-space-label">SPACE</p>
+        <div class="space-toggle">
+          <span class="toggle-link toggle-active">Professional</span>
+          <a href="/photography" class="toggle-link toggle-inactive">Personal</a>
+        </div>
+      </div>
+    </nav>
+  </div>
 
   <main class="blog-main">
     <slot />
@@ -98,6 +140,41 @@ const { title, description } = Astro.props;
       }).observe(document.documentElement, {
         childList: true,
         subtree: true,
+      });
+
+      // Mobile menu functionality
+      const hamburgerBtn = document.getElementById('blog-hamburger-btn');
+      const mobileMenu = document.getElementById('blog-mobile-menu');
+      const mobileMenuClose = document.getElementById('blog-mobile-menu-close');
+      const mobileMenuOverlay = document.getElementById('blog-mobile-menu-overlay');
+
+      function openMobileMenu() {
+        mobileMenu.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeMobileMenu() {
+        mobileMenu.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', openMobileMenu);
+      }
+
+      if (mobileMenuClose) {
+        mobileMenuClose.addEventListener('click', closeMobileMenu);
+      }
+
+      if (mobileMenuOverlay) {
+        mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+      }
+
+      // Close menu on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && mobileMenu.classList.contains('active')) {
+          closeMobileMenu();
+        }
       });
     })();
   </script>
@@ -303,6 +380,185 @@ const { title, description } = Astro.props;
       color: var(--terminal-cyan);
     }
 
+    /* Hamburger Button */
+    .hamburger-btn {
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 28px;
+      height: 22px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      z-index: 101;
+    }
+
+    .hamburger-btn span {
+      display: block;
+      width: 100%;
+      height: 3px;
+      background: var(--terminal-green);
+      border-radius: 2px;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
+    }
+
+    .hamburger-btn:hover span {
+      background: var(--terminal-cyan);
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.8);
+    }
+
+    /* Mobile Menu */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 999;
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0.3s, opacity 0.3s;
+    }
+
+    .mobile-menu.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .mobile-menu-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(2, 6, 23, 0.9);
+      backdrop-filter: blur(4px);
+    }
+
+    .mobile-menu-content {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 280px;
+      height: 100%;
+      background: var(--slate-900);
+      border-left: 2px solid var(--terminal-cyan);
+      box-shadow: -8px 0 32px rgba(6, 182, 212, 0.2);
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem;
+    }
+
+    .mobile-menu.active .mobile-menu-content {
+      transform: translateX(0);
+    }
+
+    .mobile-menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--terminal-cyan);
+    }
+
+    .mobile-menu-header h2 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--terminal-green);
+      margin: 0;
+      text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+    }
+
+    .mobile-menu-close {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--terminal-cyan);
+      background: var(--slate-800);
+      color: var(--terminal-cyan);
+      font-size: 1.75rem;
+      font-weight: 300;
+      cursor: pointer;
+      border-radius: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .mobile-menu-close:hover {
+      background: var(--terminal-cyan);
+      color: var(--slate-950);
+      transform: rotate(90deg);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.8);
+    }
+
+    .mobile-menu-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .mobile-menu-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      color: var(--terminal-gray);
+      text-decoration: none;
+      font-size: 1rem;
+      font-weight: 400;
+      border-left: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .mobile-menu-link .nav-symbol {
+      color: var(--terminal-cyan);
+      transition: transform 0.2s ease;
+    }
+
+    .mobile-menu-link:hover {
+      background: var(--slate-800);
+      color: var(--terminal-green);
+      border-left-color: var(--terminal-green);
+      transform: translateX(4px);
+      box-shadow: inset 0 0 10px rgba(34, 197, 94, 0.1);
+    }
+
+    .mobile-menu-link:hover .nav-symbol {
+      transform: translateX(4px);
+      color: var(--terminal-yellow);
+    }
+
+    .mobile-menu-divider {
+      height: 1px;
+      background: var(--slate-800);
+      margin: 1.5rem 0;
+      box-shadow: 0 0 5px rgba(6, 182, 212, 0.3);
+    }
+
+    .mobile-space-toggle {
+      margin-top: auto;
+      padding-top: 1.5rem;
+    }
+
+    .mobile-space-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--terminal-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 0.75rem;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .blog-header {
@@ -310,30 +566,27 @@ const { title, description } = Astro.props;
       }
 
       .header-content {
-        flex-direction: column;
-        gap: 1.5rem;
-        align-items: flex-start;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
       }
 
       .site-title {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
       }
 
-      .blog-nav {
-        gap: 1.5rem;
-        flex-wrap: wrap;
+      .prompt-symbol {
+        font-size: 1.25rem;
       }
 
-      .nav-link {
-        font-size: 0.85rem;
+      /* Hide desktop nav, show hamburger */
+      .desktop-nav {
+        display: none;
       }
 
-      .space-toggle {
-        font-size: 0.65rem;
-      }
-
-      .toggle-link {
-        padding: 0.4rem 0.75rem;
+      .hamburger-btn {
+        display: flex;
       }
 
       .blog-main {
