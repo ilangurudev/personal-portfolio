@@ -45,8 +45,16 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
   }, []);
 
   // Filter photos based on active tags (AND logic - must have ALL active tags)
+  // If no tags are selected, show all photos
   const filteredPhotos = useMemo(() => {
-    if (activeTags.size === 0) return [];
+    if (activeTags.size === 0) {
+      // No filters active - show all photos
+      return allPhotos.sort((a, b) => {
+        const dateA = typeof a.data.date === 'string' ? new Date(a.data.date) : a.data.date;
+        const dateB = typeof b.data.date === 'string' ? new Date(b.data.date) : b.data.date;
+        return dateB.getTime() - dateA.getTime();
+      });
+    }
     
     return allPhotos.filter(photo => {
       const photoTags = (photo.data.tags || []).map(t => String(t).toLowerCase().trim());
