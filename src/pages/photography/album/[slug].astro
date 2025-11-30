@@ -2,10 +2,9 @@
 import PhotoLayout from '../../../layouts/PhotoLayout.astro';
 import { getCollection, getEntry } from 'astro:content';
 import { getAlbumPhotosWithExif } from '../../../utils/photo-helpers';
-import { getPhotoUrl } from '../../../utils/url-helper';
-import { Image } from 'astro:assets';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../../components/photo/PhotoIcons.astro';
+import { InfinitePhotoGallery } from '../../../components/react/InfinitePhotoGallery';
 
 export async function getStaticPaths() {
   const albums = await getCollection('albums');
@@ -20,6 +19,22 @@ const photos = await getAlbumPhotosWithExif(slug!);
 const sortedPhotos = photos.sort((a, b) => 
   b.data.date.getTime() - a.data.date.getTime()
 );
+
+// Map to serializable structure for client component
+const galleryPhotos = sortedPhotos.map(p => ({
+  id: p.id,
+  data: {
+    title: p.data.title,
+    filename: p.data.filename,
+    album: p.data.album,
+    tags: p.data.tags,
+    camera: p.data.camera,
+    settings: p.data.settings,
+    focalLength: p.data.focalLength,
+    location: p.data.location,
+    date: p.data.date.toISOString()
+  }
+}));
 ---
 
 <PhotoLayout title={album.data.title} description={album.data.description}>
@@ -41,30 +56,8 @@ const sortedPhotos = photos.sort((a, b) =>
       <p class="no-photos">No photos in this album yet.</p>
     ) : (
       <>
-        <div class="photos-grid">
-          {sortedPhotos.map((photo) => (
-            <div 
-              class="photo-card"
-              data-photo-id={photo.id}
-            >
-              <div class="photo-image">
-                <img 
-                  src={getPhotoUrl(photo.data.filename)} 
-                  alt={photo.data.title}
-                  loading="lazy"
-                />
-                <div class="viewfinder-overlay">
-                  <svg class="viewfinder-corners" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Minimal corner brackets -->
-                    <path d="M15 15 L15 25 L25 25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M85 15 L85 25 L75 25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M15 85 L15 75 L25 75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M85 85 L85 75 L75 75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div class="gallery-container" style="flex: 1;">
+          <InfinitePhotoGallery client:load photos={galleryPhotos} />
         </div>
         <PhotoLightbox photos={sortedPhotos.map(p => ({
           ...p,
@@ -79,13 +72,17 @@ const sortedPhotos = photos.sort((a, b) =>
       max-width: 1400px;
       margin: 0 auto;
       padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 0; /* Allow flex child to shrink */
     }
 
     .album-header {
       text-align: center;
-      margin-bottom: 4rem;
+      margin-bottom: 2rem; /* Reduced from 4rem to give more space to gallery */
       padding-bottom: 2rem;
       border-bottom: 1px solid rgba(28, 25, 23, 0.1);
+      flex-shrink: 0;
     }
 
     .album-title {
@@ -120,14 +117,15 @@ const sortedPhotos = photos.sort((a, b) =>
       padding: 4rem 2rem;
     }
 
-    .photos-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 2rem;
+    .gallery-container {
       margin-top: 2rem;
+      width: 100%;
+      flex: 1;
+      min-height: 0; /* Allow flex child to shrink */
     }
 
-    .photo-card {
+    /* Global styles for React-rendered Photo Cards */
+    :global(.photo-card) {
       display: flex;
       flex-direction: column;
       text-decoration: none;
@@ -137,34 +135,35 @@ const sortedPhotos = photos.sort((a, b) =>
       overflow: hidden;
       background: var(--cream-dark);
       cursor: crosshair;
-      position: relative;
+      position: absolute; /* React Window positions absolutely */
     }
 
-    .photo-card:hover {
+    :global(.photo-card:hover) {
       transform: translateY(-4px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      z-index: 10; /* Ensure hovered item is above */
     }
 
-    .photo-image {
+    :global(.photo-image) {
       width: 100%;
-      aspect-ratio: 3 / 2;
+      height: 100%;
       overflow: hidden;
       background: var(--cream);
       position: relative;
     }
 
-    .photo-image img {
+    :global(.photo-image img) {
       width: 100%;
       height: 100%;
       object-fit: cover;
       transition: transform 0.3s ease;
     }
 
-    .photo-card:hover .photo-image img {
+    :global(.photo-card:hover .photo-image img) {
       transform: scale(1.05);
     }
 
-    .viewfinder-overlay {
+    :global(.viewfinder-overlay) {
       position: absolute;
       top: 0;
       left: 0;
@@ -178,11 +177,11 @@ const sortedPhotos = photos.sort((a, b) =>
       transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .photo-card:hover .viewfinder-overlay {
+    :global(.photo-card:hover .viewfinder-overlay) {
       opacity: 1;
     }
 
-    .viewfinder-corners {
+    :global(.viewfinder-corners) {
       width: 85%;
       height: 85%;
       color: rgba(255, 255, 255, 0.85);
@@ -215,6 +214,10 @@ const sortedPhotos = photos.sort((a, b) =>
 
 
     @media (max-width: 768px) {
+      .album-page {
+        padding: 1.5rem 1rem;
+      }
+
       .album-title {
         font-size: 2.5rem;
       }
@@ -223,11 +226,9 @@ const sortedPhotos = photos.sort((a, b) =>
         font-size: 1.125rem;
       }
 
-      .photos-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
+      .gallery-container {
+        margin-top: 1.5rem;
       }
     }
   </style>
 </PhotoLayout>
-
