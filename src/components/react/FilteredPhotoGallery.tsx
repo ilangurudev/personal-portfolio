@@ -15,6 +15,7 @@ interface Photo {
     focalLength?: number;
     location?: string;
     date: string | Date;
+    position?: 'top' | 'middle' | 'bottom';
   };
 }
 

@@ -92,14 +92,15 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
     ) : (
       <>
         <div class="gallery-container">
-          <FilteredPhotoGallery 
+          <FilteredPhotoGallery
             client:load
             allPhotos={allPhotos.map(p => ({
               ...p,
               data: {
                 ...p.data,
                 albumTitle: albumTitleMap.get(p.data.album),
-                date: p.data.date.toISOString()
+                date: p.data.date.toISOString(),
+                position: p.data.position
               }
             }))}
             initialActiveTags={[decodedTag.toLowerCase()]}
@@ -126,7 +127,8 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
         camera: p.data.camera,
         settings: p.data.settings,
         focalLength: p.data.focalLength,
-        location: p.data.location
+        location: p.data.location,
+        position: p.data.position
       }
     }))
   }}></script>
@@ -316,6 +318,7 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center top;
       transition: transform 0.3s ease;
     }
 
