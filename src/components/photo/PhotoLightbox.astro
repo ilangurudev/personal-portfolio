@@ -497,8 +497,8 @@ const { photos, initialIndex = 0 } = Astro.props;
         if (photo.data.tags && Array.isArray(photo.data.tags) && photo.data.tags.length > 0) {
           const tagsHTML = photo.data.tags
             .map(tag => {
-              const encodedTag = encodeURIComponent(tag);
-              return `<span class="lightbox-tag" data-tag="${encodedTag}" style="display: inline-block; font-size: 0.75rem; color: rgba(255, 251, 245, 0.95); background: rgba(160, 160, 160, 0.6); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(255, 255, 255, 0.2); white-space: nowrap; opacity: 1; visibility: visible;">#${tag.toLowerCase()}</span>`;
+              const safeTag = (tag || '').replace(/"/g, '&quot;');
+              return `<span class="lightbox-tag" data-tag="${safeTag}" style="display: inline-block; font-size: 0.75rem; color: rgba(255, 251, 245, 0.95); background: rgba(160, 160, 160, 0.6); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(255, 255, 255, 0.2); white-space: nowrap; opacity: 1; visibility: visible;">#${(tag || '').toLowerCase()}</span>`;
             })
             .join('');
           this.tags.innerHTML = tagsHTML;
@@ -514,7 +514,8 @@ const { photos, initialIndex = 0 } = Astro.props;
                 e.preventDefault();
                 const tag = el.getAttribute('data-tag');
                 if (tag) {
-                  window.location.href = `/photography/tag/${tag}`;
+                  const tagUrl = `/photography/tag/${encodeURIComponent(tag)}`;
+                  window.location.href = tagUrl;
                 }
               });
               el.addEventListener('mouseenter', () => {
