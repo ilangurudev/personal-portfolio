@@ -107,6 +107,8 @@ const { photos, initialIndex = 0 } = Astro.props;
     private slideshowBtn: HTMLElement | null;
     private slideshowDropdown: HTMLElement | null;
     private isTransitioning: boolean = false;
+    private transitionTimeout: number | null = null;
+    private imageLoadTimeout: number | null = null;
 
     constructor(photos: Photo[]) {
       this.photos = photos;
@@ -264,7 +266,7 @@ const { photos, initialIndex = 0 } = Astro.props;
       
       this.currentIndex = index;
       this.isOpen = true;
-      this.updateImage();
+      this.isTransitioning = false;
       
       if (this.lightbox) {
         this.lightbox.style.display = 'flex';
@@ -277,6 +279,15 @@ const { photos, initialIndex = 0 } = Astro.props;
             this.shutterOverlay.style.animation = 'none';
             this.shutterOverlay.offsetHeight; // trigger reflow
             this.shutterOverlay.style.animation = 'shutterClick 0.3s ease-in-out';
+          }
+          
+          // Update image with fade-in for initial open
+          this.updateImage();
+          if (this.image) {
+            this.image.style.opacity = '0';
+            requestAnimationFrame(() => {
+              this.image!.style.opacity = '1';
+            });
           }
         });
       }
@@ -315,23 +326,103 @@ const { photos, initialIndex = 0 } = Astro.props;
     }
 
     public next() {
+      if (this.isTransitioning) return;
+      
       // Restart slideshow timer on manual navigation
       if (this.slideshowIntervalMs > 0) {
         this.stopSlideshow();
         this.startSlideshow();
       }
       const nextIndex = (this.currentIndex + 1) % this.photos.length;
-      this.open(nextIndex);
+      this.navigateTo(nextIndex);
     }
 
     public prev() {
+      if (this.isTransitioning) return;
+      
       // Restart slideshow timer on manual navigation
       if (this.slideshowIntervalMs > 0) {
         this.stopSlideshow();
         this.startSlideshow();
       }
       const prevIndex = (this.currentIndex - 1 + this.photos.length) % this.photos.length;
-      this.open(prevIndex);
+      this.navigateTo(prevIndex);
+    }
+
+    private navigateTo(index: number) {
+      if (index < 0 || index >= this.photos.length || index === this.currentIndex) return;
+      if (!this.isOpen || !this.image) return;
+      
+      // Clean up any pending transitions
+      if (this.transitionTimeout !== null) {
+        clearTimeout(this.transitionTimeout);
+        this.transitionTimeout = null;
+      }
+      if (this.imageLoadTimeout !== null) {
+        clearTimeout(this.imageLoadTimeout);
+        this.imageLoadTimeout = null;
+      }
+      // Remove previous event listeners
+      this.image.onload = null;
+      this.image.onerror = null;
+      
+      this.isTransitioning = true;
+      this.currentIndex = index;
+      
+      // Preload adjacent images for smooth navigation
+      this.preloadAdjacent();
+      
+      // Fade out current image
+      this.image.style.opacity = '0';
+      
+      // Wait for fade-out, then update and fade in
+      this.transitionTimeout = window.setTimeout(() => {
+        const photo = this.photos[this.currentIndex];
+        if (!photo || !this.image) return;
+        
+        // Update image source
+        this.image.src = photo.url;
+        this.image.alt = photo.data.title;
+        
+        // Update metadata
+        this.updateImageMetadata();
+        
+        // Wait for image to load before fading in (with timeout to prevent hanging)
+        const fadeInImage = () => {
+          requestAnimationFrame(() => {
+            if (this.image) {
+              this.image.style.opacity = '1';
+              // Reset transitioning flag after transition completes
+              setTimeout(() => {
+                this.isTransitioning = false;
+              }, 300);
+            }
+          });
+        };
+        
+        // If image is already loaded (cached), fade in immediately
+        if (this.image.complete && this.image.naturalWidth > 0) {
+          fadeInImage();
+        } else {
+          // Otherwise wait for load, but don't wait more than 200ms
+          this.imageLoadTimeout = window.setTimeout(fadeInImage, 200);
+          this.image.onload = () => {
+            if (this.imageLoadTimeout !== null) {
+              clearTimeout(this.imageLoadTimeout);
+              this.imageLoadTimeout = null;
+            }
+            fadeInImage();
+          };
+          // Handle load errors
+          this.image.onerror = () => {
+            if (this.imageLoadTimeout !== null) {
+              clearTimeout(this.imageLoadTimeout);
+              this.imageLoadTimeout = null;
+            }
+            fadeInImage(); // Still fade in even on error
+          };
+        }
+      }, 150);
     }
 
     private setSlideshowInterval(intervalMs: number) {
@@ -390,6 +481,14 @@ const { photos, initialIndex = 0 } = Astro.props;
       // Update current image
       this.image.src = photo.url;
       this.image.alt = photo.data.title;
+
+      // Update metadata
+      this.updateImageMetadata();
+    }
+
+    private updateImageMetadata() {
+      const photo = this.photos[this.currentIndex];
+      if (!photo) return;
 
       // Update tags
       if (this.tags) {
@@ -789,6 +888,8 @@ const { photos, initialIndex = 0 } = Astro.props;
     border-radius: 4px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
