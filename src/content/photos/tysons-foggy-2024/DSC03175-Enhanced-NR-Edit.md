@@ -9,5 +9,6 @@ location: ""
 camera: "SONY ILCE-7C"
 settings: "f/2.8, 1/400s, ISO 1250"
 focalLength: 50
+position: bottom
 ---
 

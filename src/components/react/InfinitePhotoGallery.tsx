@@ -111,7 +111,7 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
               loading="lazy"
               decoding="async"
               style={{
-                objectPosition: `center ${photo.data.position || 'top'}`
+                objectPosition: `center ${photo.data.position || 'middle'}`
               }}
             />
             <div className="viewfinder-overlay">
