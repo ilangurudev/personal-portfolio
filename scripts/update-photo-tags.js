@@ -93,7 +93,8 @@ async function processAlbum(albumSlug) {
     }
 
     // Extract tags from photo
-    const tags = await extractTags(photoPath);
+    const rawTags = await extractTags(photoPath);
+    const tags = rawTags.map(t => t.toLowerCase().replace(/\s+/g, '-'));
 
     if (tags.length === 0) {
       console.log(`  ⏭️  ${photoFile} - No tags found`);
