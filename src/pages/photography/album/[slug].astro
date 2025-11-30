@@ -66,13 +66,7 @@ const sortedPhotos = photos.sort((a, b) =>
             </div>
           ))}
         </div>
-        <PhotoLightbox photos={sortedPhotos.map(p => ({
-          ...p,
-          data: {
-            ...p.data,
-            albumTitle: album.data.title
-          }
-        }))} />
+        <PhotoLightbox photos={sortedPhotos} />
       </>
     )}
   </div>

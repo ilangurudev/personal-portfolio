@@ -3,7 +3,6 @@ import PhotoLayout from '../../../layouts/PhotoLayout.astro';
 import { getPhotosWithExif } from '../../../utils/photo-helpers';
 import { getPhotoUrl } from '../../../utils/url-helper';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
-import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
   const allPhotos = await getPhotosWithExif();
@@ -32,8 +31,6 @@ const { tag } = Astro.params;
 const decodedTag = decodeURIComponent(tag || '');
 
 const allPhotos = await getPhotosWithExif();
-const albums = await getCollection('albums');
-const albumTitleMap = new Map(albums.map(a => [a.slug, a.data.title]));
 
 // Get all unique tags for the filter pills
 const allTagsSet = new Set<string>();
@@ -116,13 +113,7 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
             </div>
           ))}
         </div>
-        <PhotoLightbox photos={sortedPhotos.map(p => ({
-          ...p,
-          data: {
-            ...p.data,
-            albumTitle: p.data.album ? albumTitleMap.get(p.data.album) : undefined
-          }
-        }))} />
+        <PhotoLightbox photos={sortedPhotos} />
       </>
     )}
   </div>
@@ -135,7 +126,6 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
         title: p.data.title,
         filename: p.data.filename,
         album: p.data.album,
-        albumTitle: p.data.album ? albumTitleMap.get(p.data.album) : undefined,
         tags: (p.data.tags || []).map(t => (t || '').trim()).filter(t => t),
         camera: p.data.camera,
         settings: p.data.settings,
