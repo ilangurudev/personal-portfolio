@@ -28,6 +28,8 @@ const photos = defineCollection({
     featured: z.boolean().default(false),
     /** Location description (from GPS or manual) */
     location: z.string().optional(),
+    /** Vertical crop position for grid thumbnails - top, middle, or bottom */
+    position: z.enum(['top', 'middle', 'bottom']).default('top'),
 
     // Technical fields (auto-filled from EXIF when using getPhotosWithExif(), frontmatter overrides)
     /** Photo date - extracted from EXIF DateTimeOriginal if not in frontmatter */
