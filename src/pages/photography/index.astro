@@ -42,10 +42,11 @@ const sortedPhotos = featuredPhotos.sort((a, b) =>
             data-photo-id={photo.id}
           >
             <div class="photo-image">
-              <img 
-                src={getPhotoUrl(photo.data.filename)} 
+              <img
+                src={getPhotoUrl(photo.data.filename)}
                 alt={photo.data.title}
                 loading="lazy"
+                style={`object-position: center ${photo.data.position || 'top'};`}
               />
               <div class="viewfinder-overlay">
                 <svg class="viewfinder-corners" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">

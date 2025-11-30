@@ -14,6 +14,7 @@ interface Photo {
     focalLength?: number;
     location?: string;
     date: string | Date;
+    position?: 'top' | 'middle' | 'bottom';
   };
 }
 
@@ -109,6 +110,9 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
               alt={photo.data.title}
               loading="lazy"
               decoding="async"
+              style={{
+                objectPosition: `center ${photo.data.position || 'top'}`
+              }}
             />
             <div className="viewfinder-overlay">
               <svg

@@ -32,7 +32,8 @@ const galleryPhotos = sortedPhotos.map(p => ({
     settings: p.data.settings,
     focalLength: p.data.focalLength,
     location: p.data.location,
-    date: p.data.date.toISOString()
+    date: p.data.date.toISOString(),
+    position: p.data.position
   }
 }));
 ---
