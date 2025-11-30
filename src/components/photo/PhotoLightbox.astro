@@ -33,10 +33,7 @@ const { photos, initialIndex = 0 } = Astro.props;
   <div class="lightbox-content">
     <button class="lightbox-nav lightbox-prev" aria-label="Previous photo">‹</button>
     <div class="lightbox-image-container">
-      <div class="lightbox-image-wrapper">
-        <img class="lightbox-image active" src="" alt="" />
-        <img class="lightbox-image" src="" alt="" />
-      </div>
+      <img class="lightbox-image" src="" alt="" />
       <div class="lightbox-info">
         <div class="lightbox-tags-and-album">
           <div class="lightbox-album"></div>
@@ -93,8 +90,7 @@ const { photos, initialIndex = 0 } = Astro.props;
 
   class PhotoLightbox {
     private lightbox: HTMLElement | null;
-    private images: NodeListOf<HTMLImageElement> | null;
-    private currentImageIndex: number = 0;
+    private image: HTMLImageElement | null;
     private tags: HTMLElement | null;
     private album: HTMLElement | null;
     private metadata: HTMLElement | null;
@@ -112,15 +108,14 @@ const { photos, initialIndex = 0 } = Astro.props;
     private slideshowIntervalMs: number = 0;
     private slideshowBtn: HTMLElement | null;
     private slideshowDropdown: HTMLElement | null;
-    private imageContainer: HTMLElement | null;
+    private transitionTimeout: number | null = null;
 
     constructor(photos: Photo[]) {
       this.photos = photos;
       this.currentIndex = 0;
       this.lightbox = document.getElementById('photo-lightbox');
       this.shutterOverlay = this.lightbox?.querySelector('.shutter-overlay') as HTMLElement;
-      this.imageContainer = this.lightbox?.querySelector('.lightbox-image-container') as HTMLElement;
-      this.images = this.lightbox?.querySelectorAll('.lightbox-image') || null;
+      this.image = this.lightbox?.querySelector('.lightbox-image') as HTMLImageElement;
       this.tags = this.lightbox?.querySelector('.lightbox-tags') as HTMLElement;
       this.album = this.lightbox?.querySelector('.lightbox-album') as HTMLElement;
       this.metadata = this.lightbox?.querySelector('.lightbox-metadata') as HTMLElement;
@@ -152,10 +147,11 @@ const { photos, initialIndex = 0 } = Astro.props;
       document.addEventListener('keydown', (e) => this.handleKeydown(e));
 
       // Touch navigation for swipe gestures
-      if (this.imageContainer) {
-        this.imageContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e as TouchEvent), { passive: true });
-        this.imageContainer.addEventListener('touchmove', (e) => this.handleTouchMove(e as TouchEvent), { passive: true });
-        this.imageContainer.addEventListener('touchend', (e) => this.handleTouchEnd(e as TouchEvent), { passive: true });
+      const imageContainer = this.lightbox.querySelector('.lightbox-image-container');
+      if (imageContainer) {
+        imageContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e as TouchEvent), { passive: true });
+        imageContainer.addEventListener('touchmove', (e) => this.handleTouchMove(e as TouchEvent), { passive: true });
+        imageContainer.addEventListener('touchend', (e) => this.handleTouchEnd(e as TouchEvent), { passive: true });
       }
 
       // Prevent body scroll when open
@@ -389,20 +385,18 @@ const { photos, initialIndex = 0 } = Astro.props;
 
     private updateImage(animate = true) {
       const photo = this.photos[this.currentIndex];
-      if (!photo || !this.images) return;
+      if (!photo || !this.image) return;
 
       // Preload next and previous images
       this.preloadAdjacent();
 
-      const activeImg = this.images[this.currentImageIndex];
-      const nextImgIndex = (this.currentImageIndex + 1) % 2;
-      const nextImg = this.images[nextImgIndex];
+      const updateContent = () => {
+        if (!this.image || !photo) return;
 
-      // Prepare next image
-      nextImg.src = photo.url;
-      nextImg.alt = photo.data.title;
+        // Update current image
+        this.image.src = photo.url;
+        this.image.alt = photo.data.title;
 
-      const updateMetadata = () => {
         // Update tags
         if (this.tags) {
           if (photo.data.tags && Array.isArray(photo.data.tags) && photo.data.tags.length > 0) {
@@ -541,27 +535,32 @@ const { photos, initialIndex = 0 } = Astro.props;
         }
       };
 
-      const completeTransition = () => {
-        nextImg.classList.add('active');
-        activeImg.classList.remove('active');
-        this.currentImageIndex = nextImgIndex;
-        updateMetadata();
-      };
-
-      if (!animate) {
-        completeTransition();
-        return;
+      if (this.transitionTimeout) {
+        clearTimeout(this.transitionTimeout);
+        this.transitionTimeout = null;
       }
 
-      // Load new image then fade
-      if (nextImg.complete) {
-        completeTransition();
+      if (animate) {
+        this.image.classList.add('changing');
+        this.transitionTimeout = window.setTimeout(() => {
+          updateContent();
+          
+          const onImageLoad = () => {
+            this.image?.classList.remove('changing');
+            this.image?.removeEventListener('load', onImageLoad);
+          };
+          
+          if (this.image) {
+            this.image.addEventListener('load', onImageLoad);
+            if (this.image.complete) {
+              onImageLoad();
+            }
+          }
+          this.transitionTimeout = null;
+        }, 300);
       } else {
-        const onLoad = () => {
-          completeTransition();
-          nextImg.removeEventListener('load', onLoad);
-        };
-        nextImg.addEventListener('load', onLoad);
+        this.image.classList.remove('changing');
+        updateContent();
       }
     }
 
@@ -817,43 +816,35 @@ const { photos, initialIndex = 0 } = Astro.props;
     gap: 0;
   }
 
-  .lightbox-image-wrapper {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
-    width: 100%;
-    flex: 1;
-    min-height: 0;
-    justify-items: center;
-    align-items: center;
-  }
-
   .lightbox-image {
-    grid-column: 1;
-    grid-row: 1;
     max-width: 100%;
-    max-height: 100%;
+    max-height: calc(100vh - 140px);
     width: auto;
     height: auto;
     object-fit: contain;
     border-radius: 4px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    transition: opacity 1.2s ease;
+    animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.3s ease, transform 0.3s ease;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
   }
 
-  .lightbox-image.active {
-    opacity: 1;
-    z-index: 2;
+  .lightbox-image.changing {
+    opacity: 0;
+    transform: scale(0.96);
   }
 
-  /* Remove unused animations */
   @keyframes fadeInScale {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   .lightbox-info {

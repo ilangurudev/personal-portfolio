@@ -1,5 +1,5 @@
 ---
-title: "Assateague 2024"
+title: "Assateague - 2024"
 description: "A collection of photography in Assateague Island"
 coverPhoto: "assateague-2024-06/DSC05683.jpg"
 date: 2024-06-15
