@@ -4,6 +4,7 @@ import { getPhotosWithExif } from '../../../utils/photo-helpers';
 import { getPhotoUrl } from '../../../utils/url-helper';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
 import { getCollection } from 'astro:content';
+import { FilteredPhotoGallery } from '../../../components/react/FilteredPhotoGallery';
 
 export async function getStaticPaths() {
   const allPhotos = await getPhotosWithExif();
@@ -90,32 +91,18 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       <p class="no-photos">No photos found with this tag.</p>
     ) : (
       <>
-        <div class="photos-grid" id="photos-grid">
-          {allPhotos.sort((a, b) => b.data.date.getTime() - a.data.date.getTime()).map((photo) => (
-            <div
-              class="photo-card"
-              data-photo-id={photo.id}
-              data-tags={photo.data.tags.map(t => t.toLowerCase()).join(',')}
-              style={photo.data.tags.some(t => t.toLowerCase() === decodedTag.toLowerCase()) ? '' : 'display: none;'}
-            >
-              <div class="photo-image">
-                <img 
-                  src={getPhotoUrl(photo.data.filename)} 
-                  alt={photo.data.title}
-                  loading="lazy"
-                />
-                <div class="viewfinder-overlay">
-                  <svg class="viewfinder-corners" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Minimal corner brackets -->
-                    <path d="M15 15 L15 25 L25 25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M85 15 L85 25 L75 25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M15 85 L15 75 L25 75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M85 85 L85 75 L75 75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div class="gallery-container" style="display: flex; flex-direction: column; height: calc(100vh - 400px); min-height: 600px; max-height: calc(100vh - 400px);">
+          <FilteredPhotoGallery 
+            client:only="react"
+            allPhotos={allPhotos.map(p => ({
+              ...p,
+              data: {
+                ...p.data,
+                date: p.data.date.toISOString()
+              }
+            }))}
+            initialActiveTags={[decodedTag.toLowerCase()]}
+          />
         </div>
         <PhotoLightbox photos={sortedPhotos.map(p => ({
           ...p,
@@ -286,14 +273,12 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       padding: 4rem 2rem;
     }
 
-    .photos-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 2rem;
+    .gallery-container {
       margin-top: 2rem;
     }
 
-    .photo-card {
+    /* Global styles for React-rendered Photo Cards */
+    :global(.photo-card) {
       display: flex;
       flex-direction: column;
       text-decoration: none;
@@ -302,33 +287,36 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       border-radius: 4px;
       overflow: hidden;
       background: var(--cream-dark);
-      cursor: pointer;
+      cursor: crosshair;
+      position: absolute; /* React Window positions absolutely */
     }
 
-    .photo-card:hover {
+    :global(.photo-card:hover) {
       transform: translateY(-4px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      z-index: 10; /* Ensure hovered item is above */
     }
 
-    .photo-image {
+    :global(.photo-image) {
       width: 100%;
-      aspect-ratio: 3 / 2;
+      height: 100%;
       overflow: hidden;
       background: var(--cream);
+      position: relative;
     }
 
-    .photo-image img {
+    :global(.photo-image img) {
       width: 100%;
       height: 100%;
       object-fit: cover;
       transition: transform 0.3s ease;
     }
 
-    .photo-card:hover .photo-image img {
+    :global(.photo-card:hover .photo-image img) {
       transform: scale(1.05);
     }
 
-    .viewfinder-overlay {
+    :global(.viewfinder-overlay) {
       position: absolute;
       top: 0;
       left: 0;
@@ -342,11 +330,11 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .photo-card:hover .viewfinder-overlay {
+    :global(.photo-card:hover .viewfinder-overlay) {
       opacity: 1;
     }
 
-    .viewfinder-corners {
+    :global(.viewfinder-corners) {
       width: 85%;
       height: 85%;
       color: rgba(255, 255, 255, 0.85);
@@ -395,18 +383,12 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
         padding: 0.4rem 0.8rem;
       }
 
-      .photos-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
     }
   </style>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const tagPills = document.querySelectorAll('.tag-pill');
-      const photosGrid = document.getElementById('photos-grid');
-      const photoCards = document.querySelectorAll('.photo-card');
       const photoCount = document.getElementById('photo-count');
       const clearFiltersBtn = document.getElementById('clear-filters');
       const filterToggle = document.getElementById('filter-toggle');
@@ -415,28 +397,19 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       const initialTag = document.querySelector('.tag-pill.active')?.getAttribute('data-tag');
       const initialTitle = tagTitle?.textContent || '';
 
-      // Track active tags
-      let activeTags = new Set(initialTag ? [initialTag] : []);
-
-      // Update lightbox when filters change
-      function updateLightboxPhotos() {
-        if (!window.photoLightbox) return;
+      // Track active tags - will be managed by React component
+      // This script just handles UI updates for tag pills and title
+      
+      // Update lightbox when filters change - will be called by React component
+      (window as any).updateLightboxFromFilter = function(filteredPhotos: any[]) {
+        if (!(window as any).photoLightbox) return;
+        (window as any).photoLightbox.updatePhotos(filteredPhotos);
         
-        // Get all visible photo cards
-        const visibleCards = Array.from(document.querySelectorAll('.photo-card'))
-          .filter(card => card.style.display !== 'none');
-        
-        // Get photo IDs from visible cards
-        const visiblePhotoIds = visibleCards.map(card => card.getAttribute('data-photo-id'));
-        
-        // Filter photos data to only include visible photos
-        const visiblePhotos = allPhotosData.filter(photo => 
-          visiblePhotoIds.includes(photo.id)
-        );
-        
-        // Update lightbox with visible photos
-        window.photoLightbox.updatePhotos(visiblePhotos);
-      }
+        // Update count
+        if (photoCount) {
+          photoCount.textContent = `${filteredPhotos.length} ${filteredPhotos.length === 1 ? 'photo' : 'photos'}`;
+        }
+      };
 
       // Toggle filter bar
       filterToggle?.addEventListener('click', () => {
@@ -444,65 +417,51 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
         tagPillsContainer?.classList.toggle('expanded');
       });
 
-      function updatePhotos() {
-        let visibleCount = 0;
-
-        photoCards.forEach(card => {
-          const cardTags = (card.getAttribute('data-tags') || '').split(',');
-          // Show photo if it has ALL active tags (AND logic)
-          const hasAllTags = Array.from(activeTags).every(tag => cardTags.includes(tag));
-
-          if (hasAllTags && activeTags.size > 0) {
-            card.style.display = '';
-            visibleCount++;
-          } else {
-            card.style.display = 'none';
-          }
-        });
-
-        // Update count
-        if (photoCount) {
-          photoCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'photo' : 'photos'}`;
-        }
-
-        // Update title based on selected tags
-        if (tagTitle) {
-          if (activeTags.size > 1) {
-            const sortedTags = Array.from(activeTags).sort();
-            tagTitle.textContent = sortedTags.map(t => `#${t}`).join(' + ');
-          } else if (activeTags.size === 1) {
-            tagTitle.textContent = `#${Array.from(activeTags)[0]}`;
-          } else {
-            tagTitle.textContent = initialTitle;
-          }
-        }
-
-        // Show/hide clear filters button
-        if (clearFiltersBtn) {
-          clearFiltersBtn.style.display = activeTags.size > 1 ? 'block' : 'none';
-        }
-
-        // Update lightbox with visible photos
-        updateLightboxPhotos();
-      }
-
-      // Tag pill click handler
+      // Tag pill click handler - will trigger React component update
       tagPills.forEach(pill => {
         pill.addEventListener('click', () => {
           const tag = pill.getAttribute('data-tag');
+          const isActive = pill.classList.contains('active');
 
-          if (activeTags.has(tag)) {
+          if (isActive) {
             // Prevent removing the last tag
-            if (activeTags.size > 1) {
-              activeTags.delete(tag);
+            const activeCount = document.querySelectorAll('.tag-pill.active').length;
+            if (activeCount > 1) {
               pill.classList.remove('active');
+              // Trigger React component update via custom event
+              window.dispatchEvent(new CustomEvent('tagFilterChange', { 
+                detail: { 
+                  activeTags: Array.from(document.querySelectorAll('.tag-pill.active')).map(p => p.getAttribute('data-tag'))
+                } 
+              }));
             }
           } else {
-            activeTags.add(tag);
             pill.classList.add('active');
+            // Trigger React component update via custom event
+            window.dispatchEvent(new CustomEvent('tagFilterChange', { 
+              detail: { 
+                activeTags: Array.from(document.querySelectorAll('.tag-pill.active')).map(p => p.getAttribute('data-tag'))
+              } 
+            }));
           }
 
-          updatePhotos();
+          // Update title based on selected tags
+          const activeTags = Array.from(document.querySelectorAll('.tag-pill.active')).map(p => p.getAttribute('data-tag'));
+          if (tagTitle) {
+            if (activeTags.length > 1) {
+              const sortedTags = activeTags.sort();
+              tagTitle.textContent = sortedTags.map(t => `#${t}`).join(' + ');
+            } else if (activeTags.length === 1) {
+              tagTitle.textContent = `#${activeTags[0]}`;
+            } else {
+              tagTitle.textContent = initialTitle;
+            }
+          }
+
+          // Show/hide clear filters button
+          if (clearFiltersBtn) {
+            clearFiltersBtn.style.display = activeTags.length > 1 ? 'block' : 'none';
+          }
         });
       });
 
@@ -510,8 +469,6 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', () => {
           // Reset to initial tag only
-          activeTags = new Set(initialTag ? [initialTag] : []);
-
           tagPills.forEach(pill => {
             const tag = pill.getAttribute('data-tag');
             if (tag === initialTag) {
@@ -521,12 +478,19 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
             }
           });
 
-          updatePhotos();
+          // Trigger React component update
+          window.dispatchEvent(new CustomEvent('tagFilterChange', { 
+            detail: { 
+              activeTags: initialTag ? [initialTag] : []
+            } 
+          }));
+
+          if (tagTitle) {
+            tagTitle.textContent = initialTitle;
+          }
+          clearFiltersBtn.style.display = 'none';
         });
       }
-
-      // Initial update
-      updatePhotos();
     });
   </script>
 </PhotoLayout>

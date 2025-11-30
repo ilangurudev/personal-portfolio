@@ -19,10 +19,15 @@
     "sync_keywords": "node scripts/sync-keywords.js"
   },
   "dependencies": {
+    "@astrojs/react": "^4.4.2",
     "@aws-sdk/client-s3": "^3.940.0",
     "@tailwindcss/vite": "^4.1.17",
     "astro": "^5.16.2",
     "dotenv": "^17.2.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-virtualized-auto-sizer": "^1.0.26",
+    "react-window": "^2.2.3",
     "tailwindcss": "^4.1.17"
   },
   "devDependencies": {
