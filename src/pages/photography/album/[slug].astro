@@ -4,7 +4,7 @@ import { getCollection, getEntry } from 'astro:content';
 import { getAlbumPhotosWithExif } from '../../../utils/photo-helpers';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../../components/photo/PhotoIcons.astro';
-import { PhotoGallery } from '../../../components/react/PhotoGallery';
+import { InfinitePhotoGallery } from '../../../components/react/InfinitePhotoGallery';
 
 export async function getStaticPaths() {
   const albums = await getCollection('albums');
@@ -20,10 +20,18 @@ const sortedPhotos = photos.sort((a, b) =>
   b.data.date.getTime() - a.data.date.getTime()
 );
 
+// Map to serializable structure for client component
 const galleryPhotos = sortedPhotos.map(p => ({
-  ...p,
+  id: p.id,
   data: {
-    ...p.data,
+    title: p.data.title,
+    filename: p.data.filename,
+    album: p.data.album,
+    tags: p.data.tags,
+    camera: p.data.camera,
+    settings: p.data.settings,
+    focalLength: p.data.focalLength,
+    location: p.data.location,
     date: p.data.date.toISOString()
   }
 }));
@@ -48,8 +56,8 @@ const galleryPhotos = sortedPhotos.map(p => ({
       <p class="no-photos">No photos in this album yet.</p>
     ) : (
       <>
-        <div class="gallery-container" style="height: calc(100vh - 400px); min-height: 600px; flex: 1;">
-          <PhotoGallery client:load photos={galleryPhotos} />
+        <div class="gallery-container" style="flex: 1;">
+          <InfinitePhotoGallery client:load photos={galleryPhotos} />
         </div>
         <PhotoLightbox photos={sortedPhotos.map(p => ({
           ...p,
@@ -112,6 +120,8 @@ const galleryPhotos = sortedPhotos.map(p => ({
 
     .gallery-container {
       margin-top: 2rem;
+      width: 100%;
+      min-height: 400px;
     }
 
     /* Global styles for React-rendered Photo Cards */

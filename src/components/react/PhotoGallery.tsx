@@ -31,6 +31,17 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos }) => {
     return <div>No photos to display</div>;
   }
 
+  // Ensure photos is an array and has valid structure
+  if (!Array.isArray(photos)) {
+    return <div>Invalid photos data</div>;
+  }
+  
+  // Validate photo structure
+  const validPhotos = photos.filter(p => p && p.id && p.data && p.data.filename);
+  if (validPhotos.length === 0) {
+    return <div>No valid photos to display</div>;
+  }
+
   return (
     <div style={{ width: '100%', height: '100%', minHeight: '600px', position: 'relative', overflow: 'hidden' }}> 
       <AutoSizer>
@@ -44,29 +55,37 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos }) => {
 
           const itemWidth = (availableWidth - (columnCount - 1) * GAP) / columnCount;
           const itemHeight = itemWidth / (3 / 2); // Aspect ratio 3:2
-          const rowCount = Math.ceil(photos.length / columnCount);
+          const rowCount = Math.ceil(validPhotos.length / columnCount);
 
           return (
             <Grid
               columnCount={columnCount}
-              columnWidth={itemWidth + GAP}
+              columnWidth={() => itemWidth + GAP}
               height={height}
               rowCount={rowCount}
-              rowHeight={itemHeight + GAP}
+              rowHeight={() => itemHeight + GAP}
               width={width}
               overscanRowCount={2}
               overscanColumnCount={2}
               style={{ overflowX: 'hidden' }}
             >
-              {({ columnIndex, rowIndex, style }: any) => {
+              {({ columnIndex, rowIndex, style }) => {
+                if (!style) {
+                  return null;
+                }
+                
                 const index = rowIndex * columnCount + columnIndex;
                 
                 // If we're at a spot with no photo (last row might be incomplete), render nothing
-                if (index >= photos.length) {
+                if (index >= validPhotos.length || !validPhotos[index]) {
                   return null;
                 }
 
-                const photo = photos[index];
+                const photo = validPhotos[index];
+                
+                if (!photo || !photo.data || !photo.data.filename) {
+                  return null;
+                }
 
                 // Adjust style for gap
                 const itemStyle = {
@@ -84,7 +103,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos }) => {
                     <div className="photo-image">
                       <img
                         src={photo.data.filename.startsWith('/') ? `/photos${photo.data.filename}` : `/photos/${photo.data.filename}`}
-                        alt={photo.data.title}
+                        alt={photo.data.title || 'Photo'}
                         loading="lazy"
                         decoding="async"
                       />
