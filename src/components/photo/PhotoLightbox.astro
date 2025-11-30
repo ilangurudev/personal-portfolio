@@ -109,12 +109,14 @@ const { photos, initialIndex = 0 } = Astro.props;
     private slideshowBtn: HTMLElement | null;
     private slideshowDropdown: HTMLElement | null;
     private transitionTimeout: number | null = null;
+    private imageContainer: HTMLElement | null;
 
     constructor(photos: Photo[]) {
       this.photos = photos;
       this.currentIndex = 0;
       this.lightbox = document.getElementById('photo-lightbox');
       this.shutterOverlay = this.lightbox?.querySelector('.shutter-overlay') as HTMLElement;
+      this.imageContainer = this.lightbox?.querySelector('.lightbox-image-container') as HTMLElement;
       this.image = this.lightbox?.querySelector('.lightbox-image') as HTMLImageElement;
       this.tags = this.lightbox?.querySelector('.lightbox-tags') as HTMLElement;
       this.album = this.lightbox?.querySelector('.lightbox-album') as HTMLElement;
@@ -147,11 +149,10 @@ const { photos, initialIndex = 0 } = Astro.props;
       document.addEventListener('keydown', (e) => this.handleKeydown(e));
 
       // Touch navigation for swipe gestures
-      const imageContainer = this.lightbox.querySelector('.lightbox-image-container');
-      if (imageContainer) {
-        imageContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e as TouchEvent), { passive: true });
-        imageContainer.addEventListener('touchmove', (e) => this.handleTouchMove(e as TouchEvent), { passive: true });
-        imageContainer.addEventListener('touchend', (e) => this.handleTouchEnd(e as TouchEvent), { passive: true });
+      if (this.imageContainer) {
+        this.imageContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e as TouchEvent), { passive: true });
+        this.imageContainer.addEventListener('touchmove', (e) => this.handleTouchMove(e as TouchEvent), { passive: true });
+        this.imageContainer.addEventListener('touchend', (e) => this.handleTouchEnd(e as TouchEvent), { passive: true });
       }
 
       // Prevent body scroll when open
@@ -540,13 +541,16 @@ const { photos, initialIndex = 0 } = Astro.props;
         this.transitionTimeout = null;
       }
 
-      if (animate) {
-        this.image.classList.add('changing');
+      if (animate && this.imageContainer) {
+        this.imageContainer.classList.add('changing');
         this.transitionTimeout = window.setTimeout(() => {
           updateContent();
           
           const onImageLoad = () => {
-            this.image?.classList.remove('changing');
+             // Small delay to ensure the browser paints the new image before fading in
+             requestAnimationFrame(() => {
+               this.imageContainer?.classList.remove('changing');
+             });
             this.image?.removeEventListener('load', onImageLoad);
           };
           
@@ -559,7 +563,7 @@ const { photos, initialIndex = 0 } = Astro.props;
           this.transitionTimeout = null;
         }, 300);
       } else {
-        this.image.classList.remove('changing');
+        this.imageContainer?.classList.remove('changing');
         updateContent();
       }
     }
@@ -814,6 +818,12 @@ const { photos, initialIndex = 0 } = Astro.props;
     align-items: center;
     justify-content: center;
     gap: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+
+  .lightbox-image-container.changing {
+    opacity: 0;
+    transform: scale(0.96);
   }
 
   .lightbox-image {
@@ -825,16 +835,12 @@ const { photos, initialIndex = 0 } = Astro.props;
     border-radius: 4px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    transition: opacity 0.3s ease, transform 0.3s ease;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
   }
 
-  .lightbox-image.changing {
-    opacity: 0;
-    transform: scale(0.96);
-  }
+  /* Removed .lightbox-image.changing as it's now on the container */
 
   @keyframes fadeInScale {
     from {
