@@ -108,6 +108,7 @@ const { photos, initialIndex = 0 } = Astro.props;
     private slideshowIntervalMs: number = 0;
     private slideshowBtn: HTMLElement | null;
     private slideshowDropdown: HTMLElement | null;
+    private transitionTimeout: number | null = null;
 
     constructor(photos: Photo[]) {
       this.photos = photos;
@@ -148,9 +149,9 @@ const { photos, initialIndex = 0 } = Astro.props;
       // Touch navigation for swipe gestures
       const imageContainer = this.lightbox.querySelector('.lightbox-image-container');
       if (imageContainer) {
-        imageContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
-        imageContainer.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: true });
-        imageContainer.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
+        imageContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e as TouchEvent), { passive: true });
+        imageContainer.addEventListener('touchmove', (e) => this.handleTouchMove(e as TouchEvent), { passive: true });
+        imageContainer.addEventListener('touchend', (e) => this.handleTouchEnd(e as TouchEvent), { passive: true });
       }
 
       // Prevent body scroll when open
@@ -264,8 +265,9 @@ const { photos, initialIndex = 0 } = Astro.props;
       if (index < 0 || index >= this.photos.length) return;
       
       this.currentIndex = index;
+      const wasOpen = this.isOpen;
       this.isOpen = true;
-      this.updateImage();
+      this.updateImage(wasOpen);
       
       if (this.lightbox) {
         this.lightbox.style.display = 'flex';
@@ -381,152 +383,184 @@ const { photos, initialIndex = 0 } = Astro.props;
       }
     }
 
-    private updateImage() {
+    private updateImage(animate = true) {
       const photo = this.photos[this.currentIndex];
       if (!photo || !this.image) return;
 
       // Preload next and previous images
       this.preloadAdjacent();
 
-      // Update current image
-      this.image.src = photo.url;
-      this.image.alt = photo.data.title;
+      const updateContent = () => {
+        if (!this.image || !photo) return;
 
-      // Update tags
-      if (this.tags) {
-        if (photo.data.tags && Array.isArray(photo.data.tags) && photo.data.tags.length > 0) {
-          const tagsHTML = photo.data.tags
-            .map(tag => {
-              const encodedTag = encodeURIComponent(tag);
-              return `<span class="lightbox-tag" data-tag="${encodedTag}" style="display: inline-block; font-size: 0.75rem; color: rgba(255, 251, 245, 0.95); background: rgba(160, 160, 160, 0.6); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(255, 255, 255, 0.2); white-space: nowrap; opacity: 1; visibility: visible;">#${tag.toLowerCase()}</span>`;
-            })
-            .join('');
-          this.tags.innerHTML = tagsHTML;
-          this.tags.style.display = 'flex';
-          this.tags.style.visibility = 'visible';
-          
-          // Add click handlers to tags
-          setTimeout(() => {
-            this.tags?.querySelectorAll('.lightbox-tag').forEach(tagEl => {
-              const el = tagEl as HTMLElement;
-              el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const tag = el.getAttribute('data-tag');
-                if (tag) {
-                  window.location.href = `/photography/tag/${tag}`;
-                }
-              });
-              el.addEventListener('mouseenter', () => {
-                el.style.background = 'rgba(180, 180, 180, 0.8)';
-                el.style.color = 'rgba(255, 251, 245, 1)';
-                el.style.transform = 'translateY(-1px)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-              });
-              el.addEventListener('mouseleave', () => {
-                el.style.background = 'rgba(160, 160, 160, 0.6)';
-                el.style.color = 'rgba(255, 251, 245, 0.95)';
-                el.style.transform = 'translateY(0)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-              });
-            });
-          }, 0);
-        } else {
-          this.tags.style.display = 'none';
-          this.tags.style.visibility = 'hidden';
-        }
-      }
+        // Update current image
+        this.image.src = photo.url;
+        this.image.alt = photo.data.title;
 
-      // Update album
-      if (this.album) {
-        if (photo.data.album && photo.data.album.trim()) {
-          const folderIcon = this.getIconSVG('icon-folder');
-          const albumSlug = photo.data.album;
-          // Use provided album title or fallback to formatted slug
-          const albumDisplay = photo.data.albumTitle || albumSlug.split('-').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-          ).join(' ');
-          
-          this.album.innerHTML = `<span class="lightbox-album-link" data-album="${albumSlug}" style="display: inline-flex; align-items: center; font-size: 0.75rem; color: rgba(255, 251, 245, 0.95); background: rgba(160, 160, 160, 0.6); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(255, 255, 255, 0.2); white-space: nowrap; opacity: 1; visibility: visible; gap: 0.375rem;">${folderIcon}<span>${albumDisplay}</span></span>`;
-          this.album.style.display = 'flex';
-          this.album.style.visibility = 'visible';
-          
-          // Add click handler to album
-          setTimeout(() => {
-            const albumLink = this.album?.querySelector('.lightbox-album-link');
-            if (albumLink) {
-              const el = albumLink as HTMLElement;
-              el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const album = el.getAttribute('data-album');
-                if (album) {
-                  window.location.href = `/photography/album/${album}`;
-                }
+        // Update tags
+        if (this.tags) {
+          if (photo.data.tags && Array.isArray(photo.data.tags) && photo.data.tags.length > 0) {
+            const tagsHTML = photo.data.tags
+              .map(tag => {
+                const encodedTag = encodeURIComponent(tag);
+                return `<span class="lightbox-tag" data-tag="${encodedTag}" style="display: inline-block; font-size: 0.75rem; color: rgba(255, 251, 245, 0.95); background: rgba(160, 160, 160, 0.6); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(255, 255, 255, 0.2); white-space: nowrap; opacity: 1; visibility: visible;">#${tag.toLowerCase()}</span>`;
+              })
+              .join('');
+            this.tags.innerHTML = tagsHTML;
+            this.tags.style.display = 'flex';
+            this.tags.style.visibility = 'visible';
+            
+            // Add click handlers to tags
+            setTimeout(() => {
+              this.tags?.querySelectorAll('.lightbox-tag').forEach(tagEl => {
+                const el = tagEl as HTMLElement;
+                el.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const tag = el.getAttribute('data-tag');
+                  if (tag) {
+                    window.location.href = `/photography/tag/${tag}`;
+                  }
+                });
+                el.addEventListener('mouseenter', () => {
+                  el.style.background = 'rgba(180, 180, 180, 0.8)';
+                  el.style.color = 'rgba(255, 251, 245, 1)';
+                  el.style.transform = 'translateY(-1px)';
+                  el.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                });
+                el.addEventListener('mouseleave', () => {
+                  el.style.background = 'rgba(160, 160, 160, 0.6)';
+                  el.style.color = 'rgba(255, 251, 245, 0.95)';
+                  el.style.transform = 'translateY(0)';
+                  el.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                });
               });
-              el.addEventListener('mouseenter', () => {
-                el.style.background = 'rgba(180, 180, 180, 0.8)';
-                el.style.color = 'rgba(255, 251, 245, 1)';
-                el.style.transform = 'translateY(-1px)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-              });
-              el.addEventListener('mouseleave', () => {
-                el.style.background = 'rgba(160, 160, 160, 0.6)';
-                el.style.color = 'rgba(255, 251, 245, 0.95)';
-                el.style.transform = 'translateY(0)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-              });
-            }
-          }, 0);
-        } else {
-          this.album.style.display = 'none';
-          this.album.style.visibility = 'hidden';
-        }
-      }
-
-      // Update metadata
-      if (this.metadata) {
-        const metadataItems: string[] = [];
-        
-        if (photo.data.camera) {
-          const cameraIcon = this.getIconSVG('icon-camera');
-          metadataItems.push(`<div class="lightbox-metadata-item">${cameraIcon}<span>${photo.data.camera}</span></div>`);
-        }
-        
-        if (photo.data.settings) {
-          // Parse settings to extract f-stop, shutter, ISO if possible
-          const settingsIcon = this.getIconSVG('icon-aperture');
-          metadataItems.push(`<div class="lightbox-metadata-item">${settingsIcon}<span>${photo.data.settings}</span></div>`);
-        }
-
-        const focalLengthDisplay = this.getRoundedFocalLength(photo.data.focalLength);
-        if (focalLengthDisplay) {
-          const focalIcon = this.getIconSVG('icon-focal');
-          metadataItems.push(`<div class="lightbox-metadata-item">${focalIcon}<span>${focalLengthDisplay}</span></div>`);
-        }
-        
-        if (photo.data.location && photo.data.location.trim()) {
-          const locationTrimmed = photo.data.location.trim();
-          const locationLower = locationTrimmed.toLowerCase();
-          // Don't show location if it contains NaN or is exactly "na" (invalid coordinates)
-          const hasInvalidCoords = locationLower.includes('nan') || locationLower === 'na';
-          if (!hasInvalidCoords) {
-            const locationIcon = this.getIconSVG('icon-location');
-            metadataItems.push(`<div class="lightbox-metadata-item">${locationIcon}<span>${locationTrimmed}</span></div>`);
+            }, 0);
+          } else {
+            this.tags.style.display = 'none';
+            this.tags.style.visibility = 'hidden';
           }
         }
-        
-        if (metadataItems.length > 0) {
-          this.metadata.innerHTML = metadataItems.join('');
-          this.metadata.style.display = 'flex';
-        } else {
-          this.metadata.style.display = 'none';
+
+        // Update album
+        if (this.album) {
+          if (photo.data.album && photo.data.album.trim()) {
+            const folderIcon = this.getIconSVG('icon-folder');
+            const albumSlug = photo.data.album;
+            // Use provided album title or fallback to formatted slug
+            const albumDisplay = photo.data.albumTitle || albumSlug.split('-').map(word => 
+              word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+            
+            this.album.innerHTML = `<span class="lightbox-album-link" data-album="${albumSlug}" style="display: inline-flex; align-items: center; font-size: 0.75rem; color: rgba(255, 251, 245, 0.95); background: rgba(160, 160, 160, 0.6); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(255, 255, 255, 0.2); white-space: nowrap; opacity: 1; visibility: visible; gap: 0.375rem;">${folderIcon}<span>${albumDisplay}</span></span>`;
+            this.album.style.display = 'flex';
+            this.album.style.visibility = 'visible';
+            
+            // Add click handler to album
+            setTimeout(() => {
+              const albumLink = this.album?.querySelector('.lightbox-album-link');
+              if (albumLink) {
+                const el = albumLink as HTMLElement;
+                el.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const album = el.getAttribute('data-album');
+                  if (album) {
+                    window.location.href = `/photography/album/${album}`;
+                  }
+                });
+                el.addEventListener('mouseenter', () => {
+                  el.style.background = 'rgba(180, 180, 180, 0.8)';
+                  el.style.color = 'rgba(255, 251, 245, 1)';
+                  el.style.transform = 'translateY(-1px)';
+                  el.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                });
+                el.addEventListener('mouseleave', () => {
+                  el.style.background = 'rgba(160, 160, 160, 0.6)';
+                  el.style.color = 'rgba(255, 251, 245, 0.95)';
+                  el.style.transform = 'translateY(0)';
+                  el.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                });
+              }
+            }, 0);
+          } else {
+            this.album.style.display = 'none';
+            this.album.style.visibility = 'hidden';
+          }
         }
+
+        // Update metadata
+        if (this.metadata) {
+          const metadataItems: string[] = [];
+          
+          if (photo.data.camera) {
+            const cameraIcon = this.getIconSVG('icon-camera');
+            metadataItems.push(`<div class="lightbox-metadata-item">${cameraIcon}<span>${photo.data.camera}</span></div>`);
+          }
+          
+          if (photo.data.settings) {
+            // Parse settings to extract f-stop, shutter, ISO if possible
+            const settingsIcon = this.getIconSVG('icon-aperture');
+            metadataItems.push(`<div class="lightbox-metadata-item">${settingsIcon}<span>${photo.data.settings}</span></div>`);
+          }
+
+          const focalLengthDisplay = this.getRoundedFocalLength(photo.data.focalLength);
+          if (focalLengthDisplay) {
+            const focalIcon = this.getIconSVG('icon-focal');
+            metadataItems.push(`<div class="lightbox-metadata-item">${focalIcon}<span>${focalLengthDisplay}</span></div>`);
+          }
+          
+          if (photo.data.location && photo.data.location.trim()) {
+            const locationTrimmed = photo.data.location.trim();
+            const locationLower = locationTrimmed.toLowerCase();
+            // Don't show location if it contains NaN or is exactly "na" (invalid coordinates)
+            const hasInvalidCoords = locationLower.includes('nan') || locationLower === 'na';
+            if (!hasInvalidCoords) {
+              const locationIcon = this.getIconSVG('icon-location');
+              metadataItems.push(`<div class="lightbox-metadata-item">${locationIcon}<span>${locationTrimmed}</span></div>`);
+            }
+          }
+          
+          if (metadataItems.length > 0) {
+            this.metadata.innerHTML = metadataItems.join('');
+            this.metadata.style.display = 'flex';
+          } else {
+            this.metadata.style.display = 'none';
+          }
+        }
+
+        // Update counter (styled like film frame number) - moved inline with metadata
+        if (this.counter) {
+          this.counter.textContent = `${this.currentIndex + 1} / ${this.photos.length}`;
+        }
+      };
+
+      if (this.transitionTimeout) {
+        clearTimeout(this.transitionTimeout);
+        this.transitionTimeout = null;
       }
 
-      // Update counter (styled like film frame number) - moved inline with metadata
-      if (this.counter) {
-        this.counter.textContent = `${this.currentIndex + 1} / ${this.photos.length}`;
+      if (animate) {
+        this.image.classList.add('changing');
+        this.transitionTimeout = window.setTimeout(() => {
+          updateContent();
+          
+          const onImageLoad = () => {
+            this.image?.classList.remove('changing');
+            this.image?.removeEventListener('load', onImageLoad);
+          };
+          
+          if (this.image) {
+            this.image.addEventListener('load', onImageLoad);
+            if (this.image.complete) {
+              onImageLoad();
+            }
+          }
+          this.transitionTimeout = null;
+        }, 300);
+      } else {
+        this.image.classList.remove('changing');
+        updateContent();
       }
     }
 
@@ -791,9 +825,15 @@ const { photos, initialIndex = 0 } = Astro.props;
     border-radius: 4px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.3s ease, transform 0.3s ease;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
+  }
+
+  .lightbox-image.changing {
+    opacity: 0;
+    transform: scale(0.96);
   }
 
   @keyframes fadeInScale {
