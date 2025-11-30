@@ -33,7 +33,10 @@ const { photos, initialIndex = 0 } = Astro.props;
   <div class="lightbox-content">
     <button class="lightbox-nav lightbox-prev" aria-label="Previous photo">‹</button>
     <div class="lightbox-image-container">
-      <img class="lightbox-image" src="" alt="" />
+      <div class="lightbox-image-wrapper">
+        <img class="lightbox-image active" src="" alt="" />
+        <img class="lightbox-image" src="" alt="" />
+      </div>
       <div class="lightbox-info">
         <div class="lightbox-tags-and-album">
           <div class="lightbox-album"></div>
@@ -90,7 +93,8 @@ const { photos, initialIndex = 0 } = Astro.props;
 
   class PhotoLightbox {
     private lightbox: HTMLElement | null;
-    private image: HTMLImageElement | null;
+    private images: NodeListOf<HTMLImageElement> | null;
+    private currentImageIndex: number = 0;
     private tags: HTMLElement | null;
     private album: HTMLElement | null;
     private metadata: HTMLElement | null;
@@ -108,7 +112,6 @@ const { photos, initialIndex = 0 } = Astro.props;
     private slideshowIntervalMs: number = 0;
     private slideshowBtn: HTMLElement | null;
     private slideshowDropdown: HTMLElement | null;
-    private transitionTimeout: number | null = null;
     private imageContainer: HTMLElement | null;
 
     constructor(photos: Photo[]) {
@@ -117,7 +120,7 @@ const { photos, initialIndex = 0 } = Astro.props;
       this.lightbox = document.getElementById('photo-lightbox');
       this.shutterOverlay = this.lightbox?.querySelector('.shutter-overlay') as HTMLElement;
       this.imageContainer = this.lightbox?.querySelector('.lightbox-image-container') as HTMLElement;
-      this.image = this.lightbox?.querySelector('.lightbox-image') as HTMLImageElement;
+      this.images = this.lightbox?.querySelectorAll('.lightbox-image') || null;
       this.tags = this.lightbox?.querySelector('.lightbox-tags') as HTMLElement;
       this.album = this.lightbox?.querySelector('.lightbox-album') as HTMLElement;
       this.metadata = this.lightbox?.querySelector('.lightbox-metadata') as HTMLElement;
@@ -386,18 +389,20 @@ const { photos, initialIndex = 0 } = Astro.props;
 
     private updateImage(animate = true) {
       const photo = this.photos[this.currentIndex];
-      if (!photo || !this.image) return;
+      if (!photo || !this.images) return;
 
       // Preload next and previous images
       this.preloadAdjacent();
 
-      const updateContent = () => {
-        if (!this.image || !photo) return;
+      const activeImg = this.images[this.currentImageIndex];
+      const nextImgIndex = (this.currentImageIndex + 1) % 2;
+      const nextImg = this.images[nextImgIndex];
 
-        // Update current image
-        this.image.src = photo.url;
-        this.image.alt = photo.data.title;
+      // Prepare next image
+      nextImg.src = photo.url;
+      nextImg.alt = photo.data.title;
 
+      const updateMetadata = () => {
         // Update tags
         if (this.tags) {
           if (photo.data.tags && Array.isArray(photo.data.tags) && photo.data.tags.length > 0) {
@@ -536,35 +541,27 @@ const { photos, initialIndex = 0 } = Astro.props;
         }
       };
 
-      if (this.transitionTimeout) {
-        clearTimeout(this.transitionTimeout);
-        this.transitionTimeout = null;
+      const completeTransition = () => {
+        nextImg.classList.add('active');
+        activeImg.classList.remove('active');
+        this.currentImageIndex = nextImgIndex;
+        updateMetadata();
+      };
+
+      if (!animate) {
+        completeTransition();
+        return;
       }
 
-      if (animate && this.imageContainer) {
-        this.imageContainer.classList.add('changing');
-        this.transitionTimeout = window.setTimeout(() => {
-          updateContent();
-          
-          const onImageLoad = () => {
-             // Small delay to ensure the browser paints the new image before fading in
-             requestAnimationFrame(() => {
-               this.imageContainer?.classList.remove('changing');
-             });
-            this.image?.removeEventListener('load', onImageLoad);
-          };
-          
-          if (this.image) {
-            this.image.addEventListener('load', onImageLoad);
-            if (this.image.complete) {
-              onImageLoad();
-            }
-          }
-          this.transitionTimeout = null;
-        }, 300);
+      // Load new image then fade
+      if (nextImg.complete) {
+        completeTransition();
       } else {
-        this.imageContainer?.classList.remove('changing');
-        updateContent();
+        const onLoad = () => {
+          completeTransition();
+          nextImg.removeEventListener('load', onLoad);
+        };
+        nextImg.addEventListener('load', onLoad);
       }
     }
 
@@ -818,39 +815,45 @@ const { photos, initialIndex = 0 } = Astro.props;
     align-items: center;
     justify-content: center;
     gap: 0;
-    transition: opacity 0.4s ease, transform 0.4s ease;
   }
 
-  .lightbox-image-container.changing {
-    opacity: 0;
-    transform: scale(0.96);
+  .lightbox-image-wrapper {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    justify-items: center;
+    align-items: center;
   }
 
   .lightbox-image {
+    grid-column: 1;
+    grid-row: 1;
     max-width: 100%;
-    max-height: calc(100vh - 140px);
+    max-height: 100%;
     width: auto;
     height: auto;
     object-fit: contain;
     border-radius: 4px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    transition: opacity 0.6s ease;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
   }
 
-  /* Removed .lightbox-image.changing as it's now on the container */
+  .lightbox-image.active {
+    opacity: 1;
+    z-index: 2;
+  }
 
+  /* Remove unused animations */
   @keyframes fadeInScale {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .lightbox-info {
