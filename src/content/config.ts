@@ -1,12 +1,16 @@
 import { defineCollection, z } from 'astro:content';
 
+const normalizeTags = z.array(z.string()).transform(tags => 
+  tags.map(tag => tag.toLowerCase().replace(/\s+/g, '-'))
+);
+
 const albums = defineCollection({
   type: 'content',
   schema: z.object({
     title: z.string(),
     description: z.string(),
     coverPhoto: z.string(),
-    date: z.date(),
+    date: z.coerce.date(),
     featured: z.boolean().default(false),
     order: z.number().default(0),
   }),
@@ -23,7 +27,7 @@ const photos = defineCollection({
     /** Path to photo relative to public/photos/ */
     filename: z.string(),
     /** Searchable tags - refine IPTC keywords before committing */
-    tags: z.array(z.string()),
+    tags: normalizeTags,
     /** Mark true to show on featured photos page */
     featured: z.boolean().default(false),
     /** Location description (from GPS or manual) */
@@ -31,7 +35,7 @@ const photos = defineCollection({
 
     // Technical fields (auto-filled from EXIF when using getPhotosWithExif(), frontmatter overrides)
     /** Photo date - extracted from EXIF DateTimeOriginal if not in frontmatter */
-    date: z.date(),
+    date: z.coerce.date(),
     /** Camera model - extracted from EXIF Make + Model if not in frontmatter */
     camera: z.string().optional(),
     /** Camera settings - extracted from EXIF (aperture, shutter, ISO) if not in frontmatter */
@@ -46,8 +50,8 @@ const blog = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    date: z.date(),
-    tags: z.array(z.string()),
+    date: z.coerce.date(),
+    tags: normalizeTags,
     isNotebook: z.boolean().default(false),
   }),
 });
@@ -57,8 +61,8 @@ const projects = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    date: z.date(),
-    tags: z.array(z.string()),
+    date: z.coerce.date(),
+    tags: normalizeTags,
     image: z.string().optional(),
     link: z.string().url().optional(),
     repo: z.string().url().optional(),

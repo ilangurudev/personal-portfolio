@@ -199,7 +199,8 @@ async function main() {
       continue;
     }
 
-    const newKeywords = await extractKeywords(sourceImagePath);
+    const rawKeywords = await extractKeywords(sourceImagePath);
+    const newKeywords = rawKeywords.map(t => t.toLowerCase().replace(/\s+/g, '-'));
     
     // Compare new keywords with existing tags
     const currentTags = frontmatter.tags || [];

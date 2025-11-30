@@ -84,8 +84,9 @@ async function extractMetadata(photoPath) {
 
     // Keywords can be in IPTC Keywords or XMP subject - check both
     const keywords = exif?.Keywords || exif?.subject || [];
-    // Ensure it's an array
-    const tags = Array.isArray(keywords) ? keywords : (keywords ? [keywords] : []);
+    // Ensure it's an array and normalize
+    const rawTags = Array.isArray(keywords) ? keywords : (keywords ? [keywords] : []);
+    const tags = rawTags.map(t => t.toLowerCase().replace(/\s+/g, '-'));
 
     // Extract technical EXIF data
     const { camera, settings, focalLength } = extractTechnicalExif(exif);
