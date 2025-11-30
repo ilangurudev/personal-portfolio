@@ -348,6 +348,9 @@ const { title, description } = Astro.props;
       max-width: 1400px;
       margin: 0 auto;
       width: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0; /* Allow flex child to shrink */
     }
 
     /* Footer - Minimal */
@@ -554,6 +557,7 @@ const { title, description } = Astro.props;
 
       .photo-main {
         padding: 2rem 1rem;
+        min-height: 0; /* Ensure proper flex behavior on mobile */
       }
     }
 
