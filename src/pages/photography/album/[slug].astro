@@ -49,7 +49,7 @@ const galleryPhotos = sortedPhotos.map(p => ({
     ) : (
       <>
         <div class="gallery-container" style="height: calc(100vh - 400px); min-height: 600px; flex: 1;">
-          <PhotoGallery client:only="react" photos={galleryPhotos} />
+          <PhotoGallery client:load photos={galleryPhotos} />
         </div>
         <PhotoLightbox photos={sortedPhotos.map(p => ({
           ...p,

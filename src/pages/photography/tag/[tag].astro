@@ -93,7 +93,7 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
       <>
         <div class="gallery-container" style="display: flex; flex-direction: column; height: calc(100vh - 400px); min-height: 600px; max-height: calc(100vh - 400px);">
           <FilteredPhotoGallery 
-            client:only="react"
+            client:load
             allPhotos={allPhotos.map(p => ({
               ...p,
               data: {

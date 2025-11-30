@@ -128,6 +128,16 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos }) => {
           const itemHeight = itemWidth / (3 / 2); // Aspect ratio 3:2
           const rowCount = Math.ceil(photos.length / columnCount);
 
+          // Create cell renderer with closure over required data
+          const CellRenderer = ({ columnIndex, rowIndex, style }: any) => {
+            return Cell({ 
+              columnIndex, 
+              rowIndex, 
+              style, 
+              cellProps: { photos, columnCount, gap: GAP } 
+            });
+          };
+
           return (
             <Grid
               columnCount={columnCount}
@@ -136,15 +146,12 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos }) => {
               rowCount={rowCount}
               rowHeight={itemHeight + GAP}
               width={width}
-              cellComponent={Cell}
-              cellProps={{
-                photos,
-                columnCount,
-                gap: GAP
-              }}
-              overscanCount={2}
+              overscanRowCount={2}
+              overscanColumnCount={2}
               style={{ overflowX: 'hidden' }}
-            />
+            >
+              {CellRenderer}
+            </Grid>
           );
         }}
       </AutoSizer>
