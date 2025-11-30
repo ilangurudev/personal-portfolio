@@ -5,6 +5,10 @@ import { getPhotoUrl } from '../../utils/url-helper';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
 import PhotoAbout from '../../components/photo/PhotoAbout.astro';
 import PhotoIcons from '../../components/photo/PhotoIcons.astro';
+import { getCollection } from 'astro:content';
+
+const albums = await getCollection('albums');
+const albumTitleMap = new Map(albums.map(a => [a.slug, a.data.title]));
 
 const featuredPhotos = await getFeaturedPhotosWithExif();
 const sortedPhotos = featuredPhotos.sort((a, b) => 
@@ -56,7 +60,10 @@ const sortedPhotos = featuredPhotos.sort((a, b) =>
           </div>
         ))}
       </div>
-      <PhotoLightbox photos={sortedPhotos} />
+      <PhotoLightbox photos={sortedPhotos.map(p => ({
+        ...p,
+        data: { ...p.data, albumTitle: albumTitleMap.get(p.data.album) }
+      }))} />
     </>
   )}
 

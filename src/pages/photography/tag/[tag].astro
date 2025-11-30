@@ -3,6 +3,7 @@ import PhotoLayout from '../../../layouts/PhotoLayout.astro';
 import { getPhotosWithExif } from '../../../utils/photo-helpers';
 import { getPhotoUrl } from '../../../utils/url-helper';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
+import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
   const allPhotos = await getPhotosWithExif();
@@ -29,6 +30,9 @@ export async function getStaticPaths() {
 
 const { tag } = Astro.params;
 const decodedTag = decodeURIComponent(tag || '');
+
+const albums = await getCollection('albums');
+const albumTitleMap = new Map(albums.map(a => [a.slug, a.data.title]));
 
 const allPhotos = await getPhotosWithExif();
 
@@ -113,7 +117,10 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
             </div>
           ))}
         </div>
-        <PhotoLightbox photos={sortedPhotos} />
+        <PhotoLightbox photos={sortedPhotos.map(p => ({
+          ...p,
+          data: { ...p.data, albumTitle: albumTitleMap.get(p.data.album) }
+        }))} />
       </>
     )}
   </div>
@@ -126,6 +133,7 @@ const sortedPhotos = filteredPhotos.sort((a, b) =>
         title: p.data.title,
         filename: p.data.filename,
         album: p.data.album,
+        albumTitle: albumTitleMap.get(p.data.album),
         tags: (p.data.tags || []).map(t => (t || '').trim()).filter(t => t),
         camera: p.data.camera,
         settings: p.data.settings,
