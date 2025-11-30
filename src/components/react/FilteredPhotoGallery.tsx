@@ -22,21 +22,34 @@ interface Photo {
 interface FilteredPhotoGalleryProps {
   allPhotos: Photo[];
   initialActiveTags: string[];
+  initialTagLogic?: 'and' | 'or';
   onFilterChange?: (filteredPhotos: Photo[]) => void;
 }
 
 export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
   allPhotos,
   initialActiveTags,
+  initialTagLogic = 'or',
   onFilterChange
 }) => {
-  const [activeTags, setActiveTags] = useState<Set<string>>(new Set(initialActiveTags));
+  const normalizeTagValue = (tag?: string | null) => String(tag ?? '').toLowerCase().trim();
+
+  const [activeTags, setActiveTags] = useState<Set<string>>(
+    new Set((initialActiveTags || []).map(normalizeTagValue))
+  );
+  const [tagLogic, setTagLogic] = useState<'and' | 'or'>(initialTagLogic);
 
   // Listen for tag filter changes from vanilla JS
   useEffect(() => {
     const handleTagFilterChange = (event: CustomEvent) => {
-      const newTags = new Set((event.detail?.activeTags || []).map((t: string) => t.toLowerCase()));
+      const detail = event.detail || {};
+      const newTags = new Set(
+        (detail.activeTags || []).map((t: string) => normalizeTagValue(t))
+      );
+      const nextLogic = detail.tagLogic === 'and' ? 'and' : 'or';
+
       setActiveTags(newTags);
+      setTagLogic(nextLogic);
     };
 
     window.addEventListener('tagFilterChange', handleTagFilterChange as EventListener);
@@ -45,11 +58,10 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
     };
   }, []);
 
-  // Filter photos based on active tags (AND logic - must have ALL active tags)
+  // Filter photos based on active tags and logic (AND or OR)
   // If no tags are selected, show all photos
   const filteredPhotos = useMemo(() => {
     if (activeTags.size === 0) {
-      // No filters active - show all photos
       return allPhotos.sort((a, b) => {
         const dateA = typeof a.data.date === 'string' ? new Date(a.data.date) : a.data.date;
         const dateB = typeof b.data.date === 'string' ? new Date(b.data.date) : b.data.date;
@@ -57,15 +69,22 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
       });
     }
     
+    const tagComparator = Array.from(activeTags);
+
     return allPhotos.filter(photo => {
-      const photoTags = (photo.data.tags || []).map(t => String(t).toLowerCase().trim());
-      return Array.from(activeTags).every(tag => photoTags.includes(tag.toLowerCase()));
+      const photoTags = (photo.data.tags || []).map(normalizeTagValue).filter(Boolean);
+
+      if (tagLogic === 'and') {
+        return tagComparator.every(tag => photoTags.includes(tag));
+      }
+
+      return tagComparator.some(tag => photoTags.includes(tag));
     }).sort((a, b) => {
       const dateA = typeof a.data.date === 'string' ? new Date(a.data.date) : a.data.date;
       const dateB = typeof b.data.date === 'string' ? new Date(b.data.date) : b.data.date;
       return dateB.getTime() - dateA.getTime();
     });
-  }, [allPhotos, activeTags]);
+  }, [allPhotos, activeTags, tagLogic]);
 
   // Notify parent of filter changes and update lightbox
   useEffect(() => {
