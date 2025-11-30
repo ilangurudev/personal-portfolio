@@ -24,11 +24,13 @@ const sortedPhotos = photos.sort((a, b) =>
 // Get all unique tags from this album's photos only
 const albumTagsSet = new Set<string>();
 photos.forEach(photo => {
-  photo.data.tags.forEach(t => {
-    if (t) {
-      albumTagsSet.add(t.toLowerCase());
-    }
-  });
+  if (photo.data.tags && Array.isArray(photo.data.tags)) {
+    photo.data.tags.forEach(t => {
+      if (t && typeof t === 'string' && t.trim()) {
+        albumTagsSet.add(t.toLowerCase().trim());
+      }
+    });
+  }
 });
 const albumTags = Array.from(albumTagsSet).sort();
 
@@ -387,85 +389,83 @@ const galleryPhotos = sortedPhotos.map(p => ({
     }
   </style>
 
-  <script define:vars={{
-    allPhotosData: sortedPhotos.map(p => ({
-      id: p.id,
-      url: getPhotoUrl(p.data.filename),
-      data: {
-        title: p.data.title,
-        filename: p.data.filename,
-        album: p.data.album,
-        albumTitle: album.data.title,
-        tags: (p.data.tags || []).map(t => (t || '').trim()).filter(t => t),
-        camera: p.data.camera,
-        settings: p.data.settings,
-        focalLength: p.data.focalLength,
-        location: p.data.location
-      }
-    }))
-  }}>
+  <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const tagPills = document.querySelectorAll('.tag-pill');
-      const clearFiltersBtn = document.getElementById('clear-filters');
-      const filterToggle = document.getElementById('filter-toggle');
-      const tagPillsContainer = document.getElementById('tag-pills-container');
+      // Wait a bit for React to hydrate
+      setTimeout(() => {
+        const tagPills = document.querySelectorAll('.tag-pill');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const filterToggle = document.getElementById('filter-toggle');
+        const tagPillsContainer = document.getElementById('tag-pills-container');
 
-      // Toggle filter bar
-      filterToggle?.addEventListener('click', () => {
-        filterToggle.classList.toggle('expanded');
-        tagPillsContainer?.classList.toggle('expanded');
-      });
+        if (!filterToggle || !tagPillsContainer) {
+          console.warn('Tag filter elements not found', { filterToggle, tagPillsContainer });
+          return;
+        }
 
-      // Tag pill click handler - will trigger React component update
-      tagPills.forEach(pill => {
-        pill.addEventListener('click', () => {
-          const isActive = pill.classList.contains('active');
+        // Update lightbox when filters change - will be called by React component
+        window.updateLightboxFromFilter = function(filteredPhotos) {
+          if (!window.photoLightbox) return;
+          window.photoLightbox.updatePhotos(filteredPhotos);
+        };
 
-          if (isActive) {
-            pill.classList.remove('active');
-          } else {
-            pill.classList.add('active');
-          }
-
-          // Trigger React component update via custom event
-          const activeTags = Array.from(document.querySelectorAll('.tag-pill.active')).map(p => p.getAttribute('data-tag'));
-          window.dispatchEvent(new CustomEvent('tagFilterChange', { 
-            detail: { 
-              activeTags: activeTags
-            } 
-          }));
-
-          // Show/hide clear filters button
-          if (clearFiltersBtn) {
-            clearFiltersBtn.style.display = activeTags.length > 0 ? 'block' : 'none';
-          }
+        // Toggle filter bar
+        filterToggle.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          filterToggle.classList.toggle('expanded');
+          tagPillsContainer.classList.toggle('expanded');
         });
-      });
 
-      // Clear filters handler
-      if (clearFiltersBtn) {
-        clearFiltersBtn.addEventListener('click', () => {
-          // Remove all active tags
-          tagPills.forEach(pill => {
-            pill.classList.remove('active');
+        // Tag pill click handler - will trigger React component update
+        tagPills.forEach(pill => {
+          pill.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const isActive = pill.classList.contains('active');
+
+            if (isActive) {
+              pill.classList.remove('active');
+            } else {
+              pill.classList.add('active');
+            }
+
+            // Trigger React component update via custom event
+            const activeTags = Array.from(document.querySelectorAll('.tag-pill.active')).map(p => p.getAttribute('data-tag'));
+            window.dispatchEvent(new CustomEvent('tagFilterChange', { 
+              detail: { 
+                activeTags: activeTags
+              } 
+            }));
+
+            // Show/hide clear filters button
+            if (clearFiltersBtn) {
+              clearFiltersBtn.style.display = activeTags.length > 0 ? 'block' : 'none';
+            }
           });
-
-          // Trigger React component update
-          window.dispatchEvent(new CustomEvent('tagFilterChange', { 
-            detail: { 
-              activeTags: []
-            } 
-          }));
-
-          clearFiltersBtn.style.display = 'none';
         });
-      }
 
-      // Update lightbox when filters change - will be called by React component
-      (window as any).updateLightboxFromFilter = function(filteredPhotos: any[]) {
-        if (!(window as any).photoLightbox) return;
-        (window as any).photoLightbox.updatePhotos(filteredPhotos);
-      };
+        // Clear filters handler
+        if (clearFiltersBtn) {
+          clearFiltersBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Remove all active tags
+            tagPills.forEach(pill => {
+              pill.classList.remove('active');
+            });
+
+            // Trigger React component update
+            window.dispatchEvent(new CustomEvent('tagFilterChange', { 
+              detail: { 
+                activeTags: []
+              } 
+            }));
+
+            clearFiltersBtn.style.display = 'none';
+          });
+        }
+      }, 100);
     });
   </script>
 </PhotoLayout>
