@@ -2,7 +2,7 @@
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
 import { getPhotosWithExif } from '../../utils/photo-helpers';
 import { getCollection } from 'astro:content';
-import { getPhotoUrl } from '../../utils/url-helper';
+import { getPhotoUrl, getResizedPhotoUrl } from '../../utils/url-helper';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../components/photo/PhotoIcons.astro';
 
@@ -458,6 +458,7 @@ function formatShutterSpeedTemplate(seconds: number): string {
     allPhotosData: sortedPhotos.map(p => ({
       id: p.id,
       url: getPhotoUrl(p.data.filename),
+      resizedUrl: getResizedPhotoUrl(p.data.filename, 400),
       data: {
         title: p.data.title,
         filename: p.data.filename,
@@ -713,7 +714,7 @@ function formatShutterSpeedTemplate(seconds: number): string {
         card.innerHTML = `
           <div class="photo-image">
             <img
-              src="${photo.url}"
+              src="${photo.resizedUrl}"
               alt="${photo.data.title}"
               loading="lazy"
               style="object-position: center ${photo.data.position || 'top'};"

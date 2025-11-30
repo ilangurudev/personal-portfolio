@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getPhotoUrl } from '../../utils/url-helper';
+import { getResizedPhotoUrl } from '../../utils/url-helper';
 
 interface Photo {
   id: string;
@@ -106,7 +106,7 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
         >
           <div className="photo-image">
             <img
-              src={getPhotoUrl(photo.data.filename)}
+              src={getResizedPhotoUrl(photo.data.filename, 400)}
               alt={photo.data.title}
               loading="lazy"
               decoding="async"
