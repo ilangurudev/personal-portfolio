@@ -41,6 +41,7 @@ const { photos, initialIndex = 0 } = Astro.props;
         </div>
         <div class="lightbox-metadata-row">
           <div class="lightbox-metadata"></div>
+          <button class="lightbox-see-more" aria-label="Show more camera info" style="display: none;">See more</button>
           <div class="lightbox-counter-controls">
             <div class="lightbox-counter"></div>
             <div class="lightbox-slideshow-container">
@@ -111,6 +112,9 @@ const { photos, initialIndex = 0 } = Astro.props;
     private isTransitioning: boolean = false;
     private transitionTimeout: number | null = null;
     private imageLoadTimeout: number | null = null;
+    private imageContainer: HTMLElement | null;
+    private seeMoreBtn: HTMLElement | null;
+    private metadataExpanded: boolean = false;
 
     constructor(photos: Photo[]) {
       this.photos = photos;
@@ -124,6 +128,8 @@ const { photos, initialIndex = 0 } = Astro.props;
       this.counter = this.lightbox?.querySelector('.lightbox-counter') as HTMLElement;
       this.slideshowBtn = this.lightbox?.querySelector('.lightbox-slideshow-btn') as HTMLElement;
       this.slideshowDropdown = this.lightbox?.querySelector('.lightbox-slideshow-dropdown') as HTMLElement;
+      this.imageContainer = this.lightbox?.querySelector('.lightbox-image-container') as HTMLElement;
+      this.seeMoreBtn = this.lightbox?.querySelector('.lightbox-see-more') as HTMLElement;
 
       this.init();
     }
@@ -193,6 +199,24 @@ const { photos, initialIndex = 0 } = Astro.props;
           if (!this.slideshowDropdown.contains(target) && !this.slideshowBtn.contains(target)) {
             this.slideshowDropdown.style.display = 'none';
           }
+        }
+      });
+
+      // See more button for mobile
+      this.seeMoreBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleMetadataExpanded();
+      });
+
+      // Handle image load to detect orientation
+      if (this.image) {
+        this.image.addEventListener('load', () => this.updateImageOrientation());
+      }
+
+      // Handle window resize to update orientation
+      window.addEventListener('resize', () => {
+        if (this.isOpen) {
+          this.updateImageOrientation();
         }
       });
     }
@@ -355,6 +379,9 @@ const { photos, initialIndex = 0 } = Astro.props;
       if (index < 0 || index >= this.photos.length || index === this.currentIndex) return;
       if (!this.isOpen || !this.image) return;
       
+      // Reset metadata expanded state when switching photos
+      this.metadataExpanded = false;
+      
       // Clean up any pending transitions
       if (this.transitionTimeout !== null) {
         clearTimeout(this.transitionTimeout);
@@ -394,6 +421,8 @@ const { photos, initialIndex = 0 } = Astro.props;
           requestAnimationFrame(() => {
             if (this.image) {
               this.image.style.opacity = '1';
+              // Update orientation after image is visible
+              this.updateImageOrientation();
               // Reset transitioning flag after transition completes
               setTimeout(() => {
                 this.isTransitioning = false;
@@ -486,6 +515,38 @@ const { photos, initialIndex = 0 } = Astro.props;
 
       // Update metadata
       this.updateImageMetadata();
+
+      // Update orientation after image loads
+      if (this.image.complete) {
+        this.updateImageOrientation();
+      }
+    }
+
+    private updateImageOrientation() {
+      if (!this.image || !this.imageContainer) return;
+
+      const isPortrait = this.image.naturalHeight > this.image.naturalWidth;
+      const isMobile = window.innerWidth <= 768;
+
+      if (isMobile && isPortrait) {
+        this.imageContainer.classList.add('portrait-orientation');
+      } else {
+        this.imageContainer.classList.remove('portrait-orientation');
+      }
+    }
+
+    private toggleMetadataExpanded() {
+      this.metadataExpanded = !this.metadataExpanded;
+      const metadata = this.lightbox?.querySelector('.lightbox-metadata') as HTMLElement;
+      if (metadata && this.seeMoreBtn) {
+        if (this.metadataExpanded) {
+          metadata.style.display = 'flex';
+          this.seeMoreBtn.textContent = 'See less';
+        } else {
+          metadata.style.display = 'none';
+          this.seeMoreBtn.textContent = 'See more';
+        }
+      }
     }
 
     private updateImageMetadata() {
@@ -618,9 +679,25 @@ const { photos, initialIndex = 0 } = Astro.props;
         
         if (metadataItems.length > 0) {
           this.metadata.innerHTML = metadataItems.join('');
-          this.metadata.style.display = 'flex';
+          const isMobile = window.innerWidth <= 768;
+          if (isMobile) {
+            // On mobile, hide metadata by default, show "see more" button
+            this.metadata.style.display = this.metadataExpanded ? 'flex' : 'none';
+            if (this.seeMoreBtn) {
+              this.seeMoreBtn.style.display = 'inline-flex';
+              this.seeMoreBtn.textContent = this.metadataExpanded ? 'See less' : 'See more';
+            }
+          } else {
+            this.metadata.style.display = 'flex';
+            if (this.seeMoreBtn) {
+              this.seeMoreBtn.style.display = 'none';
+            }
+          }
         } else {
           this.metadata.style.display = 'none';
+          if (this.seeMoreBtn) {
+            this.seeMoreBtn.style.display = 'none';
+          }
         }
       }
 
@@ -882,6 +959,11 @@ const { photos, initialIndex = 0 } = Astro.props;
     gap: 0;
   }
 
+  .lightbox-image-container.portrait-orientation {
+    justify-content: flex-start;
+    padding-top: 1rem;
+  }
+
   .lightbox-image {
     max-width: 100%;
     max-height: calc(100vh - 140px);
@@ -931,6 +1013,26 @@ const { photos, initialIndex = 0 } = Astro.props;
     font-size: 0.875rem;
     color: rgba(255, 251, 245, 0.7);
     width: 100%;
+  }
+
+  .lightbox-see-more {
+    display: none;
+    padding: 0.375rem 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: rgba(255, 251, 245, 0.9);
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lightbox-see-more:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
   }
 
   .lightbox-metadata {
@@ -1166,11 +1268,25 @@ const { photos, initialIndex = 0 } = Astro.props;
     }
 
     .lightbox-content {
-      padding: 1rem;
+      padding: 0.5rem;
+    }
+
+    .lightbox-image-container {
+      gap: 0.5rem;
+    }
+
+    .lightbox-image-container.portrait-orientation {
+      justify-content: flex-start;
+      padding-top: 0.75rem;
     }
 
     .lightbox-image {
-      max-height: calc(100vh - 180px);
+      max-height: calc(100vh - 200px);
+      max-width: calc(100vw - 1rem);
+    }
+
+    .lightbox-image-container.portrait-orientation .lightbox-image {
+      max-height: calc(100vh - 240px);
     }
 
     .lightbox-nav {
@@ -1188,20 +1304,129 @@ const { photos, initialIndex = 0 } = Astro.props;
     }
 
     .lightbox-info {
-      margin-top: 1.5rem;
+      margin-top: 0.75rem;
+      gap: 0.5rem;
+      max-width: calc(100vw - 1rem);
+    }
+
+    .lightbox-tags-and-album {
+      gap: 0.375rem;
+    }
+
+    .lightbox-tag {
+      font-size: 0.625rem !important;
+      padding: 0.25rem 0.5rem !important;
+      border-radius: 10px !important;
+    }
+
+    .lightbox-album-link {
+      font-size: 0.625rem !important;
+      padding: 0.25rem 0.5rem !important;
+      border-radius: 10px !important;
+    }
+
+    .lightbox-metadata-row {
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .lightbox-metadata {
+      gap: 0.5rem;
+    }
+
+    .lightbox-metadata-item {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    .lightbox-see-more {
+      display: inline-flex;
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+    }
+
+    .lightbox-counter {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+    }
+
+    .lightbox-counter-controls {
+      gap: 0.375rem;
     }
   }
 
   @media (max-width: 480px) {
+    .lightbox-content {
+      padding: 0.25rem;
+    }
+
+    .lightbox-image {
+      max-height: calc(100vh - 220px);
+      max-width: calc(100vw - 0.5rem);
+    }
+
+    .lightbox-image-container.portrait-orientation {
+      padding-top: 0.5rem;
+    }
+
+    .lightbox-image-container.portrait-orientation .lightbox-image {
+      max-height: calc(100vh - 260px);
+    }
+
     .lightbox-nav {
       width: 36px;
       height: 36px;
       font-size: 1.5rem;
     }
 
+    .lightbox-prev {
+      left: 0.25rem;
+    }
+
+    .lightbox-next {
+      right: 0.25rem;
+    }
+
+    .lightbox-info {
+      margin-top: 0.5rem;
+      gap: 0.375rem;
+      max-width: calc(100vw - 0.5rem);
+    }
+
+    .lightbox-tag {
+      font-size: 0.5625rem !important;
+      padding: 0.1875rem 0.375rem !important;
+    }
+
+    .lightbox-album-link {
+      font-size: 0.5625rem !important;
+      padding: 0.1875rem 0.375rem !important;
+    }
+
+    .lightbox-metadata-row {
+      gap: 0.375rem;
+      font-size: 0.6875rem;
+    }
+
+    .lightbox-metadata-item {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.6875rem;
+    }
+
+    .lightbox-see-more {
+      font-size: 0.6875rem;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .lightbox-counter {
+      font-size: 0.6875rem;
+      padding: 0.25rem 0.5rem;
+    }
+
     .lightbox-counter-controls {
       flex-wrap: wrap;
       justify-content: center;
+      gap: 0.25rem;
     }
 
     .lightbox-slideshow-dropdown {
