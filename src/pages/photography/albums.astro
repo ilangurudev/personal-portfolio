@@ -2,44 +2,131 @@
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
 import { getCollection } from 'astro:content';
 import { getPhotoUrl } from '../../utils/url-helper';
+import { getPhotosWithExif } from '../../utils/photo-helpers';
 
 const albums = await getCollection('albums');
 const sortedAlbums = albums.sort((a, b) => {
   // Sort by date (latest first)
   return b.data.date.getTime() - a.data.date.getTime();
 });
+
+// Get all photos and extract tags per album
+const allPhotos = await getPhotosWithExif();
+
+// Build a map of album slug -> set of tags
+const albumTagsMap = new Map<string, Set<string>>();
+allPhotos.forEach(photo => {
+  const albumSlug = photo.data.album;
+  if (!albumTagsMap.has(albumSlug)) {
+    albumTagsMap.set(albumSlug, new Set());
+  }
+  photo.data.tags.forEach(tag => {
+    albumTagsMap.get(albumSlug)?.add(tag.toLowerCase());
+  });
+});
+
+// Aggregate all unique tags across albums with counts
+const tagCounts = new Map<string, number>();
+allPhotos.forEach(photo => {
+  photo.data.tags.forEach(tag => {
+    const normalizedTag = tag.toLowerCase();
+    tagCounts.set(normalizedTag, (tagCounts.get(normalizedTag) || 0) + 1);
+  });
+});
+
+// Convert to array and sort by count (descending), then alphabetically
+const tagsArray = Array.from(tagCounts.entries())
+  .map(([tag, count]) => ({ tag, count, displayTag: tag }))
+  .sort((a, b) => {
+    if (b.count !== a.count) {
+      return b.count - a.count;
+    }
+    return a.tag.localeCompare(b.tag);
+  });
+
+// Get original tag casing for display
+const tagDisplayMap = new Map<string, string>();
+allPhotos.forEach(photo => {
+  photo.data.tags.forEach(tag => {
+    const normalizedTag = tag.toLowerCase();
+    if (!tagDisplayMap.has(normalizedTag)) {
+      tagDisplayMap.set(normalizedTag, tag);
+    }
+  });
+});
+
+// Update display tags with original casing
+tagsArray.forEach(item => {
+  item.displayTag = tagDisplayMap.get(item.tag) || item.tag;
+});
 ---
 
 <PhotoLayout title="Albums" description="Photo albums by Guru">
   <div class="albums-container">
     <h1 class="albums-title">Albums</h1>
-    
+
+    {tagsArray.length > 0 && (
+      <div class="tags-filter-section">
+        <h2 class="filter-title">Refine by tags</h2>
+        <div class="tag-cloud">
+          {tagsArray.map(({ tag, count, displayTag }) => {
+            // Calculate size based on count (min: 0.875rem, max: 2.5rem)
+            const maxCount = Math.max(...tagsArray.map(t => t.count));
+            const minCount = Math.min(...tagsArray.map(t => t.count));
+            const sizeRange = 1.625; // 2.5 - 0.875
+            const normalizedSize = minCount === maxCount
+              ? 1.5
+              : 0.875 + (sizeRange * (count - minCount) / (maxCount - minCount));
+
+            return (
+              <button
+                class="tag-cloud-item"
+                style={`font-size: ${normalizedSize}rem;`}
+                data-tag={tag}
+                data-count={count}
+              >
+                #{displayTag.toLowerCase()}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    )}
+
     {sortedAlbums.length === 0 ? (
       <p class="no-albums">No albums yet. Check back soon!</p>
     ) : (
       <div class="albums-grid">
-        {sortedAlbums.map((album) => (
-          <a href={`/photography/album/${album.slug}`} class="album-card">
-            <div class="album-cover">
-              <img 
-                src={getPhotoUrl(album.data.coverPhoto)} 
-                alt={album.data.title}
-                loading="lazy"
-              />
-            </div>
-            <div class="album-info">
-              <h2 class="album-title">{album.data.title}</h2>
-              <p class="album-description">{album.data.description}</p>
-              <time class="album-date" datetime={album.data.date.toISOString()}>
-                {album.data.date.toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </time>
-            </div>
-          </a>
-        ))}
+        {sortedAlbums.map((album) => {
+          const albumTags = Array.from(albumTagsMap.get(album.slug) || []);
+
+          return (
+            <a
+              href={`/photography/album/${album.slug}`}
+              class="album-card"
+              data-tags={albumTags.join(',')}
+            >
+              <div class="album-cover">
+                <img
+                  src={getPhotoUrl(album.data.coverPhoto)}
+                  alt={album.data.title}
+                  loading="lazy"
+                />
+              </div>
+              <div class="album-info">
+                <h2 class="album-title">{album.data.title}</h2>
+                <p class="album-description">{album.data.description}</p>
+                <time class="album-date" datetime={album.data.date.toISOString()}>
+                  {album.data.date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </time>
+              </div>
+            </a>
+          );
+        })}
       </div>
     )}
   </div>
@@ -56,9 +143,82 @@ const sortedAlbums = albums.sort((a, b) => {
       font-size: 3.5rem;
       font-weight: 700;
       color: var(--charcoal);
-      margin: 0 0 3rem;
+      margin: 0 0 2rem;
       text-align: center;
       letter-spacing: -0.02em;
+    }
+
+    .tags-filter-section {
+      max-width: 900px;
+      margin: 0 auto 3rem;
+      padding: 2rem;
+      background: var(--cream-dark);
+      border-radius: 8px;
+      border: 1px solid rgba(28, 25, 23, 0.08);
+    }
+
+    .filter-title {
+      font-family: 'Crimson Text', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--charcoal);
+      margin: 0 0 1.5rem;
+      text-align: center;
+      letter-spacing: -0.01em;
+    }
+
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem 2rem;
+      padding: 1rem;
+      line-height: 1.8;
+    }
+
+    .tag-cloud-item {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--charcoal);
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      display: inline-block;
+      opacity: 0.75;
+      font-family: inherit;
+    }
+
+    .tag-cloud-item:hover {
+      color: var(--amber);
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .tag-cloud-item.active {
+      color: var(--amber);
+      opacity: 1;
+      font-weight: 600;
+    }
+
+    .tag-cloud-item::after {
+      content: attr(data-count);
+      position: absolute;
+      top: -0.5rem;
+      right: -0.75rem;
+      font-size: 0.625rem;
+      color: var(--amber);
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .tag-cloud-item:hover::after,
+    .tag-cloud-item.active::after {
+      opacity: 1;
     }
 
     .no-albums {
@@ -80,7 +240,7 @@ const sortedAlbums = albums.sort((a, b) => {
       flex-direction: column;
       text-decoration: none;
       color: inherit;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
       border-radius: 4px;
       overflow: hidden;
       background: var(--cream-dark);
@@ -89,6 +249,10 @@ const sortedAlbums = albums.sort((a, b) => {
     .album-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .album-card.hidden {
+      display: none;
     }
 
     .album-cover {
@@ -139,11 +303,61 @@ const sortedAlbums = albums.sort((a, b) => {
         font-size: 2.5rem;
       }
 
+      .tags-filter-section {
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .filter-title {
+        font-size: 1.25rem;
+      }
+
+      .tag-cloud {
+        gap: 1rem 1.5rem;
+        padding: 0.5rem;
+      }
+
       .albums-grid {
         grid-template-columns: 1fr;
         gap: 2rem;
       }
     }
   </style>
+
+  <script>
+    // Tag filtering functionality
+    const tagButtons = document.querySelectorAll('.tag-cloud-item');
+    const albumCards = document.querySelectorAll('.album-card');
+    let activeTag: string | null = null;
+
+    tagButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const clickedTag = button.getAttribute('data-tag');
+
+        // Toggle active state
+        if (activeTag === clickedTag) {
+          // Deactivate - show all albums
+          activeTag = null;
+          tagButtons.forEach(btn => btn.classList.remove('active'));
+          albumCards.forEach(card => card.classList.remove('hidden'));
+        } else {
+          // Activate new tag - filter albums
+          activeTag = clickedTag;
+          tagButtons.forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+
+          // Filter albums
+          albumCards.forEach(card => {
+            const albumTags = card.getAttribute('data-tags')?.split(',') || [];
+            if (albumTags.includes(activeTag!)) {
+              card.classList.remove('hidden');
+            } else {
+              card.classList.add('hidden');
+            }
+          });
+        }
+      });
+    });
+  </script>
 </PhotoLayout>
 
