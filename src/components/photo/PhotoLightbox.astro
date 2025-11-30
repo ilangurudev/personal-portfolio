@@ -9,6 +9,7 @@ interface Props {
       title: string;
       filename: string;
       album?: string;
+      albumTitle?: string;
       tags?: string[];
       camera?: string;
       settings?: string;
@@ -78,6 +79,7 @@ const { photos, initialIndex = 0 } = Astro.props;
       title: string;
       filename: string;
       album?: string;
+      albumTitle?: string;
       tags?: string[];
       camera?: string;
       settings?: string;
@@ -440,8 +442,8 @@ const { photos, initialIndex = 0 } = Astro.props;
         if (photo.data.album && photo.data.album.trim()) {
           const folderIcon = this.getIconSVG('icon-folder');
           const albumSlug = photo.data.album;
-          // Format album slug for display (replace hyphens with spaces, capitalize)
-          const albumDisplay = albumSlug.split('-').map(word => 
+          // Use provided album title or fallback to formatted slug
+          const albumDisplay = photo.data.albumTitle || albumSlug.split('-').map(word => 
             word.charAt(0).toUpperCase() + word.slice(1)
           ).join(' ');
           
@@ -659,6 +661,7 @@ const { photos, initialIndex = 0 } = Astro.props;
     title: p.data.title,
     filename: p.data.filename,
     album: p.data.album,
+    albumTitle: p.data.albumTitle,
     tags: p.data.tags || [],
     camera: p.data.camera,
     settings: p.data.settings,

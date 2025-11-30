@@ -17,6 +17,7 @@ const sortedPhotos = allPhotos.sort((a, b) =>
 // Get all albums for filter
 const albums = await getCollection('albums');
 const sortedAlbums = albums.sort((a, b) => a.data.title.localeCompare(b.data.title));
+const albumTitleMap = new Map(albums.map(a => [a.slug, a.data.title]));
 
 // Extract unique tags
 const allTags = new Set<string>();
@@ -448,7 +449,13 @@ function formatShutterSpeedTemplate(seconds: number): string {
     </div>
   </div>
 
-  <PhotoLightbox photos={sortedPhotos} />
+  <PhotoLightbox photos={sortedPhotos.map(p => ({
+    ...p,
+    data: {
+      ...p.data,
+      albumTitle: p.data.album ? albumTitleMap.get(p.data.album) : undefined
+    }
+  }))} />
 
   <script define:vars={{
     allPhotosData: sortedPhotos.map(p => ({
@@ -458,6 +465,7 @@ function formatShutterSpeedTemplate(seconds: number): string {
         title: p.data.title,
         filename: p.data.filename,
         album: p.data.album,
+        albumTitle: p.data.album ? albumTitleMap.get(p.data.album) : undefined,
         tags: (p.data.tags || []).map(t => (t || '').trim()).filter(t => t),
         camera: p.data.camera,
         settings: p.data.settings,
