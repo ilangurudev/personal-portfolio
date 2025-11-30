@@ -8,6 +8,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "import": "node scripts/import-photos.js",
+    "add-delta": "node scripts/add-delta.js",
     "remove": "node scripts/remove-media.js",
     "copy-exif": "node scripts/copy-exif-to-frontmatter.js",
     "fix-frontmatter": "node scripts/fix-frontmatter-types.js",
