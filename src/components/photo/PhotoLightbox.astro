@@ -92,6 +92,7 @@ const { photos, initialIndex = 0 } = Astro.props;
     private lightbox: HTMLElement | null;
     private image: HTMLImageElement | null;
     private tags: HTMLElement | null;
+    private tagsAndAlbum: HTMLElement | null;
     private album: HTMLElement | null;
     private metadata: HTMLElement | null;
     private counter: HTMLElement | null;
@@ -119,6 +120,7 @@ const { photos, initialIndex = 0 } = Astro.props;
       this.shutterOverlay = this.lightbox?.querySelector('.shutter-overlay') as HTMLElement;
       this.image = this.lightbox?.querySelector('.lightbox-image') as HTMLImageElement;
       this.tags = this.lightbox?.querySelector('.lightbox-tags') as HTMLElement;
+      this.tagsAndAlbum = this.lightbox?.querySelector('.lightbox-tags-and-album') as HTMLElement;
       this.album = this.lightbox?.querySelector('.lightbox-album') as HTMLElement;
       this.metadata = this.lightbox?.querySelector('.lightbox-metadata') as HTMLElement;
       this.counter = this.lightbox?.querySelector('.lightbox-counter') as HTMLElement;
@@ -192,6 +194,26 @@ const { photos, initialIndex = 0 } = Astro.props;
           const target = e.target as HTMLElement;
           if (!this.slideshowDropdown.contains(target) && !this.slideshowBtn.contains(target)) {
             this.slideshowDropdown.style.display = 'none';
+          }
+        }
+      });
+
+      // Use event delegation for tag clicks (set up once, works for all tags)
+      // Attach to tagsAndAlbum container since .lightbox-tags has display: contents
+      this.tagsAndAlbum?.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const tagEl = target.closest('.lightbox-tag');
+        if (tagEl) {
+          e.stopPropagation();
+          e.preventDefault();
+          const encodedTag = tagEl.getAttribute('data-tag');
+          if (encodedTag) {
+            const tag = decodeURIComponent(encodedTag);
+            const url = `/photography/tag/${encodeURIComponent(tag)}`;
+            console.log('Navigating to tag:', tag, 'URL:', url, 'Encoded tag from data:', encodedTag);
+            window.location.href = url;
+          } else {
+            console.warn('No data-tag attribute found on tag element:', tagEl);
           }
         }
       });
@@ -505,34 +527,8 @@ const { photos, initialIndex = 0 } = Astro.props;
           this.tags.style.display = 'contents';
           this.tags.style.visibility = 'visible';
           
-          // Add click handlers to tags
-          setTimeout(() => {
-            this.tags?.querySelectorAll('.lightbox-tag').forEach(tagEl => {
-              const el = tagEl as HTMLElement;
-              el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const encodedTag = el.getAttribute('data-tag');
-                if (encodedTag) {
-                  // Decode the tag before using it in the URL (browser will encode it automatically)
-                  const tag = decodeURIComponent(encodedTag);
-                  window.location.href = `/photography/tag/${encodeURIComponent(tag)}`;
-                }
-              });
-              el.addEventListener('mouseenter', () => {
-                el.style.background = 'rgba(180, 180, 180, 0.8)';
-                el.style.color = 'rgba(255, 251, 245, 1)';
-                el.style.transform = 'translateY(-1px)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-              });
-              el.addEventListener('mouseleave', () => {
-                el.style.background = 'rgba(160, 160, 160, 0.6)';
-                el.style.color = 'rgba(255, 251, 245, 0.95)';
-                el.style.transform = 'translateY(0)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-              });
-            });
-          }, 0);
+          // Event handlers are set up once in init() using event delegation
+          // No need to add individual handlers here
         } else {
           this.tags.style.display = 'none';
           this.tags.style.visibility = 'hidden';
