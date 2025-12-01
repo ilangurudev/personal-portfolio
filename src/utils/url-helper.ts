@@ -36,7 +36,7 @@ export function getResizedPhotoUrl(filename: string, width: number = 400): strin
     const cleanCdnUrl = cdnUrl.endsWith('/') ? cdnUrl.slice(0, -1) : cdnUrl;
     
     // Construct Cloudflare Image Resizing URL
-    return `${cleanCdnUrl}/cdn-cgi/image/width=${width},quality=80,format=auto/${cleanFilename}`;
+    return `${cleanCdnUrl}/cdn-cgi/image/width=${width},quality=85,format=jpg/${cleanFilename}`;
   }
 
   // Fallback to local public/photos directory (no resizing in local dev)

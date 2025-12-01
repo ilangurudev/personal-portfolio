@@ -22,7 +22,7 @@ const sortedAlbums = albums.sort((a, b) => {
           <a href={`/photography/album/${album.slug}`} class="album-card">
             <div class="album-cover">
               <img 
-                src={getResizedPhotoUrl(album.data.coverPhoto, 400)} 
+                src={getResizedPhotoUrl(album.data.coverPhoto, 600)} 
                 alt={album.data.title}
                 loading="lazy"
               />
@@ -70,7 +70,7 @@ const sortedAlbums = albums.sort((a, b) => {
 
     .albums-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 2.5rem;
       margin-top: 2rem;
     }

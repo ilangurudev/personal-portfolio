@@ -43,7 +43,7 @@ const sortedPhotos = featuredPhotos.sort((a, b) =>
           >
             <div class="photo-image">
               <img
-                src={getResizedPhotoUrl(photo.data.filename, 400)}
+                src={getResizedPhotoUrl(photo.data.filename, 600)}
                 alt={photo.data.title}
                 loading="lazy"
                 style={`object-position: center ${photo.data.position || 'top'};`}
@@ -190,7 +190,7 @@ const sortedPhotos = featuredPhotos.sort((a, b) =>
 
     .photos-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 2rem;
       margin-top: 2rem;
     }
