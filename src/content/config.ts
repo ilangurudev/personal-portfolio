@@ -30,6 +30,8 @@ const photos = defineCollection({
     location: z.string().optional(),
     /** Vertical crop position for grid thumbnails - top, middle, or bottom */
     position: z.enum(['top', 'middle', 'bottom']).default('middle'),
+    /** Custom sort order - higher scores appear first (supports negative values) */
+    order_score: z.number().default(0),
 
     // Technical fields (auto-filled from EXIF when using getPhotosWithExif(), frontmatter overrides)
     /** Photo date - extracted from EXIF DateTimeOriginal if not in frontmatter */

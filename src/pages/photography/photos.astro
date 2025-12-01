@@ -9,10 +9,17 @@ import PhotoIcons from '../../components/photo/PhotoIcons.astro';
 // Get all photos with EXIF data
 const allPhotos = await getPhotosWithExif();
 
-// Sort by date descending
-const sortedPhotos = allPhotos.sort((a, b) =>
-  b.data.date.getTime() - a.data.date.getTime()
-);
+// Sort by order_score (highest first), then by date descending
+const sortedPhotos = allPhotos.sort((a, b) => {
+  // First sort by order_score (highest first)
+  const scoreA = a.data.order_score ?? 0;
+  const scoreB = b.data.order_score ?? 0;
+  if (scoreB !== scoreA) {
+    return scoreB - scoreA;
+  }
+  // Then sort by date (latest first)
+  return b.data.date.getTime() - a.data.date.getTime();
+});
 
 // Get all albums for filter
 const albums = await getCollection('albums');
