@@ -40,13 +40,13 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Calculate column count based on container width
+  // Calculate column count based on container width (max 3 columns)
   useEffect(() => {
     const updateColumns = () => {
       if (!containerRef.current) return;
       const width = containerRef.current.offsetWidth;
       const cols = Math.floor((width + GAP) / (MIN_COLUMN_WIDTH + GAP));
-      setColumnCount(Math.max(1, cols));
+      setColumnCount(Math.min(3, Math.max(1, cols)));
     };
 
     updateColumns();
