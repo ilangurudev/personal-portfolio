@@ -210,7 +210,15 @@ function formatShutterSpeedTemplate(seconds: number): string {
       <aside id="filter-panel" class="filter-panel">
         <div class="filter-panel-header">
           <h2 class="filter-panel-title">Filters</h2>
-          <button id="clear-filters" class="clear-filters-btn">Clear All</button>
+          <div class="filter-header-actions">
+            <button id="clear-filters" class="clear-filters-btn">Clear All</button>
+            <button id="close-filters" class="close-filters-btn" aria-label="Close filters">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div class="filter-sections">
@@ -876,6 +884,14 @@ function formatShutterSpeedTemplate(seconds: number): string {
       localStorage.setItem('filterPanelCollapsed', filterPanel.classList.contains('collapsed'));
     });
 
+    // Close filter panel
+    document.getElementById('close-filters').addEventListener('click', () => {
+      filterPanel.classList.add('collapsed');
+
+      // Save state to localStorage
+      localStorage.setItem('filterPanelCollapsed', 'true');
+    });
+
     // Filter event listeners
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', applyFilters);
@@ -1086,6 +1102,12 @@ function formatShutterSpeedTemplate(seconds: number): string {
       margin: 0;
     }
 
+    .filter-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     .clear-filters-btn {
       background: none;
       border: none;
@@ -1101,6 +1123,31 @@ function formatShutterSpeedTemplate(seconds: number): string {
     .clear-filters-btn:hover {
       background: rgba(245, 158, 11, 0.1);
       color: var(--orange);
+    }
+
+    .close-filters-btn {
+      background: none;
+      border: none;
+      color: var(--gray);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+    }
+
+    .close-filters-btn:hover {
+      background: rgba(28, 25, 23, 0.1);
+      color: var(--charcoal);
+    }
+
+    .close-filters-btn svg {
+      width: 20px;
+      height: 20px;
     }
 
     .filter-sections {
