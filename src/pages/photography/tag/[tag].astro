@@ -49,9 +49,16 @@ const allTags = Array.from(allTagsSet).sort();
 const filteredPhotos = allPhotos.filter(photo =>
   photo.data.tags.some(t => t.toLowerCase() === decodedTag.toLowerCase())
 );
-const sortedPhotos = filteredPhotos.sort((a, b) =>
-  b.data.date.getTime() - a.data.date.getTime()
-);
+const sortedPhotos = filteredPhotos.sort((a, b) => {
+  // First sort by order_score (highest first)
+  const scoreA = a.data.order_score ?? 0;
+  const scoreB = b.data.order_score ?? 0;
+  if (scoreB !== scoreA) {
+    return scoreB - scoreA;
+  }
+  // Then sort by date (latest first)
+  return b.data.date.getTime() - a.data.date.getTime();
+});
 ---
 
 <PhotoLayout title={`${decodedTag} Photos`} description={`Photos tagged with ${decodedTag}`}>
