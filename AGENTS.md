@@ -61,7 +61,7 @@ npm run import         # Import photos
 - **Dual-Space Toggle:** Switch between Professional (`/`) and Photography (`/photography`)
 - **Advanced Filtering:** 8-dimensional photo filtering (Tags, EXIF, Date)
 - **Infinite Scroll:** Virtualized photo grid
-- **Lightbox:** Full-featured image viewer with EXIF data
+- **Lightbox:** Full-featured image viewer with EXIF data and optional story drawer for photo descriptions
 
 **Important Rules:**
 - **Images:** Use `getPhotosWithExif()` helper, never raw collection.
