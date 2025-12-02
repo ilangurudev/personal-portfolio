@@ -1308,6 +1308,13 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       width: 44px;
       height: 44px;
       font-size: 2rem;
+      top: auto;
+      bottom: 180px;
+      transform: translateY(0);
+    }
+
+    .lightbox-nav:hover {
+      transform: scale(1.1);
     }
 
     .lightbox-prev {
@@ -1392,6 +1399,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       width: 36px;
       height: 36px;
       font-size: 1.5rem;
+      bottom: 160px;
     }
 
     .lightbox-prev {
