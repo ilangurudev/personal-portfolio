@@ -218,10 +218,11 @@ const sortedPhotos = featuredPhotos.sort((a, b) => {
       background: rgba(28, 25, 23, 0.05);
       border-radius: 24px;
       padding: 4px;
-      width: fit-content;
+      width: auto;
     }
 
     .filter-toggle-option {
+      flex: 1;
       padding: 0.5rem 1.5rem;
       border: none;
       background: transparent;
@@ -232,6 +233,8 @@ const sortedPhotos = featuredPhotos.sort((a, b) => {
       border-radius: 20px;
       transition: all 0.2s ease;
       white-space: nowrap;
+      text-align: center;
+      min-width: 110px;
     }
 
     .filter-toggle-option:hover {
