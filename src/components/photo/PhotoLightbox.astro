@@ -562,13 +562,13 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
           const tagsHTML = photo.data.tags
             .map(tag => {
               const encodedTag = encodeURIComponent(tag);
-              return `<span class="lightbox-tag" data-tag="${encodedTag}" style="display: inline-block; font-size: 0.75rem; color: rgba(255, 251, 245, 0.95); background: rgba(160, 160, 160, 0.6); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(255, 255, 255, 0.2); white-space: nowrap; opacity: 1; visibility: visible;">#${tag.toLowerCase()}</span>`;
+              return `<span class="lightbox-tag" data-tag="${encodedTag}" style="display: inline-block; font-size: 0.75rem; color: rgba(0, 0, 0, 0.8); background: rgba(0, 0, 0, 0.08); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(0, 0, 0, 0.15); white-space: nowrap; opacity: 1; visibility: visible;">#${tag.toLowerCase()}</span>`;
             })
             .join('');
           this.tags.innerHTML = tagsHTML;
           this.tags.style.display = 'contents';
           this.tags.style.visibility = 'visible';
-          
+
           // Add click handlers to tags
           setTimeout(() => {
             this.tags?.querySelectorAll('.lightbox-tag').forEach(tagEl => {
@@ -582,16 +582,16 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
                 }
               });
               el.addEventListener('mouseenter', () => {
-                el.style.background = 'rgba(180, 180, 180, 0.8)';
-                el.style.color = 'rgba(255, 251, 245, 1)';
+                el.style.background = 'rgba(0, 0, 0, 0.15)';
+                el.style.color = 'rgba(0, 0, 0, 1)';
                 el.style.transform = 'translateY(-1px)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                el.style.borderColor = 'rgba(0, 0, 0, 0.3)';
               });
               el.addEventListener('mouseleave', () => {
-                el.style.background = 'rgba(160, 160, 160, 0.6)';
-                el.style.color = 'rgba(255, 251, 245, 0.95)';
+                el.style.background = 'rgba(0, 0, 0, 0.08)';
+                el.style.color = 'rgba(0, 0, 0, 0.8)';
                 el.style.transform = 'translateY(0)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                el.style.borderColor = 'rgba(0, 0, 0, 0.15)';
               });
             });
           }, 0);
@@ -607,14 +607,14 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
           const folderIcon = this.getIconSVG('icon-folder');
           const albumSlug = photo.data.album;
           // Use album title if available, otherwise format album slug
-          const albumDisplay = photo.data.albumTitle || albumSlug.split('-').map(word => 
+          const albumDisplay = photo.data.albumTitle || albumSlug.split('-').map(word =>
             word.charAt(0).toUpperCase() + word.slice(1)
           ).join(' ');
-          
-          this.album.innerHTML = `<span class="lightbox-album-link" data-album="${albumSlug}" style="display: inline-flex; align-items: center; font-size: 0.75rem; color: rgba(255, 251, 245, 0.95); background: rgba(160, 160, 160, 0.6); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(255, 255, 255, 0.2); white-space: nowrap; opacity: 1; visibility: visible; gap: 0.375rem;">${folderIcon}<span>${albumDisplay}</span></span>`;
+
+          this.album.innerHTML = `<span class="lightbox-album-link" data-album="${albumSlug}" style="display: inline-flex; align-items: center; font-size: 0.75rem; color: rgba(0, 0, 0, 0.8); background: rgba(0, 0, 0, 0.08); padding: 0.375rem 0.75rem; border-radius: 14px; font-weight: 400; letter-spacing: 0.02em; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid rgba(0, 0, 0, 0.15); white-space: nowrap; opacity: 1; visibility: visible; gap: 0.375rem;">${folderIcon}<span>${albumDisplay}</span></span>`;
           this.album.style.display = 'flex';
           this.album.style.visibility = 'visible';
-          
+
           // Add click handler to album
           setTimeout(() => {
             const albumLink = this.album?.querySelector('.lightbox-album-link');
@@ -629,16 +629,16 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
                 }
               });
               el.addEventListener('mouseenter', () => {
-                el.style.background = 'rgba(180, 180, 180, 0.8)';
-                el.style.color = 'rgba(255, 251, 245, 1)';
+                el.style.background = 'rgba(0, 0, 0, 0.15)';
+                el.style.color = 'rgba(0, 0, 0, 1)';
                 el.style.transform = 'translateY(-1px)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                el.style.borderColor = 'rgba(0, 0, 0, 0.3)';
               });
               el.addEventListener('mouseleave', () => {
-                el.style.background = 'rgba(160, 160, 160, 0.6)';
-                el.style.color = 'rgba(255, 251, 245, 0.95)';
+                el.style.background = 'rgba(0, 0, 0, 0.08)';
+                el.style.color = 'rgba(0, 0, 0, 0.8)';
                 el.style.transform = 'translateY(0)';
-                el.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                el.style.borderColor = 'rgba(0, 0, 0, 0.15)';
               });
             }
           }, 0);
@@ -888,7 +888,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(28, 25, 23, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(8px);
   }
 
@@ -931,8 +931,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     width: 48px;
     height: 48px;
     border: none;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--cream);
+    background: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.8);
     font-size: 2rem;
     font-weight: 300;
     cursor: pointer;
@@ -946,7 +946,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   }
 
   .lightbox-close:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.2);
     transform: rotate(90deg);
   }
 
@@ -1008,7 +1008,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   .lightbox-info {
     margin-top: 1.5rem;
     text-align: center;
-    color: var(--cream);
+    color: rgba(0, 0, 0, 0.8);
     max-width: 95vw;
     width: 100%;
     display: flex;
@@ -1025,17 +1025,17 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     gap: 1rem;
     font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
     font-size: 0.75rem;
-    color: rgba(255, 251, 245, 0.7);
+    color: rgba(0, 0, 0, 0.7);
     width: 100%;
   }
 
   .lightbox-see-more {
     display: none;
     padding: 0.375rem 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 4px;
-    color: rgba(255, 251, 245, 0.9);
+    color: rgba(0, 0, 0, 0.8);
     font-size: 0.75rem;
     font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
     cursor: pointer;
@@ -1045,8 +1045,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   }
 
   .lightbox-see-more:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.25);
   }
 
   .lightbox-metadata {
@@ -1062,9 +1062,9 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     align-items: center;
     gap: 0.5rem;
     padding: 0.375rem 0.75rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     font-size: 0.75rem;
   }
 
@@ -1117,8 +1117,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   .lightbox-tag {
     display: inline-block !important;
     font-size: 0.75rem;
-    color: rgba(255, 251, 245, 0.95) !important;
-    background: rgba(160, 160, 160, 0.25) !important;
+    color: rgba(0, 0, 0, 0.8) !important;
+    background: rgba(0, 0, 0, 0.08) !important;
     padding: 0.375rem 0.75rem;
     border-radius: 14px;
     font-weight: 400;
@@ -1126,17 +1126,17 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.15);
     white-space: nowrap;
     opacity: 1 !important;
     visibility: visible !important;
   }
 
   .lightbox-tag:hover {
-    background: rgba(180, 180, 180, 0.8) !important;
-    color: rgba(255, 251, 245, 1) !important;
+    background: rgba(0, 0, 0, 0.15) !important;
+    color: rgba(0, 0, 0, 1) !important;
     transform: translateY(-1px);
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(0, 0, 0, 0.3);
   }
 
   .lightbox-tag:active {
@@ -1151,14 +1151,14 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
 
   .lightbox-counter {
     font-size: 0.875rem;
-    color: rgba(255, 251, 245, 0.7);
+    color: rgba(0, 0, 0, 0.7);
     font-weight: 400;
     letter-spacing: 0.05em;
     font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
     padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     display: inline-block;
   }
 
@@ -1170,21 +1170,21 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     width: 40px;
     height: 40px;
     border: none;
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 251, 245, 0.7);
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.7);
     cursor: pointer;
     border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   .lightbox-slideshow-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 251, 245, 0.9);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
+    border-color: rgba(0, 0, 0, 0.2);
   }
 
   .lightbox-slideshow-btn.active {
@@ -1203,14 +1203,14 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     position: absolute;
     bottom: calc(100% + 0.5rem);
     right: 0;
-    background: rgba(28, 25, 23, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 4px;
     padding: 0.25rem;
     min-width: 80px;
     z-index: 10002;
     backdrop-filter: blur(10px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   .slideshow-option {
@@ -1219,7 +1219,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     padding: 0.5rem 0.75rem;
     background: transparent;
     border: none;
-    color: rgba(255, 251, 245, 0.7);
+    color: rgba(0, 0, 0, 0.7);
     font-size: 0.875rem;
     font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
     text-align: left;
@@ -1229,8 +1229,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   }
 
   .slideshow-option:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 251, 245, 0.9);
+    background: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
   }
 
   .slideshow-option.active {
@@ -1245,8 +1245,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     width: 56px;
     height: 56px;
     border: none;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--cream);
+    background: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.8);
     font-size: 2.5rem;
     font-weight: 300;
     cursor: pointer;
@@ -1261,7 +1261,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   }
 
   .lightbox-nav:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.2);
     transform: translateY(-50%) scale(1.1);
   }
 
