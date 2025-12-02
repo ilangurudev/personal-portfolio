@@ -67,3 +67,4 @@ npm run import         # Import photos
 - **Images:** Use `getPhotosWithExif()` helper, never raw collection.
 - **Styles:** Keep Professional (dark/terminal) and Photography (light/editorial) styles separate.
 - **Content:** All content is driven by Markdown frontmatter.
+- ALWAYS remember to keep the corresponding AGENTS.md updated after any changes to the codebase. Not all changes warrant a full update, but be sure to update the AGENTS.md for any changes that affect the codebase materially.
