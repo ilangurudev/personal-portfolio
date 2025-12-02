@@ -146,6 +146,10 @@ const sortedPhotos = featuredPhotos.sort((a, b) => {
             if (filter === 'street') return photoTags.includes('street photography');
             if (filter === 'landscape') return photoTags.includes('landscape photography');
             return false;
+          }).map(photo => {
+            // Map to full photo object with URL from the initial lightbox data
+            const fullPhoto = window.allPhotosData?.find(p => p.id === photo.id);
+            return fullPhoto || photo; // Fallback to original if not found
           });
           window.photoLightbox.updatePhotos(filteredPhotos);
         }
