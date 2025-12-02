@@ -100,7 +100,28 @@ const sortedPhotos = featuredPhotos.sort((a, b) => {
     </>
   )}
 
-  <script define:vars={{ sortedPhotos }}>
+  <script define:vars={{
+    allPhotosData: sortedPhotos.map(p => ({
+      id: p.id,
+      url: getPhotoUrl(p.data.filename),
+      body: p.body || '',
+      data: {
+        title: p.data.title,
+        filename: p.data.filename,
+        album: p.data.album,
+        albumTitle: albumTitleMap.get(p.data.album),
+        tags: p.data.tags,
+        camera: p.data.camera,
+        settings: p.data.settings,
+        focalLength: p.data.focalLength,
+        location: p.data.location
+      }
+    })),
+    sortedPhotos
+  }}>
+    // Store for lightbox updates
+    window.allPhotosData = allPhotosData;
+
     // Filter toggle functionality
     document.addEventListener('DOMContentLoaded', () => {
       const toggleButtons = document.querySelectorAll('.filter-toggle-option');
