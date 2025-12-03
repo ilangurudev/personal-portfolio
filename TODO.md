@@ -1,0 +1,4 @@
+- CRUCIAL: Add tests
+- Split AGENTS.md into multiple files that are referenced in the main file
+- Search bar
+- Make all photos view also implement "and" dynamic logic
