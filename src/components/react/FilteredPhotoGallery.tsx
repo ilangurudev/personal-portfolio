@@ -43,7 +43,7 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
   useEffect(() => {
     const handleTagFilterChange = (event: CustomEvent) => {
       const detail = event.detail || {};
-      const newTags = new Set(
+      const newTags = new Set<string>(
         (detail.activeTags || []).map((t: string) => normalizeTagValue(t))
       );
       const nextLogic = detail.tagLogic === 'and' ? 'and' : 'or';
@@ -62,13 +62,9 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
   // If no tags are selected, show all photos
   const filteredPhotos = useMemo(() => {
     if (activeTags.size === 0) {
-      return allPhotos.sort((a, b) => {
-        const dateA = typeof a.data.date === 'string' ? new Date(a.data.date) : a.data.date;
-        const dateB = typeof b.data.date === 'string' ? new Date(b.data.date) : b.data.date;
-        return dateB.getTime() - dateA.getTime();
-      });
+      return allPhotos;
     }
-    
+
     const tagComparator = Array.from(activeTags);
 
     return allPhotos.filter(photo => {
@@ -79,10 +75,6 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
       }
 
       return tagComparator.some(tag => photoTags.includes(tag));
-    }).sort((a, b) => {
-      const dateA = typeof a.data.date === 'string' ? new Date(a.data.date) : a.data.date;
-      const dateB = typeof b.data.date === 'string' ? new Date(b.data.date) : b.data.date;
-      return dateB.getTime() - dateA.getTime();
     });
   }, [allPhotos, activeTags, tagLogic]);
 
@@ -91,7 +83,7 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
     if (onFilterChange) {
       onFilterChange(filteredPhotos);
     }
-    
+
     // Update lightbox via global function
     if (typeof window !== 'undefined' && (window as any).updateLightboxFromFilter) {
       // Convert to lightbox format
@@ -101,17 +93,17 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
           id: p.id,
           url,
           data: {
-          title: p.data.title,
-          filename: p.data.filename,
-          album: p.data.album,
-          albumTitle: p.data.albumTitle,
-          tags: p.data.tags || [],
-          camera: p.data.camera,
-          settings: p.data.settings,
-          focalLength: p.data.focalLength,
-          location: p.data.location
-        }
-      };
+            title: p.data.title,
+            filename: p.data.filename,
+            album: p.data.album,
+            albumTitle: p.data.albumTitle,
+            tags: p.data.tags || [],
+            camera: p.data.camera,
+            settings: p.data.settings,
+            focalLength: p.data.focalLength,
+            location: p.data.location
+          }
+        };
       });
       (window as any).updateLightboxFromFilter(lightboxPhotos);
     }

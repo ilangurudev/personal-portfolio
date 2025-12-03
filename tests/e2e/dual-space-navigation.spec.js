@@ -34,7 +34,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
   // Test 2: Space Toggle to Photography
   console.log('\n📍 Test 2: Space Toggle Navigation');
-  const toggleButton = await page.locator('.space-toggle a');
+  const toggleButton = await page.locator('.space-toggle a').first();
   const toggleText = await toggleButton.textContent();
   console.log(`   ✓ Toggle button found: "${toggleText.trim()}"`);
 
@@ -60,7 +60,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
   // Test 4: Toggle back to Professional
   console.log('\n📍 Test 4: Toggle Back to Professional');
-  const photoToggleButton = await page.locator('.space-toggle a');
+  const photoToggleButton = await page.locator('.space-toggle a').first();
   await photoToggleButton.click();
   await page.waitForLoadState('networkidle');
 

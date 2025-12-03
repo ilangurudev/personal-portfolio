@@ -45,8 +45,8 @@ const thumbUrl = getResizedPhotoUrl('tokyo-nights/DSC09500.jpg', 400);
 
 ## 3. EXIF Augmenter (`src/content/loaders/exif-augmenter.ts`)
 
-**Note:** Mostly deprecated. EXIF data is now stored in frontmatter during import.
+**Note:** **DEPRECATED for extraction**. EXIF data is now stored in frontmatter during import.
 
-**Purpose:** Originally extracted EXIF at build time. Now simply returns photos as-is (frontmatter is source of truth).
+**Purpose:** Originally extracted EXIF at build time. Now acts as a type-safe pass-through that returns photos as-is (frontmatter is the source of truth). The extraction logic remains for reference or potential future use (e.g., re-populating missing frontmatter).
 
 **Still Contains:** Extraction logic for reference if needed.
