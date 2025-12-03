@@ -474,6 +474,7 @@ function formatShutterSpeedTemplate(seconds: number): string {
       id: p.id,
       url: getPhotoUrl(p.data.filename),
       resizedUrl: getResizedPhotoUrl(p.data.filename, 600),
+      body: p.body || '',
       data: {
         title: p.data.title,
         filename: p.data.filename,

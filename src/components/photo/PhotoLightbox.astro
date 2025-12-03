@@ -5,6 +5,7 @@ import { getPhotoUrl } from '../../utils/url-helper';
 interface Props {
   photos: Array<{
     id: string;
+    body?: string;
     data: {
       title: string;
       filename: string;
@@ -45,6 +46,14 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
           <button class="lightbox-see-more" aria-label="Show more camera info" style="display: none;">See more</button>
           <div class="lightbox-counter-controls">
             <div class="lightbox-counter"></div>
+            <button class="lightbox-story-btn" aria-label="View photo story" title="Story" style="display: none;">
+              <svg class="lightbox-story-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M10 12h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
             <div class="lightbox-slideshow-container">
               <button class="lightbox-slideshow-btn" aria-label="Slideshow settings" title="Slideshow">
                 <svg class="lightbox-slideshow-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -69,6 +78,12 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     </div>
     <button class="lightbox-nav lightbox-next" aria-label="Next photo">›</button>
   </div>
+
+  <!-- Story drawer -->
+  <div class="lightbox-story-drawer" style="display: none;">
+    <button class="lightbox-story-close" aria-label="Close story">×</button>
+    <div class="lightbox-story-content"></div>
+  </div>
 </div>
 
 <script>
@@ -77,6 +92,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   interface Photo {
     id: string;
     url: string;
+    body?: string;
     data: {
       title: string;
       filename: string;
@@ -116,6 +132,10 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     private imageContainer: HTMLElement | null;
     private seeMoreBtn: HTMLElement | null;
     private metadataExpanded: boolean = false;
+    private storyBtn: HTMLElement | null;
+    private storyDrawer: HTMLElement | null;
+    private storyContent: HTMLElement | null;
+    private storyDrawerOpen: boolean = false;
     private env: string;
 
     constructor(photos: Photo[], env: string = 'PROD') {
@@ -133,6 +153,9 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       this.slideshowDropdown = this.lightbox?.querySelector('.lightbox-slideshow-dropdown') as HTMLElement;
       this.imageContainer = this.lightbox?.querySelector('.lightbox-image-container') as HTMLElement;
       this.seeMoreBtn = this.lightbox?.querySelector('.lightbox-see-more') as HTMLElement;
+      this.storyBtn = this.lightbox?.querySelector('.lightbox-story-btn') as HTMLElement;
+      this.storyDrawer = this.lightbox?.querySelector('.lightbox-story-drawer') as HTMLElement;
+      this.storyContent = this.lightbox?.querySelector('.lightbox-story-content') as HTMLElement;
 
       this.init();
     }
@@ -209,6 +232,26 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       this.seeMoreBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         this.toggleMetadataExpanded();
+      });
+
+      // Story button
+      this.storyBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openStoryDrawer();
+      });
+
+      // Story drawer close button
+      const storyCloseBtn = this.storyDrawer?.querySelector('.lightbox-story-close');
+      storyCloseBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeStoryDrawer();
+      });
+
+      // Close story drawer when clicking on backdrop
+      this.storyDrawer?.addEventListener('click', (e) => {
+        if (e.target === this.storyDrawer) {
+          this.closeStoryDrawer();
+        }
       });
 
       // Handle image load to detect orientation
@@ -381,9 +424,12 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     private navigateTo(index: number) {
       if (index < 0 || index >= this.photos.length || index === this.currentIndex) return;
       if (!this.isOpen || !this.image) return;
-      
+
       // Reset metadata expanded state when switching photos
       this.metadataExpanded = false;
+
+      // Close story drawer when switching photos
+      this.closeStoryDrawer();
       
       // Clean up any pending transitions
       if (this.transitionTimeout !== null) {
@@ -552,6 +598,32 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       }
     }
 
+    private openStoryDrawer() {
+      if (!this.storyDrawer) return;
+
+      this.storyDrawerOpen = true;
+      this.storyDrawer.style.display = 'flex';
+
+      // Trigger animation
+      requestAnimationFrame(() => {
+        this.storyDrawer?.classList.add('active');
+      });
+    }
+
+    private closeStoryDrawer() {
+      if (!this.storyDrawer) return;
+
+      this.storyDrawerOpen = false;
+      this.storyDrawer.classList.remove('active');
+
+      // Hide after animation
+      setTimeout(() => {
+        if (!this.storyDrawerOpen && this.storyDrawer) {
+          this.storyDrawer.style.display = 'none';
+        }
+      }, 300);
+    }
+
     private updateImageMetadata() {
       const photo = this.photos[this.currentIndex];
       if (!photo) return;
@@ -715,6 +787,23 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       if (this.counter) {
         this.counter.textContent = `${this.currentIndex + 1} / ${this.photos.length}`;
       }
+
+      // Update story button visibility and content
+      const hasStory = photo.body && photo.body.trim().length > 0;
+      if (this.storyBtn) {
+        this.storyBtn.style.display = hasStory ? 'flex' : 'none';
+      }
+
+      if (this.storyContent && hasStory) {
+        // Convert newlines to paragraphs for better formatting
+        const paragraphs = (photo.body || '')
+          .trim()
+          .split('\n\n')
+          .filter(p => p.trim().length > 0)
+          .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+          .join('');
+        this.storyContent.innerHTML = paragraphs;
+      }
     }
 
     private getIconSVG(iconId: string): string {
@@ -734,7 +823,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       clone.setAttribute('stroke', 'currentColor');
       clone.style.display = 'inline-block';
       clone.style.verticalAlign = 'middle';
-      clone.style.marginRight = '0.5rem';
+      clone.style.marginRight = '0';
       clone.style.color = 'currentColor';
       
       // Get the SVG content as a string
@@ -847,6 +936,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
 <script id="photos-data" type="application/json" set:html={JSON.stringify(photos.map(p => ({
   id: p.id,
   url: getPhotoUrl(p.data.filename),
+  body: p.body || '',
   data: {
     title: p.data.title,
     filename: p.data.filename,
@@ -1308,6 +1398,13 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       width: 44px;
       height: 44px;
       font-size: 2rem;
+      top: auto;
+      bottom: 180px;
+      transform: translateY(0);
+    }
+
+    .lightbox-nav:hover {
+      transform: scale(1.1);
     }
 
     .lightbox-prev {
@@ -1392,6 +1489,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       width: 36px;
       height: 36px;
       font-size: 1.5rem;
+      bottom: 160px;
     }
 
     .lightbox-prev {
@@ -1448,6 +1546,134 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       right: auto;
       left: 50%;
       transform: translateX(-50%);
+    }
+  }
+
+  /* Story button styles */
+  .lightbox-story-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 251, 245, 0.7);
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .lightbox-story-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 251, 245, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .lightbox-story-icon {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+  }
+
+  /* Story drawer styles */
+  .lightbox-story-drawer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 70vh;
+    background: rgba(28, 25, 23, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    z-index: 10010;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lightbox-story-drawer.active {
+    transform: translateY(0);
+  }
+
+  .lightbox-story-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--cream);
+    font-size: 1.5rem;
+    font-weight: 300;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    transition: all 0.2s ease;
+  }
+
+  .lightbox-story-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+  }
+
+  .lightbox-story-content {
+    padding: 3rem 2rem 2rem;
+    overflow-y: auto;
+    color: var(--cream);
+    font-size: 1rem;
+    line-height: 1.8;
+    font-family: 'Crimson Text', serif;
+  }
+
+  .lightbox-story-content p {
+    margin: 0 0 1.5rem 0;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .lightbox-story-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (min-width: 769px) {
+    .lightbox-story-drawer {
+      max-width: 900px;
+      left: 50%;
+      transform: translate(-50%, 100%);
+    }
+
+    .lightbox-story-drawer.active {
+      transform: translate(-50%, 0);
+    }
+
+    .lightbox-story-content {
+      padding: 3rem 4rem 2rem;
+      font-size: 1.125rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .lightbox-story-content {
+      padding: 2.5rem 1.5rem 1.5rem;
+      font-size: 0.9375rem;
+    }
+
+    .lightbox-story-drawer {
+      max-height: 60vh;
     }
   }
 </style>

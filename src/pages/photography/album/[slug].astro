@@ -44,6 +44,7 @@ const albumTags = Array.from(albumTagsSet).sort();
 // Map to serializable structure for client component
 const galleryPhotos = sortedPhotos.map(p => ({
   id: p.id,
+  body: p.body || '',
   data: {
     title: p.data.title,
     filename: p.data.filename,

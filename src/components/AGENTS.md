@@ -71,6 +71,15 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
 - **Shutter Animation:** Film-style opening animation
 - **Preloading:** Adjacent photos pre-fetched for instant navigation
 - **Slideshow Mode:** Configurable intervals (1s, 3s, 5s, 10s, 60s, off)
+- **Story Drawer (New):**
+  - Book icon button appears only when photo has content in markdown body
+  - Click to reveal frosted slide-up drawer with photo description/story
+  - Smooth slide-up animation with backdrop blur
+  - Auto-closes when navigating to next/previous photo
+  - Scrollable for longer content (max 70vh on desktop, 60vh on mobile)
+  - Close button or click outside to dismiss
+  - Content formatted as paragraphs (splits on `\n\n`)
+  - Positioned to left of slideshow button
 - **Metadata Display:**
   - Album name (clickable link)
   - Tags (clickable links to tag pages)
@@ -89,6 +98,7 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
 - Global instance: `window.photoLightbox`
 - Photo updates: `updatePhotos(newPhotos)` method for filter sync
 - Viewfinder effect: SVG corners with "focus lock" animation on open
+- Story content: Reads `body` field from photo markdown files
 
 ## 3. Album-Specific Tag Filtering
 
