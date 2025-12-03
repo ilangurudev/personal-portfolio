@@ -126,3 +126,20 @@ npm run remove -- --photo new-york/_AR53764.jpg
 3. **Image:** Place screenshot in `public/projects/`
 4. **Content:** Write markdown content below frontmatter
 5. **Build:** `npm run build` generates static page at `/projects/{slug}`
+
+## 5. Utility Scripts
+
+### `add-delta.js`
+- **Command:** `npm run add-delta`
+- **Purpose:** Calculates and adds a "delta" (time difference) to photo dates. Useful for correcting timezone offsets in batch.
+- **Usage:** Interactive CLI prompts for album and time offset.
+
+### `update-photo-tags.js`
+- **Location:** `scripts/update-photo-tags.js`
+- **Purpose:** Batch update tags for photos in an album.
+- **Usage:** `node scripts/update-photo-tags.js {album-slug} {old-tag} {new-tag}`
+
+### `sync-keywords.js`
+- **Command:** `npm run sync_keywords`
+- **Purpose:** Syncs IPTC keywords from photo files to frontmatter tags.
+

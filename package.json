@@ -13,9 +13,9 @@
     "copy-exif": "node scripts/copy-exif-to-frontmatter.js",
     "fix-frontmatter": "node scripts/fix-frontmatter-types.js",
     "test": "npm run test:navigation && npm run test:responsive && npm run test:visual",
-    "test:navigation": "cd /Users/ilangurudev/projects/personal-portfolio/.claude/skills/playwright-skill && node run.js /Users/ilangurudev/projects/personal-portfolio/tests/e2e/dual-space-navigation.spec.js",
-    "test:responsive": "cd /Users/ilangurudev/projects/personal-portfolio/.claude/skills/playwright-skill && node run.js /Users/ilangurudev/projects/personal-portfolio/tests/e2e/responsive-design.spec.js",
-    "test:visual": "cd /Users/ilangurudev/projects/personal-portfolio/.claude/skills/playwright-skill && node run.js /Users/ilangurudev/projects/personal-portfolio/tests/e2e/visual-aesthetics.spec.js",
+    "test:navigation": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/dual-space-navigation.spec.js",
+    "test:responsive": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/responsive-design.spec.js",
+    "test:visual": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/visual-aesthetics.spec.js",
     "sync_keywords": "node scripts/sync-keywords.js"
   },
   "dependencies": {

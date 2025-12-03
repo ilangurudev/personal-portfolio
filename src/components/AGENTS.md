@@ -162,3 +162,14 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 - MutationObserver to catch dynamically added images
 
 **Purpose:** Discourage casual image downloading (not foolproof, but adds friction).
+
+## 7. Static Components
+
+### `PhotoAbout.astro`
+- **Location:** `src/components/photo/PhotoAbout.astro`
+- **Purpose:** "About Me" section on the photography homepage.
+- **Features:**
+  - Sticky sidebar with avatar and social links
+  - Responsive grid layout (sidebar + content)
+  - Gear list and philosophy text
+  - Styled with photography theme variables (Crimson Text, Work Sans)

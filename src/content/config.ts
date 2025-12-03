@@ -8,7 +8,7 @@ const albums = defineCollection({
     coverPhoto: z.string(),
     date: z.date(),
     featured: z.boolean().default(false),
-    order: z.number().default(0),
+    order_score: z.number().default(0),
   }),
 });
 

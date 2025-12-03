@@ -147,10 +147,10 @@ function formatGPS(lat, lon) {
  */
 async function generateAlbumFile(albumSlug, photos, outputPath, options = {}) {
   // Use provided cover photo or first photo
-  const coverPhoto = options.coverPhoto 
+  const coverPhoto = options.coverPhoto
     ? `${albumSlug}/${options.coverPhoto}`
     : (photos.length > 0 ? `${albumSlug}/${photos[0].filename}` : `${albumSlug}/cover.jpg`);
-  
+
   // Use date from first photo, or today's date
   const albumDate = photos.length > 0 && photos[0].date
     ? photos[0].date.toISOString().split('T')[0]
@@ -190,7 +190,7 @@ A collection of photography from ${albumTitle}.
 async function generatePhotoFile(albumSlug, photo, outputPath, options = {}) {
   const filenameWithoutExt = basename(photo.filename, extname(photo.filename));
   const dateStr = photo.date.toISOString().split('T')[0];
-  
+
   // Format tags array
   const tagsFormatted = photo.tags.length > 0
     ? photo.tags.map(t => `"${t}"`).join(', ')
@@ -205,6 +205,11 @@ async function generatePhotoFile(albumSlug, photo, outputPath, options = {}) {
     `date: ${dateStr}`,
     `featured: ${!!options.isFeatured}`,
   ];
+
+  // Add order_score: 25 for featured photos or cover photo
+  if (options.isFeatured || options.isCover) {
+    frontmatterLines.push(`order_score: 25`);
+  }
 
   // Add optional EXIF fields if present
   if (photo.location) {
@@ -283,7 +288,7 @@ async function main() {
 
   console.log(`\n📸 Importing photos for album: ${albumSlug}`);
   console.log(`   Source: ${sourcePath}\n`);
-  
+
   if (R2_ENABLED) {
     console.log(`   ☁️  R2 Upload Enabled (Bucket: ${process.env.R2_BUCKET_NAME})`);
   } else {
@@ -313,7 +318,7 @@ async function main() {
   const photos = [];
   for (const file of jpegFiles) {
     const sourcePhotoPath = join(sourcePath, file);
-    
+
     // Extract metadata FIRST (from local file)
     const metadata = await extractMetadata(sourcePhotoPath);
     photos.push(metadata);
@@ -360,7 +365,8 @@ async function main() {
     const metadataFilename = filenameWithoutExt.replace(/^_+/, '');
     const photoPath = join(photosDir, `${metadataFilename}.md`);
     const isFeatured = answers.featuredImages.includes(photo.filename);
-    await generatePhotoFile(albumSlug, photo, photoPath, { isFeatured });
+    const isCover = answers.coverImage === photo.filename;
+    await generatePhotoFile(albumSlug, photo, photoPath, { isFeatured, isCover });
     console.log(`  ✅ Created photo metadata: ${metadataFilename}.md`);
   }
 

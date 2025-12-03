@@ -4,7 +4,7 @@ description: "A winter getaway."
 coverPhoto: "miami-2024/DSC08293.jpg"
 date: 2024-12-29
 featured: true
-order: 1
+order_score: 1
 ---
 
 A collection of photography from Miami 2024.

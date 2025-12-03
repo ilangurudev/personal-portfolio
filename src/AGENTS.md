@@ -65,6 +65,11 @@
 - **CustomEvents:** `tagFilterChange` event syncs vanilla JS filters → React gallery
 - **URL State:** No client-side routing; all navigation is server-side
 
+### Environment Configuration
+- **`PUBLIC_PHOTO_CDN_URL`**: Base URL for Cloudflare R2 + Image Resizing (e.g., `https://photos.example.com`). If unset, falls back to local `/photos/`.
+- **`R2_ACCOUNT_ID`**: Cloudflare Account ID for upload scripts.
+- **Note:** See `.env.example` for setup.
+
 ## 2. Content Structure
 
 ### Collections Overview
@@ -86,10 +91,10 @@
   coverPhoto: string;      // Path: "{album-slug}/{photo}.jpg"
   date: Date;              // Album date (for sorting)
   featured: boolean;       // Show first in listings (default: false)
-  order: number;           // Manual ordering (lower = first, default: 0)
+  order_score: number;     // Manual ordering (higher = first, default: 0)
 }
 ```
-**Sorting:** Featured → Order (asc) → Date (desc)
+**Sorting:** Featured → Order Score (desc) → Date (desc)
 
 #### `photos` Collection
 ```typescript
@@ -102,6 +107,7 @@
   featured: boolean;                // Show on /photography homepage (default: false)
   location?: string;                // Location description
   position: 'top'|'middle'|'bottom'; // Crop position for grid (default: 'middle')
+  order_score: number;              // Custom sort order (higher = first, default: 0)
 
   // Technical fields (stored in frontmatter during import)
   date: Date;                       // Photo date (from EXIF DateTimeOriginal)
