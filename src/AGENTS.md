@@ -2,11 +2,27 @@
 
 ## 1. Architecture & Design Patterns
 
-### Content-Driven Architecture
-- **Source of Truth:** Markdown frontmatter (stored in Git)
-- **Build-Time Augmentation:** EXIF data merged from frontmatter (no runtime extraction)
-- **Type Safety:** Zod schemas validate all content at build time
-- **Static Generation:** All routes pre-rendered via `getStaticPaths()`
+### High-Level Data Flow
+
+```ascii
+┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
+│ Markdown Files  │      │ Zod Validation  │      │ Astro Pages     │
+│ (frontmatter)   │ ───► │ (config.ts)     │ ───► │ (SSG HTML)      │
+└─────────────────┘      └─────────────────┘      └────────┬────────┘
+                                                           │
+                                                           ▼
+┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
+│ Browser (DOM)   │ ◄─── │ React Islands   │ ◄─── │ Client Hydration│
+│ (Interactivity) │      │ (Components)    │      │ (JS Bundle)     │
+└─────────────────┘      └─────────────────┘      └─────────────────┘
+```
+
+### Core Data Pipeline
+1. **Content Authoring:** User creates Markdown files in `src/content/`.
+2. **Build Validation:** `src/content/config.ts` validates frontmatter against Zod schemas.
+3. **Static Generation:** Astro pages (e.g., `photos.astro`) query collections via `getCollection()`.
+4. **HTML Rendering:** Server renders static HTML for SEO and initial load.
+5. **Hydration:** Interactive islands (Gallery, Lightbox) hydrate on the client.
 
 ### Hybrid Rendering Model
 - **Server-Rendered:** Astro generates static HTML
@@ -20,6 +36,21 @@
   - Photography: Light (cream #FFFBF5), amber/terracotta, sans/serif (Work Sans, Crimson Text)
 - **Space Toggle:** In-header navigation switches between `/` ↔ `/photography`
 - **No Cross-Contamination:** Each layout defines its own CSS variables and theme
+
+### Key Patterns
+
+#### Server + Client Communication (Custom Events)
+**Problem:** Tag buttons are static HTML (vanilla JS) but need to update the React gallery.
+**Solution:** Use the `EventTarget` API.
+1. **Dispatch:** Vanilla JS fires `window.dispatchEvent(new CustomEvent('tagFilterChange', ...))`
+2. **Listen:** React component uses `useEffect` to listen: `window.addEventListener('tagFilterChange', ...)`
+3. **Contract:** See [`src/components/AGENTS.md`](src/components/AGENTS.md#integration-contracts) for the exact event payload and global function signatures.
+
+#### Tag Filter Implementation
+1. **User Interaction:** Click tag -> URL hash updates (optional) -> Event dispatched.
+2. **Filtering Logic:** `FilteredPhotoGallery.tsx` maintains a list of active photos.
+3. **Memoization:** `useMemo` recalculates the visible list only when tags or photos change.
+4. **Rendering:** The virtualized grid receives the new list and updates the DOM efficiently.
 
 ### Performance Patterns
 - **Infinite Scroll:** Batch loading (20 photos/batch) via Intersection Observer

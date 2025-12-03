@@ -31,7 +31,35 @@
 - **Filtering:** React `FilteredPhotoGallery` component listens via `tagFilterChange` event
 - **Lightbox Sync:** `window.updateLightboxFromFilter()` updates lightbox photos array
 
-## 2. Photo Lightbox
+## 2. Integration Contracts
+
+### Event Bus: `tagFilterChange`
+**Source:** Vanilla JS (Filter UI)
+**Target:** React (`FilteredPhotoGallery`)
+**Payload:**
+```typescript
+{
+  detail: {
+    activeTags: string[]; // Lowercase, trimmed (e.g., ["street", "night"])
+    tagLogic: 'and' | 'or';
+  }
+}
+```
+
+### Global Dependencies
+The "Islands" architecture relies on these window-scoped globals to glue separate components together:
+
+1.  **`window.photoLightbox`**:
+    -   **Type:** `PhotoLightbox` class instance
+    -   **Source:** `src/components/photo/PhotoLightbox.astro` (inline script)
+    -   **Usage:** Singleton controller for the fullscreen image viewer.
+
+2.  **`window.updateLightboxFromFilter(photos)`**:
+    -   **Type:** `(photos: LightboxPhoto[]) => void`
+    -   **Source:** `src/pages/photography/tag/[tag].astro` (inline script)
+    -   **Usage:** Called by React components to sync the lightbox state when the visible grid changes.
+
+## 3. Photo Lightbox
 
 **Full-Featured Image Viewer** with rich metadata and navigation.
 

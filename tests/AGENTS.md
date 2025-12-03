@@ -25,11 +25,12 @@ npm run test:visual       # Visual only
 
 **Test Files:**
 - `tests/e2e/dual-space-navigation.spec.js` - Space toggle functionality
-- `tests/e2e/responsive-design.spec.js` - Mobile/desktop layouts
 - `tests/e2e/gallery-navigation.spec.js` - Photo gallery interactions
+- `tests/e2e/photo-filter-toggle.spec.cjs` - Filter logic and UI states
+- `tests/e2e/responsive-design.spec.js` - Mobile/desktop layouts
 - `tests/e2e/visual-aesthetics.spec.js` - Design consistency
 
-**Note:** Test files may not exist yet - tests are run via Playwright skill.
+**Note:** Tests are run via Playwright. Ensure the dev server is running or use `npm run test` which handles startup.
 
 ## 3. Build Gotchas
 

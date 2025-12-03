@@ -24,6 +24,7 @@ For detailed information, refer to the `AGENTS.md` in specific directories:
 |-------|----------|-------------|
 | **Core Architecture** | [`src/AGENTS.md`](src/AGENTS.md) | Rendering model, design systems, content schemas |
 | **Components** | [`src/components/AGENTS.md`](src/components/AGENTS.md) | UI components (Lightbox, Gallery, Filtering) |
+| **Layouts & Themes** | [`src/layouts/AGENTS.md`](src/layouts/AGENTS.md) | Dual-space theme system, CSS variables, global styles |
 | **Workflows** | [`scripts/AGENTS.md`](scripts/AGENTS.md) | Import/Remove photos, Blog/Project creation |
 | **Utilities** | [`src/utils/AGENTS.md`](src/utils/AGENTS.md) | Helper functions, URL generation |
 | **Testing** | [`tests/AGENTS.md`](tests/AGENTS.md) | Development commands, E2E tests |
@@ -49,7 +50,58 @@ For detailed information, refer to the `AGENTS.md` in specific directories:
 
 ---
 
-## 4. Quick Start
+## 4. Architectural Decisions
+
+### Why Astro?
+- **Content-First:** Perfect for a portfolio/blog where 90% of content is static.
+- **Performance:** Zero-JS by default means faster loads than Next.js/React SPA.
+- **Collections:** Built-in type safety for Markdown content is superior to custom solutions.
+
+### Why Islands Architecture?
+- **Efficiency:** We only hydrate the interactive parts (filtering, lightbox).
+- **Isolation:** A heavy React component in the gallery doesn't slow down the blog post reader.
+
+### Why Separate Layouts?
+- **Aesthetic Integrity:** Prevents "style creep" between the Hacker (Professional) and Editorial (Photography) personas.
+- **Maintainability:** Changing the blog font will never accidentally break the photo gallery grid.
+
+---
+
+## 5. Common Tasks
+
+### Add a Blog Post
+1. Create file: `src/content/blog/my-new-post.md`
+2. Add frontmatter:
+   ```yaml
+   ---
+   title: "My New Post"
+   description: "What this is about"
+   date: 2023-10-27
+   tags: ["ai", "coding"]
+   ---
+   ```
+3. Write content in Markdown.
+
+### Add a Photo
+1. **Import Workflow:**
+   ```bash
+   npm run import /path/to/local/photos
+   ```
+2. **Process:**
+   - Script copies photos to `public/photos` (for dev) and uploads to R2 (for prod).
+   - Extracts EXIF data automatically.
+   - Generates a batch markdown file for review.
+3. **Review:**
+   - Edit the generated batch file to add titles/tags.
+   - Commit the new files in `src/content/photos/`.
+
+### Change Professional Space Colors
+1. Edit `src/layouts/BlogLayout.astro`
+2. Modify CSS variables in the `:root` block (e.g., `--color-accent`).
+
+---
+
+## 6. Quick Start
 
 **Development:**
 ```bash
