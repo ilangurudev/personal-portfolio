@@ -1046,12 +1046,21 @@ function formatShutterSpeedTemplate(seconds: number): string {
     // Update tag availability in AND mode
     function updateTagAvailability() {
       const currentLogic = getCurrentTagLogic();
+      const tagsContainer = document.getElementById('tags-filter');
+      const labels = getTagLabels();
 
       if (currentLogic === 'or') {
-        // In OR mode, all tags are available
-        getTagLabels().forEach(label => {
+        // In OR mode, all tags are available - restore original order by photo count
+        labels.forEach(label => {
           label.classList.remove('unavailable');
         });
+        // Sort by original photo count (stored in data attribute or tag-count text)
+        const sorted = [...labels].sort((a, b) => {
+          const countA = parseInt(a.querySelector('.tag-count')?.textContent?.replace(/[()]/g, '') || '0', 10);
+          const countB = parseInt(b.querySelector('.tag-count')?.textContent?.replace(/[()]/g, '') || '0', 10);
+          return countB - countA;
+        });
+        sorted.forEach(label => tagsContainer.appendChild(label));
         return;
       }
 
@@ -1059,13 +1068,15 @@ function formatShutterSpeedTemplate(seconds: number): string {
       const selectedTags = getSelectedTags();
       const filtered = filterPhotosByTags(selectedTags, 'and');
 
-      // Collect all tags from filtered photos
+      // Collect all tags from filtered photos with their counts in filtered results
       const availableTags = new Set();
+      const filteredTagCounts = new Map();
       filtered.forEach(photo => {
         (photo.data.tags || []).forEach(tag => {
           const normalized = normalizeTag(tag);
           if (normalized) {
             availableTags.add(normalized);
+            filteredTagCounts.set(normalized, (filteredTagCounts.get(normalized) || 0) + 1);
           }
         });
       });
@@ -1073,15 +1084,30 @@ function formatShutterSpeedTemplate(seconds: number): string {
       // Always keep selected tags available
       selectedTags.forEach(tag => availableTags.add(tag));
 
-      // Update label visibility
-      getTagLabels().forEach(label => {
+      // Update label classes and reorder: available tags first (sorted by filtered count), then unavailable
+      const availableLabels = [];
+      const unavailableLabels = [];
+
+      labels.forEach(label => {
         const tag = normalizeTag(label.getAttribute('data-tag'));
         if (availableTags.has(tag)) {
           label.classList.remove('unavailable');
+          availableLabels.push({ label, count: filteredTagCounts.get(tag) || 0, isSelected: selectedTags.includes(tag) });
         } else {
           label.classList.add('unavailable');
+          unavailableLabels.push(label);
         }
       });
+
+      // Sort available: selected first, then by filtered count descending
+      availableLabels.sort((a, b) => {
+        if (a.isSelected !== b.isSelected) return a.isSelected ? -1 : 1;
+        return b.count - a.count;
+      });
+
+      // Reorder DOM: available tags first, then unavailable
+      availableLabels.forEach(item => tagsContainer.appendChild(item.label));
+      unavailableLabels.forEach(label => tagsContainer.appendChild(label));
     }
 
     // Tag search functionality
