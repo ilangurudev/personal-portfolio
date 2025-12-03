@@ -26,16 +26,23 @@ const albums = await getCollection('albums');
 const sortedAlbums = albums.sort((a, b) => a.data.title.localeCompare(b.data.title));
 const albumTitleMap = new Map(albums.map(a => [a.slug, a.data.title]));
 
-// Extract unique tags
-const allTags = new Set<string>();
+// Extract unique tags with photo counts
+const tagCounts = new Map<string, number>();
 allPhotos.forEach(photo => {
   photo.data.tags.forEach(tag => {
     if (tag) {
-      allTags.add(tag.toLowerCase().trim());
+      const normalizedTag = tag.toLowerCase().trim();
+      tagCounts.set(normalizedTag, (tagCounts.get(normalizedTag) || 0) + 1);
     }
   });
 });
-const uniqueTags = Array.from(allTags).sort();
+// Sort tags by photo count (descending), then alphabetically
+const uniqueTags = Array.from(tagCounts.keys()).sort((a, b) => {
+  const countDiff = (tagCounts.get(b) || 0) - (tagCounts.get(a) || 0);
+  if (countDiff !== 0) return countDiff;
+  return a.localeCompare(b);
+});
+const tagCountsObj = Object.fromEntries(tagCounts);
 
 // Extract unique cameras
 const allCameras = new Set<string>();
@@ -234,18 +241,18 @@ function formatShutterSpeedTemplate(seconds: number): string {
             <div class="filter-section-header">
               <h3 class="filter-section-title">Tags</h3>
               <div class="tag-logic-toggle" id="tag-logic-toggle">
-                <button 
-                  type="button" 
-                  class="toggle-option" 
+                <button
+                  type="button"
+                  class="toggle-option"
                   data-mode="or"
                   id="toggle-or"
                   aria-pressed="true"
                 >
                   OR
                 </button>
-                <button 
-                  type="button" 
-                  class="toggle-option" 
+                <button
+                  type="button"
+                  class="toggle-option"
                   data-mode="and"
                   id="toggle-and"
                   aria-pressed="false"
@@ -254,11 +261,25 @@ function formatShutterSpeedTemplate(seconds: number): string {
                 </button>
               </div>
             </div>
+            <div class="tag-search-wrapper">
+              <input
+                type="text"
+                id="tag-search"
+                class="tag-search-input"
+                placeholder="Search tags..."
+                autocomplete="off"
+              />
+              <svg class="tag-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
             <div id="tags-filter" class="filter-checkboxes">
               {uniqueTags.map(tag => (
-                <label class="filter-checkbox-label">
+                <label class="filter-checkbox-label" data-tag={tag}>
                   <input type="checkbox" name="tag" value={tag} />
-                  <span>#{tag}</span>
+                  <span class="tag-name">#{tag}</span>
+                  <span class="tag-count">({tagCounts.get(tag)})</span>
                 </label>
               ))}
             </div>
@@ -845,6 +866,24 @@ function formatShutterSpeedTemplate(seconds: number): string {
       // Uncheck all checkboxes
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
 
+      // Reset tag search
+      const tagSearch = document.getElementById('tag-search');
+      if (tagSearch) {
+        tagSearch.value = '';
+        // Remove search-hidden from all tag labels
+        document.querySelectorAll('#tags-filter .filter-checkbox-label').forEach(label => {
+          label.classList.remove('search-hidden');
+        });
+      }
+
+      // Reset tag logic to OR
+      const toggleOr = document.getElementById('toggle-or');
+      const toggleAnd = document.getElementById('toggle-and');
+      if (toggleOr && toggleAnd) {
+        toggleOr.setAttribute('aria-pressed', 'true');
+        toggleAnd.setAttribute('aria-pressed', 'false');
+      }
+
       // Reset date range
       document.getElementById('date-min').value = exifRangesData.date.min.split('T')[0];
       document.getElementById('date-max').value = exifRangesData.date.max.split('T')[0];
@@ -873,6 +912,11 @@ function formatShutterSpeedTemplate(seconds: number): string {
       document.getElementById('focal-max-value').textContent = `${Math.round(exifRangesData.focalLength.max)}mm`;
 
       applyFilters();
+
+      // Reset tag availability (after filters are applied)
+      document.querySelectorAll('#tags-filter .filter-checkbox-label').forEach(label => {
+        label.classList.remove('unavailable');
+      });
     }
 
     // Initialize filter panel state - collapsed by default
@@ -965,7 +1009,97 @@ function formatShutterSpeedTemplate(seconds: number): string {
     // Tag logic toggle handlers
     const toggleOr = document.getElementById('toggle-or');
     const toggleAnd = document.getElementById('toggle-and');
-    
+    const tagSearchInput = document.getElementById('tag-search');
+
+    // Get all tag checkbox labels
+    function getTagLabels() {
+      return Array.from(document.querySelectorAll('#tags-filter .filter-checkbox-label'));
+    }
+
+    // Get currently selected tags
+    function getSelectedTags() {
+      return Array.from(document.querySelectorAll('input[name="tag"]:checked'))
+        .map(el => normalizeTag(el.value))
+        .filter(t => t);
+    }
+
+    // Get current tag logic mode
+    function getCurrentTagLogic() {
+      const activeToggle = document.querySelector('.tag-logic-toggle .toggle-option[aria-pressed="true"]');
+      return activeToggle?.getAttribute('data-mode') || 'or';
+    }
+
+    // Filter photos by tags (used for tag availability calculation)
+    function filterPhotosByTags(tags, logic) {
+      if (tags.length === 0) return allPhotosData;
+
+      return allPhotosData.filter(photo => {
+        const photoTags = photo.data.tags.map(t => normalizeTag(t)).filter(t => t);
+
+        if (logic === 'and') {
+          return tags.every(tag => photoTags.includes(tag));
+        }
+        return tags.some(tag => photoTags.includes(tag));
+      });
+    }
+
+    // Update tag availability in AND mode
+    function updateTagAvailability() {
+      const currentLogic = getCurrentTagLogic();
+
+      if (currentLogic === 'or') {
+        // In OR mode, all tags are available
+        getTagLabels().forEach(label => {
+          label.classList.remove('unavailable');
+        });
+        return;
+      }
+
+      // In AND mode, only show tags that would still produce results
+      const selectedTags = getSelectedTags();
+      const filtered = filterPhotosByTags(selectedTags, 'and');
+
+      // Collect all tags from filtered photos
+      const availableTags = new Set();
+      filtered.forEach(photo => {
+        (photo.data.tags || []).forEach(tag => {
+          const normalized = normalizeTag(tag);
+          if (normalized) {
+            availableTags.add(normalized);
+          }
+        });
+      });
+
+      // Always keep selected tags available
+      selectedTags.forEach(tag => availableTags.add(tag));
+
+      // Update label visibility
+      getTagLabels().forEach(label => {
+        const tag = normalizeTag(label.getAttribute('data-tag'));
+        if (availableTags.has(tag)) {
+          label.classList.remove('unavailable');
+        } else {
+          label.classList.add('unavailable');
+        }
+      });
+    }
+
+    // Tag search functionality
+    function handleTagSearch() {
+      const query = tagSearchInput.value.toLowerCase().trim();
+
+      getTagLabels().forEach(label => {
+        const tag = label.getAttribute('data-tag') || '';
+        if (query === '' || tag.toLowerCase().includes(query)) {
+          label.classList.remove('search-hidden');
+        } else {
+          label.classList.add('search-hidden');
+        }
+      });
+    }
+
+    tagSearchInput.addEventListener('input', handleTagSearch);
+
     function setTagLogic(mode) {
       if (mode === 'or') {
         toggleOr.setAttribute('aria-pressed', 'true');
@@ -975,10 +1109,18 @@ function formatShutterSpeedTemplate(seconds: number): string {
         toggleAnd.setAttribute('aria-pressed', 'true');
       }
       applyFilters();
+      updateTagAvailability();
     }
-    
+
     toggleOr.addEventListener('click', () => setTagLogic('or'));
     toggleAnd.addEventListener('click', () => setTagLogic('and'));
+
+    // Update tag availability when tags change
+    document.querySelectorAll('input[name="tag"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        updateTagAvailability();
+      });
+    });
 
     // Clear filters button
     document.getElementById('clear-filters').addEventListener('click', clearAllFilters);
@@ -987,6 +1129,7 @@ function formatShutterSpeedTemplate(seconds: number): string {
     // Initial load - ensure DOM is ready and layout is settled
     requestAnimationFrame(() => {
       loadNextBatch();
+      updateTagAvailability();
     });
   </script>
 
@@ -1217,6 +1360,41 @@ function formatShutterSpeedTemplate(seconds: number): string {
       color: white;
     }
 
+    .tag-search-wrapper {
+      position: relative;
+      margin-bottom: 0.75rem;
+    }
+
+    .tag-search-input {
+      width: 100%;
+      padding: 0.5rem 0.75rem 0.5rem 2rem;
+      border: 1px solid rgba(28, 25, 23, 0.2);
+      border-radius: 4px;
+      font-size: 0.875rem;
+      background: white;
+      color: var(--charcoal);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .tag-search-input:focus {
+      outline: none;
+      border-color: var(--amber);
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    }
+
+    .tag-search-input::placeholder {
+      color: var(--gray);
+    }
+
+    .tag-search-icon {
+      position: absolute;
+      left: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray);
+      pointer-events: none;
+    }
+
     .filter-checkboxes {
       display: flex;
       flex-direction: column;
@@ -1245,6 +1423,28 @@ function formatShutterSpeedTemplate(seconds: number): string {
       height: 16px;
       cursor: pointer;
       accent-color: var(--amber);
+      flex-shrink: 0;
+    }
+
+    .filter-checkbox-label .tag-name {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .filter-checkbox-label .tag-count {
+      font-size: 0.75rem;
+      color: var(--gray);
+      font-weight: 400;
+      flex-shrink: 0;
+    }
+
+    .filter-checkbox-label.unavailable {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .filter-checkbox-label.search-hidden {
+      display: none !important;
     }
 
     .filter-range-inputs {
