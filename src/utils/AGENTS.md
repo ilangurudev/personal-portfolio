@@ -50,3 +50,15 @@ const thumbUrl = getResizedPhotoUrl('tokyo-nights/DSC09500.jpg', 400);
 **Purpose:** Originally extracted EXIF at build time. Now acts as a type-safe pass-through that returns photos as-is (frontmatter is the source of truth). The extraction logic remains for reference or potential future use (e.g., re-populating missing frontmatter).
 
 **Still Contains:** Extraction logic for reference if needed.
+
+## 4. Homepage Data Helpers (`src/utils/homepage-data.ts`)
+
+- `selectRecentPosts(entries, limit = 5)` – Filters out `about`, sorts newest-first with slug tie-breakers, and limits the array. Used on `/` hero feed and unit-tested in `tests/unit/homepage-data.test.ts`.
+- `selectFeaturedProjects(entries, limit = 5)` – Stable sorts featured projects to the front, then falls back to recency + slug. Also ensures the original collection array is not mutated.
+
+## 5. Blog Data Helpers (`src/utils/blog-data.ts`)
+
+- `formatPostSize(body | length)` – Centralizes the `Math.floor(body.length / 100)` logic for the professional space list view and clamps weird values to `0k`.
+- `sanitizeBlogEntries(entries)` – Removes the `about` pseudo-post before display or static path generation.
+- `buildBlogStaticPaths(entries)` – Generates `{ params, props }` objects for `getStaticPaths`, deduplicating duplicate slugs to keep build output deterministic.
+- `BLOG_FILE_PERMISSIONS` / `BLOG_FILE_OWNER` – Shared constants for the faux terminal metadata row so tests can assert them without reaching into Astro files.

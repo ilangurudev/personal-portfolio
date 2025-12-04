@@ -12,7 +12,10 @@
     "remove": "node scripts/remove-media.js",
     "copy-exif": "node scripts/copy-exif-to-frontmatter.js",
     "fix-frontmatter": "node scripts/fix-frontmatter-types.js",
-    "test": "npm run test:navigation && npm run test:responsive && npm run test:visual",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "npm run test:navigation && npm run test:responsive && npm run test:visual",
     "test:navigation": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/dual-space-navigation.spec.js",
     "test:responsive": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/responsive-design.spec.js",
     "test:visual": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/visual-aesthetics.spec.js",
@@ -31,10 +34,15 @@
     "tailwindcss": "^4.1.17"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "exifr": "^7.1.3",
     "express": "^5.1.0",
     "inquirer": "^13.0.1",
+    "jsdom": "^27.2.0",
     "open": "^11.0.0",
-    "playwright": "^1.57.0"
+    "playwright": "^1.57.0",
+    "vitest": "^4.0.15"
   }
 }

@@ -45,7 +45,8 @@ Layouts are responsible for initializing the global environment that "Islands" (
 - **Global Event Listeners:**
   - Both layouts implement `contextmenu` and `dragstart` prevention for images.
   - Both layouts observe DOM mutations to apply protection to new images (e.g., loaded via infinite scroll).
+  - The professional space now loads `src/scripts/blog-layout-interactions.ts`, which encapsulates image guards + the hamburger drawer wiring for easier testing.
 
 - **Mobile Navigation:**
-  - Each layout implements its own vanilla JS mobile menu logic (Hamburger button, drawer animation).
-  - They share NO code for this, ensuring complete visual isolation.
+  - Each layout implements its own vanilla JS mobile menu logic (Hamburger button, drawer animation). For the professional space, this logic resides in `blog-layout-interactions.ts`; photography still uses an inline script.
+  - They share NO code for styling, ensuring complete visual isolation.

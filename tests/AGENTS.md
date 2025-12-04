@@ -15,9 +15,20 @@ npm run sync_keywords  # Sync IPTC keywords to tags (deprecated)
 
 ## 2. Testing
 
+**Unit & Component Tests (Vitest):**
+```bash
+npm run test:unit        # Run the full Vitest suite once
+npm run test:unit:watch  # Watch mode during development
+```
+
+- `tests/unit/` – Pure utilities (e.g., homepage data shaping)
+- `tests/integration/` – Cross-file logic (blog metadata + static paths)
+- `tests/component/` – DOM behaviors (BlogLayout interactions, etc.)
+
 **E2E Tests (Playwright):**
 ```bash
-npm run test              # All tests
+npm run test              # Unit + E2E suites
+npm run test:e2e          # Playwright-only aggregate
 npm run test:navigation   # Navigation only
 npm run test:responsive   # Responsive only
 npm run test:visual       # Visual only

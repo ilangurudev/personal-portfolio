@@ -1,20 +1,10 @@
 ---
 import BlogLayout from '../layouts/BlogLayout.astro';
 import { getCollection } from 'astro:content';
+import { selectRecentPosts, selectFeaturedProjects } from '../utils/homepage-data';
 
-const posts = (await getCollection('blog'))
-  .filter(post => post.slug !== 'about')
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .slice(0, 5); // Show only last 5 posts
-
-const projects = (await getCollection('projects'))
-  .sort((a, b) => {
-    // Featured projects first, then by date
-    if (a.data.featured && !b.data.featured) return -1;
-    if (!a.data.featured && b.data.featured) return 1;
-    return b.data.date.valueOf() - a.data.date.valueOf();
-  })
-  .slice(0, 5); // Show only last 5 projects
+const posts = selectRecentPosts(await getCollection('blog'));
+const projects = selectFeaturedProjects(await getCollection('projects'));
 ---
 
 <BlogLayout title="Guru Ilangovan" description="AI researcher and photographer">

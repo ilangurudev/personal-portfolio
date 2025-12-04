@@ -1,6 +1,7 @@
 ---
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import { getCollection } from 'astro:content';
+import { BLOG_FILE_OWNER, BLOG_FILE_PERMISSIONS, formatPostSize } from '../../utils/blog-data';
 
 const posts = (await getCollection('blog'))
   .filter(post => post.slug !== 'about')
@@ -17,9 +18,9 @@ const posts = (await getCollection('blog'))
       {posts.map(post => (
         <article class="post-preview">
           <div class="post-meta">
-            <span class="permissions">-rw-r--r--</span>
-            <span class="user">guru</span>
-            <span class="size">{Math.floor(post.body.length / 100)}k</span>
+            <span class="permissions">{BLOG_FILE_PERMISSIONS}</span>
+            <span class="user">{BLOG_FILE_OWNER}</span>
+            <span class="size">{formatPostSize(post.body)}</span>
             <time datetime={post.data.date.toISOString()}>
               {post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </time>

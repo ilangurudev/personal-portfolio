@@ -1,15 +1,11 @@
 ---
 import { getCollection } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
+import { buildBlogStaticPaths } from '../../utils/blog-data';
 
 export async function getStaticPaths() {
   const blogEntries = await getCollection('blog');
-  return blogEntries
-    .filter(entry => entry.slug !== 'about')
-    .map(entry => ({
-      params: { slug: entry.slug },
-      props: { entry },
-    }));
+  return buildBlogStaticPaths(blogEntries);
 }
 
 const { entry } = Astro.props;
