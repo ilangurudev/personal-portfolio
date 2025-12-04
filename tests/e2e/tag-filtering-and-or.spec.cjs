@@ -16,7 +16,8 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
 (async () => {
   const browser = await chromium.launch({
-    headless: process.env.HEADLESS !== 'false',
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
     slowMo: 100
   });
   const page = await browser.newPage();
@@ -25,7 +26,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
   // Test 1: Navigate to Tag Page
   console.log('📍 Test 1: Navigate to Tag Page with Filter Pills');
-  await page.goto(`${TARGET_URL}/photography/tag/street`);
+  await page.goto(`${TARGET_URL}/photography/tag/landscape%20photography`);
   await page.waitForLoadState('networkidle');
 
   const pageTitle = await page.title();

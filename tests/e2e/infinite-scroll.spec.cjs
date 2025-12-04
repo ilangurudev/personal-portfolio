@@ -18,7 +18,8 @@ const LOAD_MORE_SIZE = 20;
 
 (async () => {
   const browser = await chromium.launch({
-    headless: process.env.HEADLESS !== 'false',
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
     slowMo: 50
   });
   const page = await browser.newPage();

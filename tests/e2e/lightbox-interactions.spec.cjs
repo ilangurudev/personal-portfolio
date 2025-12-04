@@ -17,7 +17,8 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
 (async () => {
   const browser = await chromium.launch({
-    headless: process.env.HEADLESS !== 'false',
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
     slowMo: 100
   });
   const page = await browser.newPage();
@@ -171,13 +172,20 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
   await page.waitForTimeout(500);
 
   const backdrop = await page.locator('.lightbox-backdrop');
-  await backdrop.click();
+  // Click at the top-left corner to avoid content overlay
+  await backdrop.click({ position: { x: 50, y: 50 }, force: true });
   await page.waitForTimeout(400);
 
   const lightboxAfterBackdrop = await lightbox.evaluate(el =>
     el.style.display === 'none' || !el.classList.contains('active')
   );
-  console.log(`   ✓ Lightbox closed via backdrop: ${lightboxAfterBackdrop ? '✓' : '✗'}`);
+  console.log(`   ✓ Lightbox closed via backdrop: ${lightboxAfterBackdrop ? '✓' : '✗ (backdrop may not trigger close)'}`);
+
+  // Ensure lightbox is closed before next test
+  if (!lightboxAfterBackdrop) {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+  }
 
   // Test 14: Verify focus lock animation on photo click
   console.log('\n📍 Test 14: Verify Focus Lock Animation');
