@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import GoogleAnalytics from '../components/GoogleAnalytics.astro';
+import blogLayoutInteractionsScript from '../scripts/blog-layout-interactions.ts?url';
 
 interface Props {
   title: string;
@@ -107,7 +108,7 @@ const { title, description } = Astro.props;
     </p>
   </footer>
 
-  <script type="module" src={Astro.resolve('../scripts/blog-layout-interactions.ts')}></script>
+  <script type="module" src={blogLayoutInteractionsScript}></script>
 
   <style>
     :root {
