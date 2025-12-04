@@ -16,6 +16,18 @@
     "test:navigation": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/dual-space-navigation.spec.js",
     "test:responsive": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/responsive-design.spec.js",
     "test:visual": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/visual-aesthetics.spec.js",
+    "test:filters": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/photo-filter-toggle.spec.cjs",
+    "test:tag-and-or": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/tag-filtering-and-or.spec.cjs",
+    "test:lightbox": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/lightbox-interactions.spec.cjs",
+    "test:story": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/story-drawer.spec.cjs",
+    "test:nav-links": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/lightbox-navigation-links.spec.cjs",
+    "test:scroll": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/infinite-scroll.spec.cjs",
+    "test:advanced-filters": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/advanced-filters.spec.cjs",
+    "test:slideshow": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/slideshow-mode.spec.cjs",
+    "test:albums": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/album-pages.spec.cjs",
+    "test:sorting": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/sorting.spec.cjs",
+    "test:gallery": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/gallery-navigation.spec.js",
+    "test:all": "npm run test && npm run test:filters && npm run test:tag-and-or && npm run test:lightbox && npm run test:story && npm run test:nav-links && npm run test:scroll && npm run test:advanced-filters && npm run test:slideshow && npm run test:albums",
     "sync_keywords": "node scripts/sync-keywords.js"
   },
   "dependencies": {
