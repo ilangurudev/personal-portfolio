@@ -26,8 +26,23 @@ echo ""
 # Step 3: Install Chromium browser
 echo "🌐 Step 3/5: Installing Chromium browser (~100MB download)..."
 cd /home/user/personal-portfolio
-npx playwright install chromium
-echo "✅ Chromium installed"
+
+# Allow skipping in sandboxes where downloads are blocked (e.g., Claude web)
+BROWSER_CACHE_DIR="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}"
+if [ "${SKIP_CHROMIUM_INSTALL:-0}" = "1" ]; then
+  echo "↪️  SKIP_CHROMIUM_INSTALL=1 set; skipping Chromium download."
+  echo "    Ensure Chromium already exists in ${BROWSER_CACHE_DIR}."
+elif ls "${BROWSER_CACHE_DIR}"/chromium-* >/dev/null 2>&1; then
+  echo "✅ Chromium already present in ${BROWSER_CACHE_DIR}, skipping download."
+else
+  if npx playwright install chromium; then
+    echo "✅ Chromium installed"
+  else
+    echo "⚠️ Chromium download failed. If you're in a restricted sandbox, set"
+    echo "   SKIP_CHROMIUM_INSTALL=1 and ensure a Chromium binary is available"
+    echo "   in ${BROWSER_CACHE_DIR} (or set PLAYWRIGHT_BROWSERS_PATH)."
+  fi
+fi
 echo ""
 
 # Step 4: Start dev server
@@ -46,32 +61,13 @@ echo ""
 
 # Step 5: Verify dev server is running
 echo "⏳ Step 5/5: Waiting for dev server to start..."
-sleep 10
+sleep 5
 
 # Check if dev server is responding
 if curl -s http://localhost:4321 > /dev/null 2>&1; then
   echo "✅ Dev server is running on http://localhost:4321"
   echo ""
   echo "🎉 Setup complete!"
-  echo ""
-  echo "Run tests with:"
-  echo "  HEADLESS=true npm run test              # Run all tests"
-  echo "  HEADLESS=true npm run test:navigation   # Run specific test"
-  echo ""
-  echo "Available test commands:"
-  echo "  test:navigation    - Dual-space navigation tests"
-  echo "  test:sorting       - Photo sorting tests"
-  echo "  test:responsive    - Responsive design tests"
-  echo "  test:visual        - Visual aesthetics tests"
-  echo "  test:filters       - Photo filter toggle tests"
-  echo "  test:tag-and-or    - Tag filtering AND/OR tests"
-  echo "  test:lightbox      - Lightbox interaction tests"
-  echo "  test:story         - Story drawer tests"
-  echo "  test:nav-links     - Lightbox navigation links tests"
-  echo "  test:scroll        - Infinite scroll tests"
-  echo "  test:advanced-filters - Advanced filter panel tests"
-  echo "  test:slideshow     - Slideshow mode tests"
-  echo "  test:albums        - Album pages tests"
 else
   echo "❌ Dev server failed to start properly"
   echo "Check logs at: /tmp/astro-dev.log"

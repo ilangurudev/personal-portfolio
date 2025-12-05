@@ -122,5 +122,4 @@ npm run import         # Import photos
 
 # CRITICAL AGENT RULES
 - ALWAYS remember to keep the corresponding AGENTS.md updated after any changes to the codebase. Not all changes warrant a full update, but be sure to update the AGENTS.md for any changes that affect the codebase materially.
-- ALWAYS strive to verify your work - for scripts and tests, run them and test. Even if not explicitly requested, run it and verify work. 
-- ALWAYS test your code changes either using something like a playwright skill or a browser tool to check and validate the feature that you are being asked to implement.
+- ALWAYS strive to verify your work - for any feature build or bug fix, do tdd by writing failing test first and then building until the tests pass. Finally, run `npm run test` to make sure everything is working as inteded before committing. 

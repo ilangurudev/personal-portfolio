@@ -22,6 +22,7 @@ If you're running tests in a remote or sandboxed environment (e.g., Claude Code 
 - Installing Playwright/Chromium
 - Starting the dev server
 - Troubleshooting common issues
+  - If Chromium downloads are blocked, set `SKIP_CHROMIUM_INSTALL=1` and point `PLAYWRIGHT_BROWSERS_PATH` (or `${HOME}/.cache/ms-playwright`) to a preinstalled browser.
 
 **E2E Tests (Playwright):**
 ```bash
