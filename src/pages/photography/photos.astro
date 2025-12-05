@@ -1129,6 +1129,7 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
   <style>
     .photos-page {
       max-width: 1800px;
+      width: 100%;
       margin: 0 auto;
       padding: 0 1.5rem 2rem;
     }
@@ -1641,8 +1642,10 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
 
       .filter-panel.collapsed {
         transform: translateX(-100%);
-        width: 320px;
-        padding: 1.5rem;
+        width: 0;
+        padding: 0;
+        border: none;
+        overflow: hidden;
       }
 
       .toggle-filters-btn {
