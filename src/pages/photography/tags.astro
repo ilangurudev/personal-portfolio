@@ -1,46 +1,11 @@
 ---
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
-import { getPhotosWithExif } from '../../utils/photo-helpers';
+import { getPhotosWithExif, extractTags } from '../../utils/photo-helpers';
 
 const allPhotos = await getPhotosWithExif();
 
-// Aggregate tags with photo counts
-const tagCounts = new Map<string, number>();
-
-allPhotos.forEach(photo => {
-  photo.data.tags.forEach(tag => {
-    const normalizedTag = tag.toLowerCase();
-    tagCounts.set(normalizedTag, (tagCounts.get(normalizedTag) || 0) + 1);
-  });
-});
-
-// Convert to array and sort by count (descending), then alphabetically
-const tagsArray = Array.from(tagCounts.entries())
-  .map(([tag, count]) => ({ tag, count, displayTag: tag }))
-  .sort((a, b) => {
-    // First sort by count (descending)
-    if (b.count !== a.count) {
-      return b.count - a.count;
-    }
-    // Then alphabetically
-    return a.tag.localeCompare(b.tag);
-  });
-
-// Get original tag casing for display (use first occurrence)
-const tagDisplayMap = new Map<string, string>();
-allPhotos.forEach(photo => {
-  photo.data.tags.forEach(tag => {
-    const normalizedTag = tag.toLowerCase();
-    if (!tagDisplayMap.has(normalizedTag)) {
-      tagDisplayMap.set(normalizedTag, tag);
-    }
-  });
-});
-
-// Update display tags with original casing
-tagsArray.forEach(item => {
-  item.displayTag = tagDisplayMap.get(item.tag) || item.tag;
-});
+// Extract tags with counts, sorted by count (descending), preserving original casing
+const tagsArray = extractTags(allPhotos, { sortBy: 'count', preserveDisplayCasing: true });
 ---
 
 <PhotoLayout title="Tags" description="Browse photos by tag">

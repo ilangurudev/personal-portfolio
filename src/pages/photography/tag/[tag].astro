@@ -1,6 +1,6 @@
 ---
 import PhotoLayout from "../../../layouts/PhotoLayout.astro";
-import { getPhotosWithExif, sortPhotos } from "../../../utils/photo-helpers";
+import { getPhotosWithExif, sortPhotos, extractTags, extractTagNames } from "../../../utils/photo-helpers";
 import { getPhotoUrl } from "../../../utils/url-helper";
 import PhotoLightbox from "../../../components/photo/PhotoLightbox.astro";
 import { getCollection } from "astro:content";
@@ -9,23 +9,12 @@ import { FilteredPhotoGallery } from "../../../components/react/FilteredPhotoGal
 export async function getStaticPaths() {
   const allPhotos = await getPhotosWithExif();
 
-  // Collect all unique tags from all photos (use original casing for URL)
-  const tagMap = new Map<string, string>(); // lowercase -> original
-  allPhotos.forEach((photo) => {
-    photo.data.tags.forEach((tag) => {
-      if (tag) {
-        const lowerTag = tag.toLowerCase();
-        // Store original casing if not already stored
-        if (!tagMap.has(lowerTag)) {
-          tagMap.set(lowerTag, tag);
-        }
-      }
-    });
-  });
+  // Collect all unique tags (preserving original casing for URLs)
+  const tagsWithDisplay = extractTags(allPhotos, { preserveDisplayCasing: true });
 
   // Return paths for each unique tag (Astro handles URL encoding automatically)
-  return Array.from(tagMap.values()).map((tag) => ({
-    params: { tag },
+  return tagsWithDisplay.map(({ displayTag }) => ({
+    params: { tag: displayTag },
   }));
 }
 
@@ -37,14 +26,8 @@ const albumTitleMap = new Map(albums.map((a) => [a.slug, a.data.title]));
 
 const allPhotos = sortPhotos(await getPhotosWithExif());
 
-// Get all unique tags for the filter pills
-const allTagsSet = new Set<string>();
-allPhotos.forEach((photo) => {
-  photo.data.tags.forEach((t) => {
-    allTagsSet.add(t.toLowerCase());
-  });
-});
-const allTags = Array.from(allTagsSet).sort();
+// Get all unique tags for the filter pills (sorted alphabetically)
+const allTags = extractTagNames(allPhotos, 'alpha');
 
 const filteredPhotos = allPhotos.filter((photo) =>
   photo.data.tags.some((t) => t.toLowerCase() === decodedTag.toLowerCase()),
@@ -351,97 +334,18 @@ const sortedPhotos = sortPhotos(filteredPhotos);
       min-height: 0; /* Allow flex child to shrink */
     }
 
-    /* Global styles for React-rendered Photo Cards */
+    /* Photo card base styles imported via PhotoLayout from photo-card.css */
+    /* Overrides for virtualized grid (React Window positions absolutely) */
     :global(.photo-card) {
-      display: flex;
-      flex-direction: column;
-      text-decoration: none;
-      color: inherit;
-      transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-      border-radius: 4px;
-      overflow: hidden;
-      background: var(--cream-dark);
-      cursor: crosshair;
-      position: absolute; /* React Window positions absolutely */
+      position: absolute;
     }
 
     :global(.photo-card:hover) {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
       z-index: 10; /* Ensure hovered item is above */
     }
 
     :global(.photo-image) {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--cream);
-      position: relative;
-    }
-
-    :global(.photo-image img) {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      /* object-position is set inline by InfinitePhotoGallery component */
-      transition: transform 0.3s ease;
-    }
-
-    :global(.photo-card:hover .photo-image img) {
-      transform: scale(1.05);
-    }
-
-    :global(.viewfinder-overlay) {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    :global(.photo-card:hover .viewfinder-overlay) {
-      opacity: 1;
-    }
-
-    :global(.viewfinder-corners) {
-      width: 85%;
-      height: 85%;
-      color: rgba(255, 255, 255, 0.85);
-      animation: viewfinderFocus 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      transition:
-        color 0.2s ease,
-        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Focus lock animation state */
-    :global(.viewfinder-corners.focus-locked) {
-      color: #22c55e !important;
-      transform: scale(0.95);
-      opacity: 1 !important;
-    }
-
-    /* Ensure overlay is visible during focus lock */
-    :global(.photo-card .viewfinder-overlay:has(.focus-locked)) {
-      opacity: 1 !important;
-    }
-
-    @keyframes viewfinderFocus {
-      from {
-        opacity: 0;
-        transform: scale(1.1);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
+      height: 100%; /* Override aspect-ratio for virtualized grid */
     }
 
     @media (max-width: 768px) {

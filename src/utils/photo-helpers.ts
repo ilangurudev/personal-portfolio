@@ -115,3 +115,151 @@ export function sortAlbums<T extends { data: { featured?: boolean; order_score: 
     return b.data.date.getTime() - a.data.date.getTime();
   });
 }
+
+/**
+ * Parsed EXIF settings from a settings string
+ */
+export interface ParsedExifSettings {
+  aperture?: number;
+  shutterSpeed?: number;
+  iso?: number;
+}
+
+/**
+ * Parse camera settings string into structured EXIF data
+ * @param settings - Raw settings string (e.g., "f/2.8, 1/1000s, ISO 400")
+ * @returns Parsed settings object with aperture, shutterSpeed, and iso
+ */
+export function parseSettings(settings?: string): ParsedExifSettings {
+  if (!settings) return {};
+
+  const result: ParsedExifSettings = {};
+
+  // Parse aperture (f/2.8 -> 2.8)
+  const apertureMatch = settings.match(/f\/([\d.]+)/);
+  if (apertureMatch) {
+    result.aperture = parseFloat(apertureMatch[1]);
+  }
+
+  // Parse shutter speed (1/1000s -> 0.001, 2s -> 2)
+  const shutterMatch = settings.match(/(\d+)\/(\d+)s|(\d+(?:\.\d+)?)s/);
+  if (shutterMatch) {
+    if (shutterMatch[1] && shutterMatch[2]) {
+      // Fractional shutter speed (e.g., 1/1000s)
+      result.shutterSpeed = parseInt(shutterMatch[1]) / parseInt(shutterMatch[2]);
+    } else if (shutterMatch[3]) {
+      // Whole number shutter speed (e.g., 2s)
+      result.shutterSpeed = parseFloat(shutterMatch[3]);
+    }
+  }
+
+  // Parse ISO (ISO 400 -> 400)
+  const isoMatch = settings.match(/ISO\s*(\d+)/);
+  if (isoMatch) {
+    result.iso = parseInt(isoMatch[1]);
+  }
+
+  return result;
+}
+
+/**
+ * Format shutter speed value for display
+ * @param seconds - Shutter speed in seconds
+ * @returns Formatted string (e.g., "1/1000s" or "2.0s")
+ */
+export function formatShutterSpeed(seconds: number): string {
+  if (seconds < 1) {
+    // Fractional shutter speed (e.g., 1/1000s)
+    const denominator = Math.round(1 / seconds);
+    return `1/${denominator}s`;
+  }
+  // Whole number shutter speed (e.g., 2s)
+  return `${seconds.toFixed(1)}s`;
+}
+
+/**
+ * Options for tag extraction
+ */
+export interface TagExtractionOptions {
+  /** Sort by 'alpha' (alphabetically) or 'count' (by photo count, descending) */
+  sortBy?: 'alpha' | 'count';
+  /** Whether to preserve original casing for display (uses first occurrence) */
+  preserveDisplayCasing?: boolean;
+}
+
+/**
+ * Extracted tag with count and optional display form
+ */
+export interface ExtractedTag {
+  /** Normalized (lowercase) tag */
+  tag: string;
+  /** Number of photos with this tag */
+  count: number;
+  /** Original casing for display (only if preserveDisplayCasing is true) */
+  displayTag?: string;
+}
+
+/**
+ * Extract unique tags from photos with counts and sorting options
+ * @param photos - Array of photos to extract tags from
+ * @param options - Extraction options (sortBy, preserveDisplayCasing)
+ * @returns Array of extracted tags with counts
+ */
+export function extractTags<T extends { data: { tags: string[] } }>(
+  photos: T[],
+  options: TagExtractionOptions = {}
+): ExtractedTag[] {
+  const { sortBy = 'count', preserveDisplayCasing = false } = options;
+
+  // Count tags
+  const tagCounts = new Map<string, number>();
+  const tagDisplayMap = preserveDisplayCasing ? new Map<string, string>() : null;
+
+  photos.forEach(photo => {
+    photo.data.tags.forEach(tag => {
+      if (tag && typeof tag === 'string' && tag.trim()) {
+        const normalized = tag.toLowerCase().trim();
+        tagCounts.set(normalized, (tagCounts.get(normalized) || 0) + 1);
+
+        // Preserve first occurrence of original casing
+        if (tagDisplayMap && !tagDisplayMap.has(normalized)) {
+          tagDisplayMap.set(normalized, tag);
+        }
+      }
+    });
+  });
+
+  // Convert to array
+  const tags: ExtractedTag[] = Array.from(tagCounts.entries()).map(([tag, count]) => ({
+    tag,
+    count,
+    ...(tagDisplayMap && { displayTag: tagDisplayMap.get(tag) || tag }),
+  }));
+
+  // Sort based on option
+  if (sortBy === 'count') {
+    // Sort by count descending, then alphabetically
+    tags.sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.tag.localeCompare(b.tag);
+    });
+  } else {
+    // Sort alphabetically
+    tags.sort((a, b) => a.tag.localeCompare(b.tag));
+  }
+
+  return tags;
+}
+
+/**
+ * Extract just the tag names (normalized, lowercase) from photos
+ * @param photos - Array of photos to extract tags from
+ * @param sortBy - Sort by 'alpha' (alphabetically) or 'count' (by photo count)
+ * @returns Array of normalized tag names
+ */
+export function extractTagNames<T extends { data: { tags: string[] } }>(
+  photos: T[],
+  sortBy: 'alpha' | 'count' = 'count'
+): string[] {
+  return extractTags(photos, { sortBy }).map(t => t.tag);
+}
