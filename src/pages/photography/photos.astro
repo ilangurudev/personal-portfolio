@@ -1129,6 +1129,7 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
   <style>
     .photos-page {
       max-width: 1800px;
+      width: 100%;
       margin: 0 auto;
       padding: 0 1.5rem 2rem;
     }
@@ -1215,18 +1216,20 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
       padding: 1.5rem;
       max-height: calc(100vh - 4rem);
       overflow-y: auto;
-      transition: transform 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+      transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
       border: 1px solid rgba(28, 25, 23, 0.1);
       width: 320px;
       flex-shrink: 0;
     }
 
     .filter-panel.collapsed {
-      transform: translateX(-100%);
+      width: 0;
       opacity: 0;
       pointer-events: none;
-      margin-left: -320px;
-      margin-right: -2rem;
+      padding: 0;
+      margin: 0;
+      border: none;
+      overflow: hidden;
     }
 
     .filter-panel-header {
@@ -1639,8 +1642,10 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
 
       .filter-panel.collapsed {
         transform: translateX(-100%);
-        margin-left: 0;
-        margin-right: 0;
+        width: 0;
+        padding: 0;
+        border: none;
+        overflow: hidden;
       }
 
       .toggle-filters-btn {
