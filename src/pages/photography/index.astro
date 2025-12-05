@@ -1,6 +1,6 @@
 ---
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
-import { getFeaturedPhotosWithExif, sortPhotos } from '../../utils/photo-helpers';
+import { getFeaturedPhotosWithExif, sortPhotos, transformForLightbox } from '../../utils/photo-helpers';
 import { getPhotoUrl, getResizedPhotoUrl } from '../../utils/url-helper';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
 import PhotoAbout from '../../components/photo/PhotoAbout.astro';
@@ -81,16 +81,13 @@ const sortedPhotos = sortPhotos(featuredPhotos);
           </div>
         ))}
       </div>
-      <PhotoLightbox photos={sortedPhotos.map(p => ({
-        ...p,
-        data: { ...p.data, albumTitle: albumTitleMap.get(p.data.album) }
-      }))} />
+      <PhotoLightbox photos={sortedPhotos.map(p => transformForLightbox(p, albumTitleMap))} />
     </>
   )}
 
-  <script type="module">
+  <script>
     import { normalizeTag } from '../../utils/client/tag-utils';
-    window.photoTagUtils = { normalizeTag };
+    (window as any).photoTagUtils = { normalizeTag };
   </script>
 
   <script define:vars={{

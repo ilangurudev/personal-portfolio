@@ -118,6 +118,7 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
               alt={photo.data.title}
               loading="lazy"
               decoding="async"
+              draggable={false}
               style={{
                 objectPosition: `center ${photo.data.position || 'middle'}`
               }}

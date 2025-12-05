@@ -6,7 +6,8 @@ import {
   parseSettings,
   extractTags,
   extractTagNames,
-  formatShutterSpeed
+  formatShutterSpeed,
+  transformForLightbox
 } from '../../utils/photo-helpers';
 import { getCollection } from 'astro:content';
 import { getPhotoUrl, getResizedPhotoUrl } from '../../utils/url-helper';
@@ -434,16 +435,13 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
     </div>
   </div>
 
-  <PhotoLightbox photos={sortedPhotos.map(p => ({
-    ...p,
-    data: { ...p.data, albumTitle: albumTitleMap.get(p.data.album) }
-  }))} />
+  <PhotoLightbox photos={sortedPhotos.map(p => transformForLightbox(p, albumTitleMap))} />
 
-  <script type="module">
+  <script>
     import { filterPhotosByTags, getAvailableTags, normalizeTag } from '../../utils/client/tag-utils';
     import { formatShutterSpeed } from '../../utils/shared/exif';
-    window.photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
-    window.photoFormatters = { formatShutterSpeed };
+    (window as any).photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
+    (window as any).photoFormatters = { formatShutterSpeed };
   </script>
 
   <script define:vars={{
@@ -1131,6 +1129,7 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
   <style>
     .photos-page {
       max-width: 1800px;
+      width: 100%;
       margin: 0 auto;
       padding: 0 1.5rem 2rem;
     }
@@ -1183,16 +1182,16 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
     }
 
     .toggle-filters-btn:hover {
-      background: var(--orange);
+      background: var(--terracotta);
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      box-shadow: 0 4px 12px rgba(194, 65, 12, 0.3);
     }
 
     .filter-count {
       position: absolute;
       top: -8px;
       right: -8px;
-      background: var(--orange);
+      background: var(--terracotta);
       color: white;
       font-size: 0.75rem;
       font-weight: 600;
@@ -1217,18 +1216,20 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
       padding: 1.5rem;
       max-height: calc(100vh - 4rem);
       overflow-y: auto;
-      transition: transform 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+      transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
       border: 1px solid rgba(28, 25, 23, 0.1);
       width: 320px;
       flex-shrink: 0;
     }
 
     .filter-panel.collapsed {
-      transform: translateX(-100%);
+      width: 0;
       opacity: 0;
       pointer-events: none;
-      margin-left: -320px;
-      margin-right: -2rem;
+      padding: 0;
+      margin: 0;
+      border: none;
+      overflow: hidden;
     }
 
     .filter-panel-header {
@@ -1268,7 +1269,7 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
 
     .clear-filters-btn:hover {
       background: rgba(245, 158, 11, 0.1);
-      color: var(--orange);
+      color: var(--terracotta);
     }
 
     .close-filters-btn {
@@ -1618,7 +1619,7 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
     }
 
     .reset-filters-btn:hover {
-      background: var(--orange);
+      background: var(--terracotta);
       transform: translateY(-2px);
     }
 
@@ -1641,8 +1642,10 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
 
       .filter-panel.collapsed {
         transform: translateX(-100%);
-        margin-left: 0;
-        margin-right: 0;
+        width: 0;
+        padding: 0;
+        border: none;
+        overflow: hidden;
       }
 
       .toggle-filters-btn {
