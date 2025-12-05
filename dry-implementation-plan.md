@@ -545,7 +545,7 @@ const { tags, initialActiveTag } = Astro.props;
 
 ---
 
-### 2.5 Photo→Lightbox Data Transformation (4 locations)
+### 2.5 Photo→Lightbox Data Transformation (4 locations) — **Done**
 
 **Problem:** Same mapping pattern for lightbox format.
 
@@ -555,7 +555,7 @@ const { tags, initialActiveTag } = Astro.props;
 - `src/pages/photography/album/[slug].astro` (lines 45-61, 136-139)
 - `src/components/react/FilteredPhotoGallery.tsx` (lines 90-107)
 
-**Solution:** Add to `src/utils/photo-helpers.ts`
+**Solution:** Add shared transform in `src/utils/lightbox-transform.ts` (re-exported from `src/utils/photo-helpers.ts`) and use across all lightbox entry points.
 
 ```typescript
 export interface LightboxPhoto {

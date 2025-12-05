@@ -26,6 +26,16 @@ const isComplete = hasCompleteMetadata(photo);
 const formattedSettings = formatSettings(photo.data.settings);
 ```
 
+### Lightbox Transformation
+
+```typescript
+// Normalize any photo shape (Date or ISO string) for the lightbox payload
+const lightboxPhotos = photos.map(photo => transformForLightbox(photo, albumTitleMap));
+// → Ensures url, albumTitle, tags (default []), body (''), date ISO are present
+// → Invalid/malformed date values are coerced to '' to avoid runtime errors
+```
+Location: `src/utils/lightbox-transform.ts` (re-exported from `photo-helpers.ts`) so it can be safely used from both Astro server code and React islands.
+
 ### Sorting Utilities
 
 ```typescript

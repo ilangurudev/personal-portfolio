@@ -56,6 +56,7 @@ npm run test:viewfinder   # Viewfinder overlay CSS functionality
 | `visual-aesthetics.spec.js` | Design consistency | Colors, typography, themes |
 | `tag-filtering-and-or.spec.cjs` | Tag filtering | AND/OR modes, tag availability, clear filters |
 | `story-drawer.spec.cjs` | Story drawer | Open/close, content display, auto-close |
+| `story-drawer-album-tag.spec.cjs` | Story drawer (album/tag pages) | Finds photos with story metadata dynamically; verifies drawer on album + tag pages |
 | `lightbox-navigation-links.spec.cjs` | Link navigation | Tag click → tag page, album click → album page |
 | `infinite-scroll.spec.cjs` | Lazy loading | Initial batch, scroll loading, photo counts |
 | `advanced-filters.spec.cjs` | Filter panel | All 8 dimensions, persistence, clear all |
