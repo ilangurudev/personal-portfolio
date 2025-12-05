@@ -438,8 +438,8 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
   <PhotoLightbox photos={sortedPhotos.map(p => transformForLightbox(p, albumTitleMap))} />
 
   <script type="module">
-    import { filterPhotosByTags, getAvailableTags, normalizeTag } from '../../utils/client/tag-utils';
-    import { formatShutterSpeed } from '../../utils/shared/exif';
+    import { filterPhotosByTags, getAvailableTags, normalizeTag } from '/src/utils/client/tag-utils.ts';
+    import { formatShutterSpeed } from '/src/utils/shared/exif.ts';
     window.photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
     window.photoFormatters = { formatShutterSpeed };
   </script>

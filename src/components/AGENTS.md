@@ -160,6 +160,7 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 - Disable drag-and-drop (`draggable="false"`)
 - iOS touch-callout prevention
 - MutationObserver to catch dynamically added images
+- React galleries also set `draggable={false}` on `<img>` (e.g., `InfinitePhotoGallery`) to keep hydration in sync with the layout script that marks images undraggable at runtime.
 
 **Purpose:** Discourage casual image downloading (not foolproof, but adds friction).
 

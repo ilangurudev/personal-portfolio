@@ -51,7 +51,7 @@
 2. **Filtering Logic:** `FilteredPhotoGallery.tsx` maintains a list of active photos.
 3. **Memoization:** `useMemo` recalculates the visible list only when tags or photos change.
 4. **Rendering:** The virtualized grid receives the new list and updates the DOM efficiently.
-5. **Shared helpers:** Client tag normalization/filtering/availability lives in `src/utils/client/tag-utils.ts`; photography pages import these instead of redefining inline logic.
+5. **Shared helpers:** Client tag normalization/filtering/availability lives in `src/utils/client/tag-utils.ts`; inline `<script type="module">` blocks must import via absolute `/src/...` paths (e.g., `/src/utils/client/tag-utils.ts`) so the browser can fetch the module without 404s.
 
 ### Performance Patterns
 - **Infinite Scroll:** Batch loading (20 photos/batch) via Intersection Observer
