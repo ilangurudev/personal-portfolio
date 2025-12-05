@@ -1,11 +1,10 @@
 ---
 import PhotoLayout from '../../../layouts/PhotoLayout.astro';
 import { getCollection, getEntry } from 'astro:content';
-import { getAlbumPhotosWithExif, sortPhotos, extractTagNames } from '../../../utils/photo-helpers';
+import { getAlbumPhotosWithExif, sortPhotos, extractTagNames, transformForLightbox } from '../../../utils/photo-helpers';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../../components/photo/PhotoIcons.astro';
 import { FilteredPhotoGallery } from '../../../components/react/FilteredPhotoGallery';
-import { getPhotoUrl } from '../../../utils/url-helper';
 
 export async function getStaticPaths() {
   const albums = await getCollection('albums');
@@ -21,6 +20,7 @@ const sortedPhotos = sortPhotos(photos);
 
 // Get all unique tags from this album's photos only (sorted alphabetically)
 const albumTags = extractTagNames(photos, 'alpha');
+const albumTitleMap = new Map([[album.slug, album.data.title]]);
 
 // Map to serializable structure for client component
 const galleryPhotos = sortedPhotos.map(p => ({
@@ -115,10 +115,7 @@ const galleryPhotos = sortedPhotos.map(p => ({
             initialActiveTags={[]}
           />
         </div>
-        <PhotoLightbox photos={sortedPhotos.map(p => ({
-          ...p,
-          data: { ...p.data, albumTitle: album.data.title }
-        }))} />
+        <PhotoLightbox photos={sortedPhotos.map(p => transformForLightbox(p, albumTitleMap))} />
       </>
     )}
   </div>

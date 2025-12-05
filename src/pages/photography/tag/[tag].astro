@@ -1,6 +1,6 @@
 ---
 import PhotoLayout from "../../../layouts/PhotoLayout.astro";
-import { getPhotosWithExif, sortPhotos, extractTags, extractTagNames } from "../../../utils/photo-helpers";
+import { getPhotosWithExif, sortPhotos, extractTags, extractTagNames, transformForLightbox } from "../../../utils/photo-helpers";
 import { getPhotoUrl } from "../../../utils/url-helper";
 import PhotoLightbox from "../../../components/photo/PhotoLightbox.astro";
 import { getCollection } from "astro:content";
@@ -133,10 +133,7 @@ const sortedPhotos = sortPhotos(filteredPhotos);
             />
           </div>
           <PhotoLightbox
-            photos={sortedPhotos.map((p) => ({
-              ...p,
-              data: { ...p.data, albumTitle: albumTitleMap.get(p.data.album) },
-            }))}
+            photos={sortedPhotos.map((p) => transformForLightbox(p, albumTitleMap))}
           />
         </>
       )

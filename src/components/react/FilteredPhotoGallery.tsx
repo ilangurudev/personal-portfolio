@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { InfinitePhotoGallery } from './InfinitePhotoGallery';
-import { getPhotoUrl } from '../../utils/url-helper';
 import { normalizeTag } from '../../utils/client/tag-utils';
+import { transformForLightbox, type LightboxPhoto } from '../../utils/lightbox-transform';
 
 interface Photo {
   id: string;
+  body?: string;
   data: {
     title: string;
     filename: string;
@@ -87,24 +88,17 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
     // Update lightbox via global function
     if (typeof window !== 'undefined' && (window as any).updateLightboxFromFilter) {
       // Convert to lightbox format
-      const lightboxPhotos = filteredPhotos.map(p => {
-        const url = getPhotoUrl(p.data.filename);
-        return {
-          id: p.id,
-          url,
+      const lightboxPhotos: LightboxPhoto[] = filteredPhotos.map(p =>
+        transformForLightbox({
+          ...p,
+          body: p.body,
           data: {
-            title: p.data.title,
-            filename: p.data.filename,
-            album: p.data.album,
-            albumTitle: p.data.albumTitle,
+            ...p.data,
+            album: p.data.album || '',
             tags: p.data.tags || [],
-            camera: p.data.camera,
-            settings: p.data.settings,
-            focalLength: p.data.focalLength,
-            location: p.data.location
-          }
-        };
-      });
+          },
+        })
+      );
       (window as any).updateLightboxFromFilter(lightboxPhotos);
     }
   }, [filteredPhotos, onFilterChange]);

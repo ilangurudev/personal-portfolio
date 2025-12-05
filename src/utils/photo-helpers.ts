@@ -1,6 +1,7 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { augmentPhotosWithExif } from '../content/loaders/exif-augmenter';
 import { formatShutterSpeed } from './shared/exif';
+export { transformForLightbox, type LightboxPhoto } from './lightbox-transform';
 
 export { formatShutterSpeed };
 
