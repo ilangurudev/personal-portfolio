@@ -173,3 +173,8 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
   - Responsive grid layout (sidebar + content)
   - Gear list and philosophy text
   - Styled with photography theme variables (Crimson Text, Work Sans)
+
+### `ViewfinderSVG` (Astro + React)
+- **Locations:** `src/components/photo/ViewfinderSVG.astro`, `src/components/react/ViewfinderSVG.tsx`
+- **Purpose:** Single source of truth for the viewfinder corner overlay SVG used on photo cards (server-rendered grids and the React infinite gallery).
+- **Usage:** Import in Astro pages/components for markup; the all-photos page also consumes it via a `<template id="viewfinder-template">` for JS-inserted cards to avoid duplicated SVG strings.

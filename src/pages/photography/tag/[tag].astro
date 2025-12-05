@@ -381,6 +381,11 @@ const sortedPhotos = sortPhotos(filteredPhotos);
     }
   </style>
 
+  <script type="module">
+    import { filterPhotosByTags, getAvailableTags, normalizeTag } from '../../../utils/client/tag-utils';
+    window.photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
+  </script>
+
   <script
     define:vars={{
       allPhotosData: allPhotos.map((p) => ({
@@ -403,6 +408,65 @@ const sortedPhotos = sortPhotos(filteredPhotos);
       })),
     }}
   >
+    const normalizeTag =
+      (window.photoTagUtils && window.photoTagUtils.normalizeTag) ||
+      ((tag) =>
+        String(tag ?? "")
+          .toLowerCase()
+          .trim());
+
+    const filterPhotosByTags =
+      (window.photoTagUtils && window.photoTagUtils.filterPhotosByTags) ||
+      ((photos, tags, logic = "or") => {
+        if (tags.length === 0) {
+          return photos;
+        }
+
+        return photos.filter((photo) => {
+          const photoTags = (photo.data?.tags || [])
+            .map((t) => normalizeTag(t))
+            .filter(Boolean);
+
+          if (logic === "and") {
+            return tags.every((tag) => photoTags.includes(normalizeTag(tag)));
+          }
+
+          return tags.some((tag) => photoTags.includes(normalizeTag(tag)));
+        });
+      });
+
+    const getAvailableTags =
+      (window.photoTagUtils && window.photoTagUtils.getAvailableTags) ||
+      ((photos, selectedTags, logic) => {
+        if (logic === "or") {
+          const allTags = new Set();
+          photos.forEach((photo) => {
+            (photo.data?.tags || []).forEach((tag) => {
+              const normalized = normalizeTag(tag);
+              if (normalized) {
+                allTags.add(normalized);
+              }
+            });
+          });
+          return allTags;
+        }
+
+        const filtered = filterPhotosByTags(photos, selectedTags, "and");
+        const available = new Set();
+
+        filtered.forEach((photo) => {
+          (photo.data?.tags || []).forEach((tag) => {
+            const normalized = normalizeTag(tag);
+            if (normalized) {
+              available.add(normalized);
+            }
+          });
+        });
+
+        selectedTags.forEach((tag) => available.add(normalizeTag(tag)));
+        return available;
+      });
+
     document.addEventListener("DOMContentLoaded", () => {
       const getTagPills = () =>
         Array.from(document.querySelectorAll(".tag-pill"));
@@ -418,29 +482,7 @@ const sortedPhotos = sortPhotos(filteredPhotos);
       const initialTitle = tagTitle?.textContent || "";
       let currentTagLogic = "or";
 
-      const normalizeTag = (tag) =>
-        String(tag ?? "")
-          .toLowerCase()
-          .trim();
       const photoDataset = Array.isArray(allPhotosData) ? allPhotosData : [];
-
-      const filterPhotosByTags = (tags, logic) => {
-        if (tags.length === 0) {
-          return photoDataset;
-        }
-
-        return photoDataset.filter((photo) => {
-          const photoTags = (photo.data?.tags || [])
-            .map((t) => normalizeTag(t))
-            .filter(Boolean);
-
-          if (logic === "and") {
-            return tags.every((tag) => photoTags.includes(tag));
-          }
-
-          return tags.some((tag) => photoTags.includes(tag));
-        });
-      };
 
       const getRawActiveTags = () =>
         getTagPills()
@@ -471,19 +513,8 @@ const sortedPhotos = sortPhotos(filteredPhotos);
         const normalizedActiveTags = getRawActiveTags().map((tag) =>
           normalizeTag(tag),
         );
-        const filtered = filterPhotosByTags(normalizedActiveTags, "and");
-        const available = new Set();
-
-        filtered.forEach((photo) => {
-          (photo.data?.tags || []).forEach((tag) => {
-            const normalized = normalizeTag(tag);
-            if (normalized) {
-              available.add(normalized);
-            }
-          });
-        });
-
-        normalizedActiveTags.forEach((tag) => available.add(tag));
+        const filtered = filterPhotosByTags(photoDataset, normalizedActiveTags, "and");
+        const available = getAvailableTags(photoDataset, normalizedActiveTags, "and");
 
         getTagPills().forEach((pill) => {
           const normalized = normalizeTag(pill.getAttribute("data-tag"));

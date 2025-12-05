@@ -38,6 +38,8 @@ npm run test:advanced-filters # 8-dimensional filter panel
 npm run test:slideshow    # Slideshow mode
 npm run test:albums       # Album pages functionality
 npm run test:sorting      # Photo sorting
+npm run test:css-leaks    # CSS rendering leak detection
+npm run test:viewfinder   # Viewfinder overlay CSS functionality
 ```
 
 **Headless vs headed:**
@@ -61,6 +63,8 @@ npm run test:sorting      # Photo sorting
 | `album-pages.spec.cjs` | Album pages | Listing, detail pages, album filtering |
 | `sorting.spec.cjs` | Photo sorting | order_score, date sorting |
 | `lightbox-interactions.spec.cjs` | Lightbox core | Open/close, navigation, metadata, keyboard (home + all-photos + all-photos after tag filter + first album + first tag pages from listings) |
+| `css-rendering-leaks.spec.cjs` | CSS leak detection | Regression test for CSS code appearing as plain text before header on photography pages |
+| `viewfinder-css.spec.cjs` | Viewfinder CSS | Viewfinder overlay visibility, hover effects, focus lock animation, CSS styles loading |
 
 **Note:** Tests are run via Playwright. Ensure the dev server is running (`npm run dev`) before running tests. The Playwright runner now watches for any `✗` output or `console.error` in specs and exits non-zero so failures are visible.
 

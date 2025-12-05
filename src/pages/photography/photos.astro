@@ -1,10 +1,18 @@
 ---
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
-import { getPhotosWithExif, sortPhotos, parseSettings, extractTags, extractTagNames } from '../../utils/photo-helpers';
+import {
+  getPhotosWithExif,
+  sortPhotos,
+  parseSettings,
+  extractTags,
+  extractTagNames,
+  formatShutterSpeed
+} from '../../utils/photo-helpers';
 import { getCollection } from 'astro:content';
 import { getPhotoUrl, getResizedPhotoUrl } from '../../utils/url-helper';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../components/photo/PhotoIcons.astro';
+import ViewfinderSVG from '../../components/photo/ViewfinderSVG.astro';
 
 // Get all photos with EXIF data
 const allPhotos = await getPhotosWithExif();
@@ -136,17 +144,6 @@ exifRanges.shutterSpeed = alignRangeToStep(exifRanges.shutterSpeed, RANGE_STEPS.
 exifRanges.iso = alignRangeToStep(exifRanges.iso, RANGE_STEPS.iso);
 exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.focalLength);
 
-// Format shutter speed for display in template
-function formatShutterSpeedTemplate(seconds: number): string {
-  if (seconds < 1) {
-    // Fractional shutter speed (e.g., 1/1000s)
-    const denominator = Math.round(1 / seconds);
-    return `1/${denominator}s`;
-  } else {
-    // Whole number shutter speed (e.g., 2s)
-    return `${seconds.toFixed(1)}s`;
-  }
-}
 ---
 
 <PhotoLayout title="All Photos" description="Browse all photos with advanced filters">
@@ -339,9 +336,9 @@ function formatShutterSpeedTemplate(seconds: number): string {
                 />
               </div>
               <div class="filter-range-values">
-                <span id="shutter-min-value">{formatShutterSpeedTemplate(exifRanges.shutterSpeed.min)}</span>
+                <span id="shutter-min-value">{formatShutterSpeed(exifRanges.shutterSpeed.min)}</span>
                 <span>—</span>
-                <span id="shutter-max-value">{formatShutterSpeedTemplate(exifRanges.shutterSpeed.max)}</span>
+                <span id="shutter-max-value">{formatShutterSpeed(exifRanges.shutterSpeed.max)}</span>
               </div>
             </div>
           </div>
@@ -418,6 +415,12 @@ function formatShutterSpeedTemplate(seconds: number): string {
           <!-- Photos will be rendered progressively by JavaScript -->
         </div>
 
+        <template id="viewfinder-template">
+          <div class="viewfinder-overlay">
+            <ViewfinderSVG />
+          </div>
+        </template>
+
         <div id="loading-indicator" class="loading-indicator" style="display: none;">
           <div class="loading-spinner"></div>
           <p>Loading more photos...</p>
@@ -435,6 +438,13 @@ function formatShutterSpeedTemplate(seconds: number): string {
     ...p,
     data: { ...p.data, albumTitle: albumTitleMap.get(p.data.album) }
   }))} />
+
+  <script type="module">
+    import { filterPhotosByTags, getAvailableTags, normalizeTag } from '../../utils/client/tag-utils';
+    import { formatShutterSpeed } from '../../utils/shared/exif';
+    window.photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
+    window.photoFormatters = { formatShutterSpeed };
+  </script>
 
   <script define:vars={{
     allPhotosData: sortedPhotos.map(p => ({
@@ -467,18 +477,70 @@ function formatShutterSpeedTemplate(seconds: number): string {
       }
     }
   }}>
+    const normalizeTag =
+      (window.photoTagUtils && window.photoTagUtils.normalizeTag) ||
+      ((tag) => String(tag ?? '').toLowerCase().trim());
+
+    const filterPhotosByTags =
+      (window.photoTagUtils && window.photoTagUtils.filterPhotosByTags) ||
+      ((photos, tags, logic = 'or') => {
+        if (tags.length === 0) return photos;
+
+        return photos.filter(photo => {
+          const photoTags = (photo.data?.tags || []).map(t => normalizeTag(t)).filter(Boolean);
+          if (logic === 'and') {
+            return tags.every(tag => photoTags.includes(normalizeTag(tag)));
+          }
+          return tags.some(tag => photoTags.includes(normalizeTag(tag)));
+        });
+      });
+
+    const getAvailableTags =
+      (window.photoTagUtils && window.photoTagUtils.getAvailableTags) ||
+      ((photos, selectedTags, logic) => {
+        if (logic === 'or') {
+          const allTags = new Set();
+          photos.forEach(photo => {
+            (photo.data?.tags || []).forEach(tag => {
+              const normalized = normalizeTag(tag);
+              if (normalized) allTags.add(normalized);
+            });
+          });
+          return allTags;
+        }
+
+        const filtered = filterPhotosByTags(photos, selectedTags, 'and');
+        const available = new Set();
+
+        filtered.forEach(photo => {
+          (photo.data?.tags || []).forEach(tag => {
+            const normalized = normalizeTag(tag);
+            if (normalized) available.add(normalized);
+          });
+        });
+
+        selectedTags.forEach(tag => available.add(normalizeTag(tag)));
+        return available;
+      });
+
+    const formatShutterSpeed =
+      (window.photoFormatters && window.photoFormatters.formatShutterSpeed) ||
+      ((seconds) => {
+        if (seconds < 1) {
+          const denominator = Math.round(1 / seconds);
+          return `1/${denominator}s`;
+        }
+        return `${seconds.toFixed(1)}s`;
+      });
+
     // Photo filtering and progressive loading
     const BATCH_SIZE = 20;
     console.log('EXIF Ranges:', exifRangesData);
     let currentBatchIndex = 0;
     let filteredPhotos = [...allPhotosData];
     let displayedPhotos = [];
-
-    // Normalize tag for consistent comparison
-    function normalizeTag(tag) {
-      if (!tag) return '';
-      return String(tag).toLowerCase().trim();
-    }
+    const viewfinderTemplate = document.getElementById('viewfinder-template');
+    const viewfinderMarkup = viewfinderTemplate?.innerHTML?.trim?.() || '';
 
     // Parse settings helper
     function parseSettings(settings) {
@@ -506,18 +568,6 @@ function formatShutterSpeedTemplate(seconds: number): string {
       }
 
       return result;
-    }
-
-    // Format shutter speed for display
-    function formatShutterSpeed(seconds) {
-      if (seconds < 1) {
-        // Fractional shutter speed (e.g., 1/1000s)
-        const denominator = Math.round(1 / seconds);
-        return `1/${denominator}s`;
-      } else {
-        // Whole number shutter speed (e.g., 2s)
-        return `${seconds.toFixed(1)}s`;
-      }
     }
 
     // Get current filter state
@@ -702,14 +752,7 @@ function formatShutterSpeedTemplate(seconds: number): string {
               loading="lazy"
               style="object-position: center ${photo.data.position || 'top'};"
             />
-            <div class="viewfinder-overlay">
-              <svg class="viewfinder-corners" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 15 L15 25 L25 25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M85 15 L85 25 L75 25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M15 85 L15 75 L25 75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M85 85 L85 75 L75 75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
+            ${viewfinderMarkup}
           </div>
         `;
 
@@ -975,20 +1018,6 @@ function formatShutterSpeedTemplate(seconds: number): string {
       return activeToggle?.getAttribute('data-mode') || 'or';
     }
 
-    // Filter photos by tags (used for tag availability calculation)
-    function filterPhotosByTags(tags, logic) {
-      if (tags.length === 0) return allPhotosData;
-
-      return allPhotosData.filter(photo => {
-        const photoTags = photo.data.tags.map(t => normalizeTag(t)).filter(t => t);
-
-        if (logic === 'and') {
-          return tags.every(tag => photoTags.includes(tag));
-        }
-        return tags.some(tag => photoTags.includes(tag));
-      });
-    }
-
     // Update tag availability in AND mode
     function updateTagAvailability() {
       const currentLogic = getCurrentTagLogic();
@@ -1012,23 +1041,17 @@ function formatShutterSpeedTemplate(seconds: number): string {
 
       // In AND mode, only show tags that would still produce results
       const selectedTags = getSelectedTags();
-      const filtered = filterPhotosByTags(selectedTags, 'and');
-
-      // Collect all tags from filtered photos with their counts in filtered results
-      const availableTags = new Set();
+      const filtered = filterPhotosByTags(allPhotosData, selectedTags, 'and');
+      const availableTags = getAvailableTags(allPhotosData, selectedTags, 'and');
       const filteredTagCounts = new Map();
       filtered.forEach(photo => {
         (photo.data.tags || []).forEach(tag => {
           const normalized = normalizeTag(tag);
           if (normalized) {
-            availableTags.add(normalized);
             filteredTagCounts.set(normalized, (filteredTagCounts.get(normalized) || 0) + 1);
           }
         });
       });
-
-      // Always keep selected tags available
-      selectedTags.forEach(tag => availableTags.add(tag));
 
       // Update label classes and reorder: available tags first (sorted by filtered count), then unavailable
       const availableLabels = [];
