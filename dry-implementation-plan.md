@@ -24,7 +24,7 @@ This document outlines a comprehensive plan to eliminate code duplication (DRY v
 
 ## 1. High Severity Violations
 
-### 1.1 Photo Sorting Logic (5 locations)
+### 1.1 Photo Sorting Logic (5 locations) — **Done**
 
 **Problem:** Identical sorting logic duplicated across 5 locations.
 
@@ -66,7 +66,7 @@ export function sortPhotos<T extends { data: { order_score?: number; date: Date 
 
 ---
 
-### 1.2 Album Sorting Logic (1 location, different pattern)
+### 1.2 Album Sorting Logic (1 location, different pattern) — **Done**
 
 **File:** `src/pages/photography/albums.astro` (lines 7-19)
 
@@ -99,7 +99,7 @@ export function sortAlbums<T extends { data: { featured?: boolean; order_score: 
 
 ---
 
-### 1.3 `normalizeTag()` Function (5 locations)
+### 1.3 `normalizeTag()` Function (5 locations) — **Done**
 
 **Problem:** Tag normalization function defined separately in each file.
 
@@ -129,7 +129,7 @@ export const normalizeTag = (tag?: string | null): string =>
 
 ---
 
-### 1.4 `parseSettings()` EXIF Parser (4 locations)
+### 1.4 `parseSettings()` EXIF Parser (4 locations) — **Partially Done** (server shared; client in `photos.astro` still duplicates parser)
 
 **Problem:** EXIF parsing logic duplicated in server and client code.
 
@@ -181,7 +181,7 @@ export function parseSettings(settings?: string): ParsedExifSettings {
 
 ---
 
-### 1.5 Tag Extraction/Counting Logic (4 locations)
+### 1.5 Tag Extraction/Counting Logic (4 locations) — **Done**
 
 **Problem:** Similar tag collection patterns across pages.
 
@@ -236,7 +236,7 @@ export function extractTags(
 
 ---
 
-### 1.6 Photo Card CSS Styles (4 locations)
+### 1.6 Photo Card CSS Styles (4 locations) — **Done**
 
 **Problem:** ~80 lines of identical CSS repeated in each photography page.
 
@@ -291,7 +291,7 @@ Then import in each page:
 
 ---
 
-### 1.7 `filterPhotosByTags()` Logic (3 locations)
+### 1.7 `filterPhotosByTags()` Logic (3 locations) — **Done**
 
 **Problem:** Tag filtering logic with AND/OR support duplicated.
 
@@ -340,7 +340,7 @@ export function filterPhotosByTags<T extends { data: { tags: string[] } }>(
 
 ---
 
-### 1.8 Tag Availability Update Logic (3 locations)
+### 1.8 Tag Availability Update Logic (3 locations) — **Done**
 
 **Problem:** Complex tag availability calculation duplicated.
 

@@ -93,6 +93,11 @@ const sortedPhotos = sortPhotos(featuredPhotos);
     </>
   )}
 
+  <script type="module">
+    import { normalizeTag } from '../../utils/client/tag-utils';
+    window.photoTagUtils = { normalizeTag };
+  </script>
+
   <script define:vars={{
     allPhotosData: sortedPhotos.map(p => ({
       id: p.id,
@@ -120,11 +125,9 @@ const sortedPhotos = sortPhotos(featuredPhotos);
       const toggleButtons = document.querySelectorAll('.filter-toggle-option');
       const photoCards = document.querySelectorAll('.photo-card');
 
-      // Normalize tag for consistent comparison
-      function normalizeTag(tag) {
-        if (!tag) return '';
-        return String(tag).toLowerCase().trim();
-      }
+      const normalizeTag =
+        (window.photoTagUtils && window.photoTagUtils.normalizeTag) ||
+        ((tag) => String(tag ?? '').toLowerCase().trim());
 
       // Apply filter based on selection
       function applyFilter(filter) {
