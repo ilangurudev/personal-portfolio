@@ -453,7 +453,7 @@ export function formatShutterSpeed(seconds: number): string {
 
 ---
 
-### 2.3 Tag Logic Toggle Handler (3 locations)
+### 2.3 Tag Logic Toggle Handler (3 locations) — **Done**
 
 **Problem:** Nearly identical OR/AND toggle logic.
 
@@ -487,7 +487,7 @@ export function setupTagLogicToggle(
 
 ---
 
-### 2.4 Filter Bar HTML Structure (3 locations)
+### 2.4 Filter Bar HTML Structure (3 locations) — **Done**
 
 **Problem:** Identical collapsible filter bar markup.
 
