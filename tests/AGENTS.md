@@ -1,33 +1,30 @@
 # Development & Testing
 
-## 1. Development Commands
+## 1. Determining Environment
 
-```bash
-npm run dev            # Start dev server (http://localhost:4321)
-npm run build          # Production build
-npm run preview        # Preview production build
-npm run import         # Import photos (see workflow)
-npm run remove         # Remove photos/albums (see workflow)
-npm run copy-exif      # Migrate EXIF to frontmatter (deprecated)
-npm run fix-frontmatter # Fix type issues in frontmatter (deprecated)
-npm run sync_keywords  # Sync IPTC keywords to tags (deprecated)
-```
+First determine if the env var `PUBLIC_ENV` is "DEV". If it is, then you are in a local environment. Else you are probably in a remote (sandboxed) environment.  
 
-## 2. Testing
+### Local Env Instructions
 
-**Remote/Sandboxed Environment Setup:**
+In a local environment, environment is mostly setup for you. You can check if a dev server is already running. If not, you can start by `npm run dev # Start dev server (http://localhost:4321)`
 
-If you're running tests in a remote or sandboxed environment (e.g., Claude Code web, Codespaces, containers) where `public_env` is not `dev`, see [SETUP-REMOTE.md](./SETUP-REMOTE.md) for detailed setup instructions including:
+### Remove Env
+
+If you're running tests in a remote or sandboxed environment (e.g., Claude Code web, Codespaces, containers) where `PUBLIC_ENV` is not `DEV`, setup environment with `SKIP_CHROMIUM_INSTALL=1 bash tests/setup-remote-e2e.sh`. 
+
+see [SETUP-REMOTE.md](./SETUP-REMOTE.md) for detailed troubleshooting instructions including:
 - Installing dependencies
 - Installing Playwright/Chromium
 - Starting the dev server
 - Troubleshooting common issues
   - If Chromium downloads are blocked, set `SKIP_CHROMIUM_INSTALL=1` and point `PLAYWRIGHT_BROWSERS_PATH` (or `${HOME}/.cache/ms-playwright`) to a preinstalled browser.
 
+## 2. Testing
+
+
 **E2E Tests (Playwright):**
 ```bash
-npm run test              # Core tests (navigation, responsive, visual)
-npm run test:all          # Run ALL tests comprehensively
+npm run test              # Run ALL tests comprehensively
 npm run test:navigation   # Dual-space navigation
 npm run test:responsive   # Responsive layouts
 npm run test:visual       # Visual aesthetics
@@ -45,7 +42,7 @@ npm run test:sorting      # Photo sorting
 
 **Headless vs headed:**
 - Browsers run headed by default so you can watch interactions.
-- Set `HEADLESS=true` to run all Playwright tests in headless mode.
+- Set `HEADLESS=true` to run all Playwright tests in headless mode. In remote envs, USE THIS. 
 
 **Test Files:**
 
