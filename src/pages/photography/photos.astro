@@ -436,6 +436,11 @@ function formatShutterSpeedTemplate(seconds: number): string {
     data: { ...p.data, albumTitle: albumTitleMap.get(p.data.album) }
   }))} />
 
+  <script type="module">
+    import { filterPhotosByTags, getAvailableTags, normalizeTag } from '../../utils/client/tag-utils';
+    window.photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
+  </script>
+
   <script define:vars={{
     allPhotosData: sortedPhotos.map(p => ({
       id: p.id,
@@ -467,18 +472,58 @@ function formatShutterSpeedTemplate(seconds: number): string {
       }
     }
   }}>
+    const normalizeTag =
+      (window.photoTagUtils && window.photoTagUtils.normalizeTag) ||
+      ((tag) => String(tag ?? '').toLowerCase().trim());
+
+    const filterPhotosByTags =
+      (window.photoTagUtils && window.photoTagUtils.filterPhotosByTags) ||
+      ((photos, tags, logic = 'or') => {
+        if (tags.length === 0) return photos;
+
+        return photos.filter(photo => {
+          const photoTags = (photo.data?.tags || []).map(t => normalizeTag(t)).filter(Boolean);
+          if (logic === 'and') {
+            return tags.every(tag => photoTags.includes(normalizeTag(tag)));
+          }
+          return tags.some(tag => photoTags.includes(normalizeTag(tag)));
+        });
+      });
+
+    const getAvailableTags =
+      (window.photoTagUtils && window.photoTagUtils.getAvailableTags) ||
+      ((photos, selectedTags, logic) => {
+        if (logic === 'or') {
+          const allTags = new Set();
+          photos.forEach(photo => {
+            (photo.data?.tags || []).forEach(tag => {
+              const normalized = normalizeTag(tag);
+              if (normalized) allTags.add(normalized);
+            });
+          });
+          return allTags;
+        }
+
+        const filtered = filterPhotosByTags(photos, selectedTags, 'and');
+        const available = new Set();
+
+        filtered.forEach(photo => {
+          (photo.data?.tags || []).forEach(tag => {
+            const normalized = normalizeTag(tag);
+            if (normalized) available.add(normalized);
+          });
+        });
+
+        selectedTags.forEach(tag => available.add(normalizeTag(tag)));
+        return available;
+      });
+
     // Photo filtering and progressive loading
     const BATCH_SIZE = 20;
     console.log('EXIF Ranges:', exifRangesData);
     let currentBatchIndex = 0;
     let filteredPhotos = [...allPhotosData];
     let displayedPhotos = [];
-
-    // Normalize tag for consistent comparison
-    function normalizeTag(tag) {
-      if (!tag) return '';
-      return String(tag).toLowerCase().trim();
-    }
 
     // Parse settings helper
     function parseSettings(settings) {
@@ -975,20 +1020,6 @@ function formatShutterSpeedTemplate(seconds: number): string {
       return activeToggle?.getAttribute('data-mode') || 'or';
     }
 
-    // Filter photos by tags (used for tag availability calculation)
-    function filterPhotosByTags(tags, logic) {
-      if (tags.length === 0) return allPhotosData;
-
-      return allPhotosData.filter(photo => {
-        const photoTags = photo.data.tags.map(t => normalizeTag(t)).filter(t => t);
-
-        if (logic === 'and') {
-          return tags.every(tag => photoTags.includes(tag));
-        }
-        return tags.some(tag => photoTags.includes(tag));
-      });
-    }
-
     // Update tag availability in AND mode
     function updateTagAvailability() {
       const currentLogic = getCurrentTagLogic();
@@ -1012,23 +1043,17 @@ function formatShutterSpeedTemplate(seconds: number): string {
 
       // In AND mode, only show tags that would still produce results
       const selectedTags = getSelectedTags();
-      const filtered = filterPhotosByTags(selectedTags, 'and');
-
-      // Collect all tags from filtered photos with their counts in filtered results
-      const availableTags = new Set();
+      const filtered = filterPhotosByTags(allPhotosData, selectedTags, 'and');
+      const availableTags = getAvailableTags(allPhotosData, selectedTags, 'and');
       const filteredTagCounts = new Map();
       filtered.forEach(photo => {
         (photo.data.tags || []).forEach(tag => {
           const normalized = normalizeTag(tag);
           if (normalized) {
-            availableTags.add(normalized);
             filteredTagCounts.set(normalized, (filteredTagCounts.get(normalized) || 0) + 1);
           }
         });
       });
-
-      // Always keep selected tags available
-      selectedTags.forEach(tag => availableTags.add(tag));
 
       // Update label classes and reorder: available tags first (sorted by filtered count), then unavailable
       const availableLabels = [];
