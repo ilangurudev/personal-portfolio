@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { InfinitePhotoGallery } from './InfinitePhotoGallery';
 import { normalizeTag } from '../../utils/client/tag-utils';
-import { transformForLightbox, type LightboxPhoto } from '../../utils/lightbox-transform';
+import {
+  transformForLightbox,
+  type LightboxPhoto,
+  toIsoDateString
+} from '../../utils/lightbox-transform';
 
 interface Photo {
   id: string;
@@ -110,7 +114,7 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
       data: {
         ...p.data,
         order_score: typeof p.data.order_score === 'number' ? p.data.order_score : 0,
-        date: typeof p.data.date === 'string' ? p.data.date : p.data.date.toISOString()
+        date: toIsoDateString(p.data.date)
       }
     }));
   }, [filteredPhotos]);
