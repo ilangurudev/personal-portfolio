@@ -15,6 +15,14 @@ npm run sync_keywords  # Sync IPTC keywords to tags (deprecated)
 
 ## 2. Testing
 
+**Remote/Sandboxed Environment Setup:**
+
+If you're running tests in a remote or sandboxed environment (e.g., Claude Code web, Codespaces, containers) where `public_env` is not `dev`, see [SETUP-REMOTE.md](./SETUP-REMOTE.md) for detailed setup instructions including:
+- Installing dependencies
+- Installing Playwright/Chromium
+- Starting the dev server
+- Troubleshooting common issues
+
 **E2E Tests (Playwright):**
 ```bash
 npm run test              # Core tests (navigation, responsive, visual)
