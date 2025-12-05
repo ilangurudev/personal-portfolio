@@ -390,7 +390,7 @@ export function getAvailableTags<T extends { data: { tags: string[] } }>(
 
 ## 2. Medium Severity Violations
 
-### 2.1 Viewfinder SVG Markup (5+ locations)
+### 2.1 Viewfinder SVG Markup (5+ locations) — **Done**
 
 **Problem:** Identical SVG markup (~10 lines) copied across files.
 
@@ -400,7 +400,7 @@ export function getAvailableTags<T extends { data: { tags: string[] } }>(
 - `src/components/react/InfinitePhotoGallery.tsx` (lines 118-152)
 - Referenced via components in `album/[slug].astro` and `tag/[tag].astro`
 
-**Solution:** Create `src/components/photo/ViewfinderSVG.astro`
+**Solution:** Create `src/components/photo/ViewfinderSVG.astro` (**shipped**) and React twin `src/components/react/ViewfinderSVG.tsx` (**shipped**). The all-photos page now uses a `<template id="viewfinder-template">` with the Astro component so JS-inserted cards reuse the same markup.
 
 ```astro
 ---
@@ -431,7 +431,7 @@ export const ViewfinderSVG = () => (
 
 ---
 
-### 2.2 `formatShutterSpeed()` Function (3 locations)
+### 2.2 `formatShutterSpeed()` Function (3 locations) — **Done**
 
 **Files Affected:**
 | File | Lines | Type |
@@ -439,7 +439,7 @@ export const ViewfinderSVG = () => (
 | `src/pages/photography/photos.astro` | 194-203 | Server TS |
 | `src/pages/photography/photos.astro` | 566-575 | Client JS |
 
-**Solution:** Add to `src/utils/photo-helpers.ts`
+**Solution:** Move the formatter to `src/utils/shared/exif.ts` and re-export from `photo-helpers.ts`. The all-photos page consumes the shared helper server-side and via a single window-exposed helper for client scripts (no duplicate formatter definitions).
 
 ```typescript
 export function formatShutterSpeed(seconds: number): string {

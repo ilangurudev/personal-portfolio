@@ -1,5 +1,8 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { augmentPhotosWithExif } from '../content/loaders/exif-augmenter';
+import { formatShutterSpeed } from './shared/exif';
+
+export { formatShutterSpeed };
 
 export type Photo = CollectionEntry<'photos'>;
 
@@ -160,21 +163,6 @@ export function parseSettings(settings?: string): ParsedExifSettings {
   }
 
   return result;
-}
-
-/**
- * Format shutter speed value for display
- * @param seconds - Shutter speed in seconds
- * @returns Formatted string (e.g., "1/1000s" or "2.0s")
- */
-export function formatShutterSpeed(seconds: number): string {
-  if (seconds < 1) {
-    // Fractional shutter speed (e.g., 1/1000s)
-    const denominator = Math.round(1 / seconds);
-    return `1/${denominator}s`;
-  }
-  // Whole number shutter speed (e.g., 2s)
-  return `${seconds.toFixed(1)}s`;
 }
 
 /**
