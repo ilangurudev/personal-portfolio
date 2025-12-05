@@ -49,6 +49,8 @@ This downloads the Chromium browser binary used by Playwright. It's a ~100MB dow
 
 ### 4. Start the Dev Server
 
+**⚠️ CRITICAL:** The dev server MUST be started from the project root directory (`/home/user/personal-portfolio`). Starting it from any subdirectory will result in 404 errors and test failures.
+
 ```bash
 cd /home/user/personal-portfolio
 npm run dev &
@@ -109,6 +111,15 @@ npm run test:navigation   # Run specific test with visible browser
 **Cause:** Running headed mode in environment without display
 **Fix:** Use `HEADLESS=true npm run test`
 
+### "Page loaded: 404: Not Found" in test output
+
+**Cause:** Dev server started from wrong directory or `src/` directory not found
+**Fix:**
+1. Kill the dev server: `pkill -f "astro dev"`
+2. Ensure you're in `/home/user/personal-portfolio` (not a subdirectory)
+3. Restart: `cd /home/user/personal-portfolio && npm run dev &`
+4. Wait 10 seconds and verify: `curl -s http://localhost:4321 | head -20`
+
 ## Quick Setup Script
 
 For convenience, here's a one-liner to set up everything:
@@ -119,10 +130,13 @@ npm install && \
 cd .claude/skills/playwright-skill && \
 npm install && \
 npx playwright install chromium && \
-cd ../.. && \
-npm run dev &
+cd /home/user/personal-portfolio && \
+npm run dev & \
 sleep 10 && \
-echo "✅ Setup complete! Run 'HEADLESS=true npm run test' to start testing"
+echo "✅ Setup complete! Verifying dev server..." && \
+curl -s http://localhost:4321 | head -5 && \
+echo "" && \
+echo "✅ Dev server is running! Run 'HEADLESS=true npm run test' to start testing"
 ```
 
 ## Environment Detection
@@ -136,7 +150,11 @@ The setup process differs based on environment:
 ## Next Steps
 
 After setup is complete:
-1. Verify dev server is running: `curl http://localhost:4321`
+1. Verify dev server is running and serving content:
+   ```bash
+   curl -s http://localhost:4321 | head -20
+   ```
+   You should see HTML content, not "404: Not Found"
 2. Run a single test to verify: `HEADLESS=true npm run test:navigation`
 3. Run full suite: `HEADLESS=true npm run test`
 
