@@ -364,9 +364,9 @@ const galleryPhotos = sortedPhotos.map(p => ({
     }
   </style>
 
-  <script type="module">
-    import { filterPhotosByTags, getAvailableTags, normalizeTag } from '/src/utils/client/tag-utils.ts';
-    window.photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
+  <script>
+    import { filterPhotosByTags, getAvailableTags, normalizeTag } from '../../../utils/client/tag-utils';
+    (window as any).photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
   </script>
 
   <script define:vars={{ albumPhotosData: galleryPhotos }}>

@@ -85,9 +85,9 @@ const sortedPhotos = sortPhotos(featuredPhotos);
     </>
   )}
 
-  <script type="module">
-    import { normalizeTag } from '/src/utils/client/tag-utils.ts';
-    window.photoTagUtils = { normalizeTag };
+  <script>
+    import { normalizeTag } from '../../utils/client/tag-utils';
+    (window as any).photoTagUtils = { normalizeTag };
   </script>
 
   <script define:vars={{
