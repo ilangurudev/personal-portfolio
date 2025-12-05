@@ -52,7 +52,7 @@ npm run setup
 
 This installs Playwright and Chromium browser. Only needed once.
 
-In and only in a Claude Code web sandboxed environment, use SETUP-REMOTE.md instructions to get the environment setup. 
+For remote/sandboxed environments (e.g., Claude Code web, Codespaces), refer to the project's `tests/SETUP-REMOTE.md` for detailed setup instructions.
 
 
 ## Execution Pattern
