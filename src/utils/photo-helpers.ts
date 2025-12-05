@@ -74,3 +74,44 @@ export function formatSettings(settings?: string): string {
   if (!settings) return 'Settings unknown';
   return settings;
 }
+
+/**
+ * Sort photos by order_score (descending) and then by date (descending)
+ * @param photos - Array of photos to sort
+ * @returns Sorted array of photos (creates a new array, doesn't mutate)
+ */
+export function sortPhotos<T extends { data: { order_score?: number; date: Date } }>(
+  photos: T[]
+): T[] {
+  return [...photos].sort((a, b) => {
+    const scoreA = a.data.order_score ?? 0;
+    const scoreB = b.data.order_score ?? 0;
+    if (scoreB !== scoreA) {
+      return scoreB - scoreA;
+    }
+    return b.data.date.getTime() - a.data.date.getTime();
+  });
+}
+
+/**
+ * Sort albums by featured status, then by order_score (descending), then by date (descending)
+ * @param albums - Array of albums to sort
+ * @returns Sorted array of albums (creates a new array, doesn't mutate)
+ */
+export function sortAlbums<T extends { data: { featured?: boolean; order_score: number; date: Date } }>(
+  albums: T[]
+): T[] {
+  return [...albums].sort((a, b) => {
+    // Featured albums first
+    if (a.data.featured && !b.data.featured) return -1;
+    if (!a.data.featured && b.data.featured) return 1;
+
+    // Then by order_score (descending)
+    if (a.data.order_score !== b.data.order_score) {
+      return b.data.order_score - a.data.order_score;
+    }
+
+    // Finally by date (descending)
+    return b.data.date.getTime() - a.data.date.getTime();
+  });
+}

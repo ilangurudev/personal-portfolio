@@ -4,6 +4,31 @@ This guide is for setting up E2E tests in remote or sandboxed environments (e.g.
 
 **Note:** If you're running tests in a standard local development environment, you likely don't need this guide. Use this only when `public_env` is not `dev` or you're in a containerized/sandboxed environment.
 
+## Quick Setup (Automated Script)
+
+Run this one-liner to set up everything automatically:
+
+```bash
+bash tests/setup-remote-e2e.sh
+```
+
+The script will:
+1. Install project dependencies
+2. Install Playwright dependencies
+3. Install Chromium browser
+4. Start the dev server
+5. Verify everything is working
+
+After the script completes, you can run tests with:
+```bash
+HEADLESS=true npm run test              # Run all tests
+HEADLESS=true npm run test:navigation   # Run specific test
+```
+
+## Manual Setup (Alternative)
+
+If you prefer to set up manually or the automated script fails, follow these steps:
+
 ## Prerequisites Check
 
 Before running E2E tests, verify your environment:

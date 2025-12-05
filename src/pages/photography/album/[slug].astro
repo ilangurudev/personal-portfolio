@@ -1,7 +1,7 @@
 ---
 import PhotoLayout from '../../../layouts/PhotoLayout.astro';
 import { getCollection, getEntry } from 'astro:content';
-import { getAlbumPhotosWithExif } from '../../../utils/photo-helpers';
+import { getAlbumPhotosWithExif, sortPhotos } from '../../../utils/photo-helpers';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../../components/photo/PhotoIcons.astro';
 import { FilteredPhotoGallery } from '../../../components/react/FilteredPhotoGallery';
@@ -17,16 +17,7 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 const album = await getEntry('albums', slug!);
 const photos = await getAlbumPhotosWithExif(slug!);
-const sortedPhotos = photos.sort((a, b) => {
-  // First sort by order_score (highest first)
-  const scoreA = a.data.order_score ?? 0;
-  const scoreB = b.data.order_score ?? 0;
-  if (scoreB !== scoreA) {
-    return scoreB - scoreA;
-  }
-  // Then sort by date (latest first)
-  return b.data.date.getTime() - a.data.date.getTime();
-});
+const sortedPhotos = sortPhotos(photos);
 
 // Get all unique tags from this album's photos only
 const albumTagsSet = new Set<string>();
