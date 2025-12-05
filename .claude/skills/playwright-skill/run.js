@@ -17,6 +17,11 @@ const { execSync } = require('child_process');
 // Change to skill directory for proper module resolution
 process.chdir(__dirname);
 
+// Default to headless unless explicitly overridden
+if (typeof process.env.HEADLESS === 'undefined') {
+  process.env.HEADLESS = 'true';
+}
+
 // Track console output that indicates failures so we can exit non-zero
 let testFailureDetected = false;
 const originalLog = console.log;
@@ -110,6 +115,10 @@ function getCodeToExecute() {
  * Clean up old temporary execution files from previous runs
  */
 function cleanupOldTempFiles() {
+  if (process.env.PLAYWRIGHT_SKIP_TEMP_CLEANUP === 'true') {
+    // Parallel runners may be using shared temp files; skip cleanup in that mode.
+    return;
+  }
   try {
     const files = fs.readdirSync(__dirname);
     const tempFiles = files.filter(f => f.startsWith('.temp-execution-') && f.endsWith('.js'));
