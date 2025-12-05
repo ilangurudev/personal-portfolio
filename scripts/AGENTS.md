@@ -12,7 +12,7 @@ npm run import ~/path/to/photos
 
 **Process:**
 1. **Album Slug Extraction:** Last path component becomes album slug (e.g., `tokyo-nights`)
-2. **Interactive CLI:** `import-ui.js` prompts for album details (optional)
+2. **Interactive CLI & UI:** `import-ui.js` prompts for album details (optional) and spins up a temporary UI for ease of use.
 3. **Photo Copy:** Copies photos to `public/photos/{album-slug}/`
 4. **EXIF Extraction:** Reads EXIF/IPTC data (camera, settings, GPS, keywords, dates)
 5. **R2 Upload:** Optionally uploads to Cloudflare R2 (if credentials configured)
@@ -47,8 +47,7 @@ featured: false
 1. Create album metadata: `src/content/albums/{album-slug}.md`
 2. Split batch file into individual `.md` files in `src/content/photos/{album-slug}/`
 3. Delete batch file: `rm batch-import-{album-slug}.md`
-4. Validate: `node scripts/validate-metadata.js {album-slug}`
-5. Build: `npm run build` (augments any missing EXIF data)
+4. Build: `npm run build` (augments any missing EXIF data)
 
 ## 2. Photo Removal Workflow
 
@@ -126,3 +125,16 @@ npm run remove -- --photo new-york/_AR53764.jpg
 3. **Image:** Place screenshot in `public/projects/`
 4. **Content:** Write markdown content below frontmatter
 5. **Build:** `npm run build` generates static page at `/projects/{slug}`
+
+## 5. Utility Scripts
+
+### `add-delta.js`
+- **Command:** `npm run add-delta`
+- **Purpose:** Figures out the photos in the source directory that are not present in the destination directory and adds them to the destination directory.
+- **Usage:** Interactive CLI prompts for album and time offset.
+
+
+### `sync-keywords.js`
+- **Command:** `npm run sync_keywords`
+- **Purpose:** Syncs IPTC keywords from photo files to frontmatter tags.
+

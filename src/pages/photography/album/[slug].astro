@@ -1,7 +1,7 @@
 ---
 import PhotoLayout from '../../../layouts/PhotoLayout.astro';
 import { getCollection, getEntry } from 'astro:content';
-import { getAlbumPhotosWithExif } from '../../../utils/photo-helpers';
+import { getAlbumPhotosWithExif, sortPhotos, extractTagNames } from '../../../utils/photo-helpers';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../../components/photo/PhotoIcons.astro';
 import { FilteredPhotoGallery } from '../../../components/react/FilteredPhotoGallery';
@@ -17,29 +17,10 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 const album = await getEntry('albums', slug!);
 const photos = await getAlbumPhotosWithExif(slug!);
-const sortedPhotos = photos.sort((a, b) => {
-  // First sort by order_score (highest first)
-  const scoreA = a.data.order_score ?? 0;
-  const scoreB = b.data.order_score ?? 0;
-  if (scoreB !== scoreA) {
-    return scoreB - scoreA;
-  }
-  // Then sort by date (latest first)
-  return b.data.date.getTime() - a.data.date.getTime();
-});
+const sortedPhotos = sortPhotos(photos);
 
-// Get all unique tags from this album's photos only
-const albumTagsSet = new Set<string>();
-photos.forEach(photo => {
-  if (photo.data.tags && Array.isArray(photo.data.tags)) {
-    photo.data.tags.forEach(t => {
-      if (t && typeof t === 'string' && t.trim()) {
-        albumTagsSet.add(t.toLowerCase().trim());
-      }
-    });
-  }
-});
-const albumTags = Array.from(albumTagsSet).sort();
+// Get all unique tags from this album's photos only (sorted alphabetically)
+const albumTags = extractTagNames(photos, 'alpha');
 
 // Map to serializable structure for client component
 const galleryPhotos = sortedPhotos.map(p => ({
@@ -47,6 +28,7 @@ const galleryPhotos = sortedPhotos.map(p => ({
   body: p.body || '',
   data: {
     title: p.data.title,
+    order_score: p.data.order_score ?? 0,
     filename: p.data.filename,
     album: p.data.album,
     albumTitle: album.data.title,
@@ -335,94 +317,19 @@ const galleryPhotos = sortedPhotos.map(p => ({
       min-height: 0; /* Allow flex child to shrink */
     }
 
-    /* Global styles for React-rendered Photo Cards */
+    /* Photo card base styles imported via PhotoLayout from photo-card.css */
+    /* Overrides for virtualized grid (React Window positions absolutely) */
     :global(.photo-card) {
-      display: flex;
-      flex-direction: column;
-      text-decoration: none;
-      color: inherit;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      border-radius: 4px;
-      overflow: hidden;
-      background: var(--cream-dark);
-      cursor: crosshair;
-      position: absolute; /* React Window positions absolutely */
+      position: absolute;
     }
 
     :global(.photo-card:hover) {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
       z-index: 10; /* Ensure hovered item is above */
     }
 
     :global(.photo-image) {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--cream);
-      position: relative;
+      height: 100%; /* Override aspect-ratio for virtualized grid */
     }
-
-    :global(.photo-image img) {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s ease;
-    }
-
-    :global(.photo-card:hover .photo-image img) {
-      transform: scale(1.05);
-    }
-
-    :global(.viewfinder-overlay) {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    :global(.photo-card:hover .viewfinder-overlay) {
-      opacity: 1;
-    }
-
-    :global(.viewfinder-corners) {
-      width: 85%;
-      height: 85%;
-      color: rgba(255, 255, 255, 0.85);
-      animation: viewfinderFocus 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      transition: color 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Focus lock animation state */
-    :global(.viewfinder-corners.focus-locked) {
-      color: #22c55e !important;
-      transform: scale(0.95);
-      opacity: 1 !important;
-    }
-
-    /* Ensure overlay is visible during focus lock */
-    :global(.photo-card .viewfinder-overlay:has(.focus-locked)) {
-      opacity: 1 !important;
-    }
-
-    @keyframes viewfinderFocus {
-      from {
-        opacity: 0;
-        transform: scale(1.1);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
 
     @media (max-width: 768px) {
       .album-page {

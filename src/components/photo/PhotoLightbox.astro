@@ -335,11 +335,14 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
 
     public open(index: number) {
       if (index < 0 || index >= this.photos.length) return;
-      
+
       this.currentIndex = index;
       this.isOpen = true;
       this.isTransitioning = false;
-      
+
+      // Ensure story drawer is closed when opening a new photo
+      this.closeStoryDrawer();
+
       if (this.lightbox) {
         this.lightbox.style.display = 'flex';
         // Trigger reflow for animation
@@ -368,6 +371,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     public close() {
       this.isOpen = false;
       this.stopSlideshow();
+      // Close story drawer when closing lightbox to prevent stale state
+      this.closeStoryDrawer();
       if (this.lightbox) {
         this.lightbox.classList.remove('active');
         // Hide after animation
@@ -428,8 +433,18 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       // Reset metadata expanded state when switching photos
       this.metadataExpanded = false;
 
-      // Close story drawer when switching photos
-      this.closeStoryDrawer();
+      // Remember if drawer was open before navigation
+      const wasDrawerOpen = this.storyDrawerOpen;
+
+      // Check if new photo has a story
+      const newPhoto = this.photos[index];
+      const newPhotoHasStory = newPhoto?.body && newPhoto.body.trim().length > 0;
+
+      // If drawer was open but new photo has no story, close the drawer
+      // If drawer was open and new photo has story, keep it open (content will update via updateImageMetadata)
+      if (wasDrawerOpen && !newPhotoHasStory) {
+        this.closeStoryDrawer();
+      }
       
       // Clean up any pending transitions
       if (this.transitionTimeout !== null) {

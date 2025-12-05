@@ -5,6 +5,7 @@ filename: "teton-2024-08/DSC08350-HDR.jpg"
 tags: ["landscape photography", "sunrise"]
 date: 2024-08-24
 featured: true
+order_score: 25
 location: "NaN° S, NaN° W"
 camera: "SONY ILCE-7C"
 settings: "f/16, 1/20s, ISO 100"

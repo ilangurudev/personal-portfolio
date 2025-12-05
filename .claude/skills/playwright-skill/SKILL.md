@@ -52,6 +52,9 @@ npm run setup
 
 This installs Playwright and Chromium browser. Only needed once.
 
+For remote/sandboxed environments (e.g., Claude Code web, Codespaces), refer to the project's `tests/SETUP-REMOTE.md` for detailed setup instructions.
+
+
 ## Execution Pattern
 
 **Step 1: Detect dev servers (for localhost testing)**

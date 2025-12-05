@@ -28,3 +28,7 @@ pnpm-debug.log*
 
 tmp/*
 tmp/
+
+# Local Playwright helper artifacts
+.claude/skills/playwright-skill/.temp*
+.claude/skills/playwright-skill/tests/screenshots/

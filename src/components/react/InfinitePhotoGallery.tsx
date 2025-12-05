@@ -6,6 +6,7 @@ interface Photo {
   data: {
     title: string;
     filename: string;
+    order_score?: number;
     album?: string;
     albumTitle?: string;
     tags?: string[];
@@ -98,6 +99,12 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
           key={photo.id}
           className="photo-card"
           data-photo-id={photo.id}
+          data-order-score={photo.data.order_score ?? 0}
+          data-photo-date={
+            typeof photo.data.date === 'string'
+              ? photo.data.date
+              : photo.data.date.toISOString()
+          }
           style={{
             width: '100%',
             aspectRatio: '3/2',

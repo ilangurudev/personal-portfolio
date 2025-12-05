@@ -1,84 +1,80 @@
 ---
-import PhotoLayout from '../../../layouts/PhotoLayout.astro';
-import { getPhotosWithExif } from '../../../utils/photo-helpers';
-import { getPhotoUrl } from '../../../utils/url-helper';
-import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
-import { getCollection } from 'astro:content';
-import { FilteredPhotoGallery } from '../../../components/react/FilteredPhotoGallery';
+import PhotoLayout from "../../../layouts/PhotoLayout.astro";
+import { getPhotosWithExif, sortPhotos, extractTags, extractTagNames } from "../../../utils/photo-helpers";
+import { getPhotoUrl } from "../../../utils/url-helper";
+import PhotoLightbox from "../../../components/photo/PhotoLightbox.astro";
+import { getCollection } from "astro:content";
+import { FilteredPhotoGallery } from "../../../components/react/FilteredPhotoGallery";
 
 export async function getStaticPaths() {
   const allPhotos = await getPhotosWithExif();
-  
-  // Collect all unique tags from all photos (use original casing for URL)
-  const tagMap = new Map<string, string>(); // lowercase -> original
-  allPhotos.forEach(photo => {
-    photo.data.tags.forEach(tag => {
-      if (tag) {
-        const lowerTag = tag.toLowerCase();
-        // Store original casing if not already stored
-        if (!tagMap.has(lowerTag)) {
-          tagMap.set(lowerTag, tag);
-        }
-      }
-    });
-  });
-  
+
+  // Collect all unique tags (preserving original casing for URLs)
+  const tagsWithDisplay = extractTags(allPhotos, { preserveDisplayCasing: true });
+
   // Return paths for each unique tag (Astro handles URL encoding automatically)
-  return Array.from(tagMap.values()).map(tag => ({
-    params: { tag },
+  return tagsWithDisplay.map(({ displayTag }) => ({
+    params: { tag: displayTag },
   }));
 }
 
 const { tag } = Astro.params;
-const decodedTag = decodeURIComponent(tag || '');
+const decodedTag = decodeURIComponent(tag || "");
 
-const albums = await getCollection('albums');
-const albumTitleMap = new Map(albums.map(a => [a.slug, a.data.title]));
+const albums = await getCollection("albums");
+const albumTitleMap = new Map(albums.map((a) => [a.slug, a.data.title]));
 
-const allPhotos = await getPhotosWithExif();
+const allPhotos = sortPhotos(await getPhotosWithExif());
 
-// Get all unique tags for the filter pills
-const allTagsSet = new Set<string>();
-allPhotos.forEach(photo => {
-  photo.data.tags.forEach(t => {
-    allTagsSet.add(t.toLowerCase());
-  });
-});
-const allTags = Array.from(allTagsSet).sort();
+// Get all unique tags for the filter pills (sorted alphabetically)
+const allTags = extractTagNames(allPhotos, 'alpha');
 
-const filteredPhotos = allPhotos.filter(photo =>
-  photo.data.tags.some(t => t.toLowerCase() === decodedTag.toLowerCase())
+const filteredPhotos = allPhotos.filter((photo) =>
+  photo.data.tags.some((t) => t.toLowerCase() === decodedTag.toLowerCase()),
 );
-const sortedPhotos = filteredPhotos.sort((a, b) => {
-  // First sort by order_score (highest first)
-  const scoreA = a.data.order_score ?? 0;
-  const scoreB = b.data.order_score ?? 0;
-  if (scoreB !== scoreA) {
-    return scoreB - scoreA;
-  }
-  // Then sort by date (latest first)
-  return b.data.date.getTime() - a.data.date.getTime();
-});
+const sortedPhotos = sortPhotos(filteredPhotos);
 ---
 
-<PhotoLayout title={`${decodedTag} Photos`} description={`Photos tagged with ${decodedTag}`}>
+<PhotoLayout
+  title={`${decodedTag} Photos`}
+  description={`Photos tagged with ${decodedTag}`}
+>
   <div class="tag-page">
     <div class="tag-header">
       <h1 class="tag-title">#{decodedTag.toLowerCase()}</h1>
-      <p class="tag-count" id="photo-count">{sortedPhotos.length} {sortedPhotos.length === 1 ? 'photo' : 'photos'}</p>
+      <p class="tag-count" id="photo-count">
+        {sortedPhotos.length}
+        {sortedPhotos.length === 1 ? "photo" : "photos"}
+      </p>
     </div>
 
     <!-- Tag Filter Pills -->
     <div class="tag-filter-bar">
       <button class="filter-toggle" id="filter-toggle" type="button">
         <span class="filter-toggle-text">Refine by tags</span>
-        <svg class="filter-toggle-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg
+          class="filter-toggle-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+        >
+          <path
+            d="M4 6L8 10L12 6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
         </svg>
       </button>
       <div class="tag-pills-container" id="tag-pills-container">
         <div class="tag-filter-controls">
-          <div class="tag-logic-toggle" id="tag-logic-toggle" role="group" aria-label="Tag filter mode">
+          <div
+            class="tag-logic-toggle"
+            id="tag-logic-toggle"
+            role="group"
+            aria-label="Tag filter mode"
+          >
             <button
               type="button"
               class="toggle-option"
@@ -98,15 +94,17 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
           </div>
         </div>
         <div class="tag-pills" id="tag-pills">
-          {allTags.map((t) => (
-            <button
-              class={`tag-pill ${t === decodedTag.toLowerCase() ? 'active' : ''}`}
-              data-tag={t}
-              type="button"
-            >
-              #{t}
-            </button>
-          ))}
+          {
+            allTags.map((t) => (
+              <button
+                class={`tag-pill ${t === decodedTag.toLowerCase() ? "active" : ""}`}
+                data-tag={t}
+                type="button"
+              >
+                #{t}
+              </button>
+            ))
+          }
         </div>
         <button class="clear-filters" id="clear-filters" style="display: none;">
           Clear filters
@@ -114,31 +112,35 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
       </div>
     </div>
 
-    {sortedPhotos.length === 0 ? (
-      <p class="no-photos">No photos found with this tag.</p>
-    ) : (
-      <>
-        <div class="gallery-container">
-          <FilteredPhotoGallery
-            client:load
-            allPhotos={allPhotos.map(p => ({
+    {
+      sortedPhotos.length === 0 ? (
+        <p class="no-photos">No photos found with this tag.</p>
+      ) : (
+        <>
+          <div class="gallery-container">
+            <FilteredPhotoGallery
+              client:load
+              allPhotos={allPhotos.map((p) => ({
+                ...p,
+                data: {
+                  ...p.data,
+                  albumTitle: albumTitleMap.get(p.data.album),
+                  date: p.data.date.toISOString(),
+                  position: p.data.position,
+                },
+              }))}
+              initialActiveTags={[decodedTag.toLowerCase()]}
+            />
+          </div>
+          <PhotoLightbox
+            photos={sortedPhotos.map((p) => ({
               ...p,
-              data: {
-                ...p.data,
-                albumTitle: albumTitleMap.get(p.data.album),
-                date: p.data.date.toISOString(),
-                position: p.data.position
-              }
+              data: { ...p.data, albumTitle: albumTitleMap.get(p.data.album) },
             }))}
-            initialActiveTags={[decodedTag.toLowerCase()]}
           />
-        </div>
-        <PhotoLightbox photos={sortedPhotos.map(p => ({
-          ...p,
-          data: { ...p.data, albumTitle: albumTitleMap.get(p.data.album) }
-        }))} />
-      </>
-    )}
+        </>
+      )
+    }
   </div>
 
   <style>
@@ -305,7 +307,7 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
     }
 
     .tag-title {
-      font-family: 'Crimson Text', serif;
+      font-family: "Crimson Text", serif;
       font-size: 3.5rem;
       font-weight: 700;
       color: var(--charcoal);
@@ -332,93 +334,18 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
       min-height: 0; /* Allow flex child to shrink */
     }
 
-    /* Global styles for React-rendered Photo Cards */
+    /* Photo card base styles imported via PhotoLayout from photo-card.css */
+    /* Overrides for virtualized grid (React Window positions absolutely) */
     :global(.photo-card) {
-      display: flex;
-      flex-direction: column;
-      text-decoration: none;
-      color: inherit;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      border-radius: 4px;
-      overflow: hidden;
-      background: var(--cream-dark);
-      cursor: crosshair;
-      position: absolute; /* React Window positions absolutely */
+      position: absolute;
     }
 
     :global(.photo-card:hover) {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
       z-index: 10; /* Ensure hovered item is above */
     }
 
     :global(.photo-image) {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--cream);
-      position: relative;
-    }
-
-    :global(.photo-image img) {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      /* object-position is set inline by InfinitePhotoGallery component */
-      transition: transform 0.3s ease;
-    }
-
-    :global(.photo-card:hover .photo-image img) {
-      transform: scale(1.05);
-    }
-
-    :global(.viewfinder-overlay) {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    :global(.photo-card:hover .viewfinder-overlay) {
-      opacity: 1;
-    }
-
-    :global(.viewfinder-corners) {
-      width: 85%;
-      height: 85%;
-      color: rgba(255, 255, 255, 0.85);
-      animation: viewfinderFocus 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      transition: color 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Focus lock animation state */
-    :global(.viewfinder-corners.focus-locked) {
-      color: #22c55e !important;
-      transform: scale(0.95);
-      opacity: 1 !important;
-    }
-
-    /* Ensure overlay is visible during focus lock */
-    :global(.photo-card .viewfinder-overlay:has(.focus-locked)) {
-      opacity: 1 !important;
-    }
-
-    @keyframes viewfinderFocus {
-      from {
-        opacity: 0;
-        transform: scale(1.1);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
+      height: 100%; /* Override aspect-ratio for virtualized grid */
     }
 
     @media (max-width: 768px) {
@@ -454,37 +381,47 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
     }
   </style>
 
-  <script define:vars={{
-    allPhotosData: allPhotos.map(p => ({
-      id: p.id,
-      url: getPhotoUrl(p.data.filename),
-      data: {
-        title: p.data.title,
-        filename: p.data.filename,
-        album: p.data.album,
-        albumTitle: albumTitleMap.get(p.data.album),
-        tags: (p.data.tags || []).map(t => (t || '').trim()).filter(t => t),
-        camera: p.data.camera,
-        settings: p.data.settings,
-        focalLength: p.data.focalLength,
-        location: p.data.location,
-        position: p.data.position
-      }
-    }))
-  }}>
-    document.addEventListener('DOMContentLoaded', () => {
-      const getTagPills = () => Array.from(document.querySelectorAll('.tag-pill'));
-      const photoCount = document.getElementById('photo-count');
-      const clearFiltersBtn = document.getElementById('clear-filters');
-      const filterToggle = document.getElementById('filter-toggle');
-      const tagPillsContainer = document.getElementById('tag-pills-container');
-      const tagLogicToggle = document.getElementById('tag-logic-toggle');
-      const tagTitle = document.querySelector('.tag-title');
-      const initialTag = document.querySelector('.tag-pill.active')?.getAttribute('data-tag');
-      const initialTitle = tagTitle?.textContent || '';
-      let currentTagLogic = 'or';
+  <script
+    define:vars={{
+      allPhotosData: allPhotos.map((p) => ({
+        id: p.id,
+        url: getPhotoUrl(p.data.filename),
+        data: {
+          title: p.data.title,
+          filename: p.data.filename,
+          album: p.data.album,
+          albumTitle: albumTitleMap.get(p.data.album),
+          tags: (p.data.tags || [])
+            .map((t) => (t || "").trim())
+            .filter((t) => t),
+          camera: p.data.camera,
+          settings: p.data.settings,
+          focalLength: p.data.focalLength,
+          location: p.data.location,
+          position: p.data.position,
+        },
+      })),
+    }}
+  >
+    document.addEventListener("DOMContentLoaded", () => {
+      const getTagPills = () =>
+        Array.from(document.querySelectorAll(".tag-pill"));
+      const photoCount = document.getElementById("photo-count");
+      const clearFiltersBtn = document.getElementById("clear-filters");
+      const filterToggle = document.getElementById("filter-toggle");
+      const tagPillsContainer = document.getElementById("tag-pills-container");
+      const tagLogicToggle = document.getElementById("tag-logic-toggle");
+      const tagTitle = document.querySelector(".tag-title");
+      const initialTag = document
+        .querySelector(".tag-pill.active")
+        ?.getAttribute("data-tag");
+      const initialTitle = tagTitle?.textContent || "";
+      let currentTagLogic = "or";
 
-      const normalizeTag = (tag) => String(tag ?? '').toLowerCase().trim();
+      const normalizeTag = (tag) =>
+        String(tag ?? "")
+          .toLowerCase()
+          .trim();
       const photoDataset = Array.isArray(allPhotosData) ? allPhotosData : [];
 
       const filterPhotosByTags = (tags, logic) => {
@@ -492,46 +429,52 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
           return photoDataset;
         }
 
-        return photoDataset.filter(photo => {
-          const photoTags = (photo.data?.tags || []).map((t) => normalizeTag(t)).filter(Boolean);
+        return photoDataset.filter((photo) => {
+          const photoTags = (photo.data?.tags || [])
+            .map((t) => normalizeTag(t))
+            .filter(Boolean);
 
-          if (logic === 'and') {
-            return tags.every(tag => photoTags.includes(tag));
+          if (logic === "and") {
+            return tags.every((tag) => photoTags.includes(tag));
           }
 
-          return tags.some(tag => photoTags.includes(tag));
+          return tags.some((tag) => photoTags.includes(tag));
         });
       };
 
       const getRawActiveTags = () =>
         getTagPills()
-          .filter(pill => pill.classList.contains('active'))
-          .map(pill => pill.getAttribute('data-tag') || '')
+          .filter((pill) => pill.classList.contains("active"))
+          .map((pill) => pill.getAttribute("data-tag") || "")
           .filter(Boolean);
 
       const dispatchFilterChange = () => {
-        const normalized = getRawActiveTags().map(tag => normalizeTag(tag));
-        window.dispatchEvent(new CustomEvent('tagFilterChange', { 
-          detail: { 
-            activeTags: normalized,
-            tagLogic: currentTagLogic
-          } 
-        }));
+        const normalized = getRawActiveTags().map((tag) => normalizeTag(tag));
+        window.dispatchEvent(
+          new CustomEvent("tagFilterChange", {
+            detail: {
+              activeTags: normalized,
+              tagLogic: currentTagLogic,
+            },
+          }),
+        );
       };
 
       const updateTagAvailability = () => {
-        if (currentTagLogic === 'or') {
-          getTagPills().forEach(pill => {
-            pill.style.display = '';
+        if (currentTagLogic === "or") {
+          getTagPills().forEach((pill) => {
+            pill.style.display = "";
           });
           return;
         }
 
-        const normalizedActiveTags = getRawActiveTags().map(tag => normalizeTag(tag));
-        const filtered = filterPhotosByTags(normalizedActiveTags, 'and');
+        const normalizedActiveTags = getRawActiveTags().map((tag) =>
+          normalizeTag(tag),
+        );
+        const filtered = filterPhotosByTags(normalizedActiveTags, "and");
         const available = new Set();
 
-        filtered.forEach(photo => {
+        filtered.forEach((photo) => {
           (photo.data?.tags || []).forEach((tag) => {
             const normalized = normalizeTag(tag);
             if (normalized) {
@@ -540,42 +483,44 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
           });
         });
 
-        normalizedActiveTags.forEach(tag => available.add(tag));
+        normalizedActiveTags.forEach((tag) => available.add(tag));
 
-        getTagPills().forEach(pill => {
-          const normalized = normalizeTag(pill.getAttribute('data-tag'));
-          pill.style.display = available.has(normalized) ? '' : 'none';
+        getTagPills().forEach((pill) => {
+          const normalized = normalizeTag(pill.getAttribute("data-tag"));
+          pill.style.display = available.has(normalized) ? "" : "none";
         });
       };
 
       // Update lightbox when filters change - will be called by React component
-      window.updateLightboxFromFilter = function(filteredPhotos) {
+      window.updateLightboxFromFilter = function (filteredPhotos) {
         if (!window.photoLightbox) return;
         window.photoLightbox.updatePhotos(filteredPhotos);
-        
+
         // Update count
         if (photoCount) {
-          photoCount.textContent = `${filteredPhotos.length} ${filteredPhotos.length === 1 ? 'photo' : 'photos'}`;
+          photoCount.textContent = `${filteredPhotos.length} ${filteredPhotos.length === 1 ? "photo" : "photos"}`;
         }
       };
 
       // Toggle filter bar
-      filterToggle?.addEventListener('click', () => {
-        filterToggle.classList.toggle('expanded');
-        tagPillsContainer?.classList.toggle('expanded');
+      filterToggle?.addEventListener("click", () => {
+        filterToggle.classList.toggle("expanded");
+        tagPillsContainer?.classList.toggle("expanded");
       });
 
       // Handle tag logic toggle
-      const logicButtons = Array.from(tagLogicToggle?.querySelectorAll('.toggle-option') || []);
-      logicButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const mode = button.getAttribute('data-mode') || 'or';
+      const logicButtons = Array.from(
+        tagLogicToggle?.querySelectorAll(".toggle-option") || [],
+      );
+      logicButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const mode = button.getAttribute("data-mode") || "or";
           if (mode === currentTagLogic) return;
 
           currentTagLogic = mode;
-          logicButtons.forEach(btn => {
-            const isActive = btn.getAttribute('data-mode') === currentTagLogic;
-            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+          logicButtons.forEach((btn) => {
+            const isActive = btn.getAttribute("data-mode") === currentTagLogic;
+            btn.setAttribute("aria-pressed", isActive ? "true" : "false");
           });
 
           dispatchFilterChange();
@@ -589,7 +534,7 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
         if (tagTitle) {
           if (activeTags.length > 1) {
             const sortedTags = [...activeTags].sort();
-            tagTitle.textContent = sortedTags.map(t => `#${t}`).join(' + ');
+            tagTitle.textContent = sortedTags.map((t) => `#${t}`).join(" + ");
           } else if (activeTags.length === 1) {
             tagTitle.textContent = `#${activeTags[0]}`;
           } else {
@@ -598,23 +543,25 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
         }
 
         if (clearFiltersBtn) {
-          clearFiltersBtn.style.display = activeTags.length > 1 ? 'block' : 'none';
+          clearFiltersBtn.style.display =
+            activeTags.length > 1 ? "block" : "none";
         }
       };
 
       // Tag pill click handler - will trigger React component update
-      getTagPills().forEach(pill => {
-        pill.addEventListener('click', () => {
-          const isActive = pill.classList.contains('active');
+      getTagPills().forEach((pill) => {
+        pill.addEventListener("click", () => {
+          const isActive = pill.classList.contains("active");
 
           if (isActive) {
-            const activeCount = document.querySelectorAll('.tag-pill.active').length;
+            const activeCount =
+              document.querySelectorAll(".tag-pill.active").length;
             if (activeCount > 1) {
-              pill.classList.remove('active');
+              pill.classList.remove("active");
               dispatchFilterChange();
             }
           } else {
-            pill.classList.add('active');
+            pill.classList.add("active");
             dispatchFilterChange();
           }
 
@@ -625,13 +572,13 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
 
       // Clear filters handler
       if (clearFiltersBtn) {
-        clearFiltersBtn.addEventListener('click', () => {
-          getTagPills().forEach(pill => {
-            const tag = pill.getAttribute('data-tag');
+        clearFiltersBtn.addEventListener("click", () => {
+          getTagPills().forEach((pill) => {
+            const tag = pill.getAttribute("data-tag");
             if (tag === initialTag) {
-              pill.classList.add('active');
+              pill.classList.add("active");
             } else {
-              pill.classList.remove('active');
+              pill.classList.remove("active");
             }
           });
 
@@ -640,7 +587,7 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
           if (tagTitle) {
             tagTitle.textContent = initialTitle;
           }
-          clearFiltersBtn.style.display = 'none';
+          clearFiltersBtn.style.display = "none";
           updateTagAvailability();
         });
       }
@@ -651,4 +598,3 @@ const sortedPhotos = filteredPhotos.sort((a, b) => {
     });
   </script>
 </PhotoLayout>
-

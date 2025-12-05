@@ -1,47 +1,55 @@
 ---
-import PhotoLayout from '../../layouts/PhotoLayout.astro';
-import { getCollection } from 'astro:content';
-import { getResizedPhotoUrl } from '../../utils/url-helper';
+import PhotoLayout from "../../layouts/PhotoLayout.astro";
+import { getCollection } from "astro:content";
+import { getResizedPhotoUrl } from "../../utils/url-helper";
+import { sortAlbums } from "../../utils/photo-helpers";
 
-const albums = await getCollection('albums');
-const sortedAlbums = albums.sort((a, b) => {
-  // Sort by date (latest first)
-  return b.data.date.getTime() - a.data.date.getTime();
-});
+const albums = await getCollection("albums");
+const sortedAlbums = sortAlbums(albums);
 ---
 
 <PhotoLayout title="Albums" description="Photo albums by Guru">
   <div class="albums-container">
     <h1 class="albums-title">Albums</h1>
-    
-    {sortedAlbums.length === 0 ? (
-      <p class="no-albums">No albums yet. Check back soon!</p>
-    ) : (
-      <div class="albums-grid">
-        {sortedAlbums.map((album) => (
-          <a href={`/photography/album/${album.slug}`} class="album-card">
-            <div class="album-cover">
-              <img 
-                src={getResizedPhotoUrl(album.data.coverPhoto, 600)} 
-                alt={album.data.title}
-                loading="lazy"
-              />
-            </div>
-            <div class="album-info">
-              <h2 class="album-title">{album.data.title}</h2>
-              <p class="album-description">{album.data.description}</p>
-              <time class="album-date" datetime={album.data.date.toISOString()}>
-                {album.data.date.toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </time>
-            </div>
-          </a>
-        ))}
-      </div>
-    )}
+
+    {
+      sortedAlbums.length === 0 ? (
+        <p class="no-albums">No albums yet. Check back soon!</p>
+      ) : (
+        <div class="albums-grid">
+          {sortedAlbums.map((album) => (
+            <a
+              href={`/photography/album/${album.slug}`}
+              class="album-card"
+              data-album-card
+              data-album-slug={album.slug}
+            >
+              <div class="album-cover">
+                <img
+                  src={getResizedPhotoUrl(album.data.coverPhoto, 600)}
+                  alt={album.data.title}
+                  loading="lazy"
+                />
+              </div>
+              <div class="album-info">
+                <h2 class="album-title">{album.data.title}</h2>
+                <p class="album-description">{album.data.description}</p>
+                <time
+                  class="album-date"
+                  datetime={album.data.date.toISOString()}
+                >
+                  {album.data.date.toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </time>
+              </div>
+            </a>
+          ))}
+        </div>
+      )
+    }
   </div>
 
   <style>
@@ -52,7 +60,7 @@ const sortedAlbums = albums.sort((a, b) => {
     }
 
     .albums-title {
-      font-family: 'Crimson Text', serif;
+      font-family: "Crimson Text", serif;
       font-size: 3.5rem;
       font-weight: 700;
       color: var(--charcoal);
@@ -80,7 +88,9 @@ const sortedAlbums = albums.sort((a, b) => {
       flex-direction: column;
       text-decoration: none;
       color: inherit;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
       border-radius: 4px;
       overflow: hidden;
       background: var(--cream-dark);
@@ -115,7 +125,7 @@ const sortedAlbums = albums.sort((a, b) => {
     }
 
     .album-title {
-      font-family: 'Crimson Text', serif;
+      font-family: "Crimson Text", serif;
       font-size: 1.5rem;
       font-weight: 600;
       color: var(--charcoal);
@@ -147,4 +157,3 @@ const sortedAlbums = albums.sort((a, b) => {
     }
   </style>
 </PhotoLayout>
-
