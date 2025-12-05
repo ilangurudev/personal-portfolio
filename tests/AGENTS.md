@@ -24,7 +24,8 @@ see [SETUP-REMOTE.md](./SETUP-REMOTE.md) for detailed troubleshooting instructio
 
 **E2E Tests (Playwright):**
 ```bash
-npm run test              # Run ALL tests comprehensively
+npm test                  # Run ALL specs in parallel (new runner)
+npm run test:serial       # Run ALL specs sequentially (previous flow)
 npm run test:navigation   # Dual-space navigation
 npm run test:responsive   # Responsive layouts
 npm run test:visual       # Visual aesthetics
@@ -42,9 +43,15 @@ npm run test:css-leaks    # CSS rendering leak detection
 npm run test:viewfinder   # Viewfinder overlay CSS functionality
 ```
 
+**Parallel runner options:**
+- `E2E_CONCURRENCY`: Specs to run at once (defaults to CPU count; capped by spec count).
+- `E2E_LOG_THROUGH=true`: Stream each spec's output live with `[spec]` prefixes.
+- `HEADLESS=true`: Run browsers headless (recommended in remote/CI).
+- Failures are summarized at the end with captured output for failing specs only.
+
 **Headless vs headed:**
-- Browsers run headed by default so you can watch interactions.
-- Set `HEADLESS=true` to run all Playwright tests in headless mode. In remote envs, USE THIS. 
+- Browsers run headless by default (we set `HEADLESS=true` unless overridden).
+- To watch interactions locally, set `HEADLESS=false` for a single run.
 
 **Test Files:**
 
