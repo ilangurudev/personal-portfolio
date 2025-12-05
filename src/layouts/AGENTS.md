@@ -66,3 +66,4 @@ Layouts are responsible for initializing the global environment that "Islands" (
 - **Mobile Navigation:**
   - Each layout implements its own vanilla JS mobile menu logic (Hamburger button, drawer animation).
   - They share NO code for this, ensuring complete visual isolation.
+  - Hamburger replaces desktop nav at ≤1200px to prevent header/nav overlap on wider tablets (iPad landscape included).

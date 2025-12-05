@@ -28,6 +28,9 @@ npm run test:responsive
 
 # Visual aesthetics verification
 npm run test:visual
+
+# Lightbox scroll lock
+npm run test:lightbox-scroll
 ```
 
 ## Test Suites
@@ -52,6 +55,9 @@ Verifies design implementation:
 - Professional space: Dark background, terminal green, monospace font, scanlines
 - Photography space: Cream background, serif font, editorial styling
 - Color contrast between spaces
+
+### 4. Lightbox Scroll Lock (`lightbox-scroll-lock.spec.cjs`)
+Ensures page scrolling is disabled while the lightbox is open and restored after closing.
 
 ## Environment Variables
 

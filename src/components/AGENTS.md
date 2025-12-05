@@ -68,6 +68,7 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
   - Keyboard: Arrow keys (prev/next), Escape (close)
   - Touch: Swipe gestures for mobile
   - Mouse: Click arrows or outside to close
+- **Scroll Lock:** Disables page scrolling while the lightbox is open and restores it on close
 - **Shutter Animation:** Film-style opening animation
 - **Preloading:** Adjacent photos pre-fetched for instant navigation
 - **Slideshow Mode:** Configurable intervals (1s, 3s, 5s, 10s, 60s, off)
