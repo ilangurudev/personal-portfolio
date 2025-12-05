@@ -2,21 +2,10 @@
 import PhotoLayout from "../../layouts/PhotoLayout.astro";
 import { getCollection } from "astro:content";
 import { getResizedPhotoUrl } from "../../utils/url-helper";
+import { sortAlbums } from "../../utils/photo-helpers";
 
 const albums = await getCollection("albums");
-const sortedAlbums = albums.sort((a, b) => {
-  // 1. Featured first
-  if (a.data.featured && !b.data.featured) return -1;
-  if (!a.data.featured && b.data.featured) return 1;
-
-  // 2. Order Score (high to low)
-  if (a.data.order_score !== b.data.order_score) {
-    return b.data.order_score - a.data.order_score;
-  }
-
-  // 3. Date (latest first)
-  return b.data.date.getTime() - a.data.date.getTime();
-});
+const sortedAlbums = sortAlbums(albums);
 ---
 
 <PhotoLayout title="Albums" description="Photo albums by Guru">

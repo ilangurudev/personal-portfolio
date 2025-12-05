@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { InfinitePhotoGallery } from './InfinitePhotoGallery';
 import { getPhotoUrl } from '../../utils/url-helper';
+import { normalizeTag } from '../../utils/client/tag-utils';
 
 interface Photo {
   id: string;
@@ -33,10 +34,8 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
   initialTagLogic = 'or',
   onFilterChange
 }) => {
-  const normalizeTagValue = (tag?: string | null) => String(tag ?? '').toLowerCase().trim();
-
   const [activeTags, setActiveTags] = useState<Set<string>>(
-    new Set((initialActiveTags || []).map(normalizeTagValue))
+    new Set((initialActiveTags || []).map(normalizeTag))
   );
   const [tagLogic, setTagLogic] = useState<'and' | 'or'>(initialTagLogic);
 
@@ -45,7 +44,7 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
     const handleTagFilterChange = (event: CustomEvent) => {
       const detail = event.detail || {};
       const newTags = new Set<string>(
-        (detail.activeTags || []).map((t: string) => normalizeTagValue(t))
+        (detail.activeTags || []).map((t: string) => normalizeTag(t))
       );
       const nextLogic = detail.tagLogic === 'and' ? 'and' : 'or';
 
@@ -69,7 +68,7 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
     const tagComparator = Array.from(activeTags);
 
     return allPhotos.filter(photo => {
-      const photoTags = (photo.data.tags || []).map(normalizeTagValue).filter(Boolean);
+      const photoTags = (photo.data.tags || []).map(normalizeTag).filter(Boolean);
 
       if (tagLogic === 'and') {
         return tagComparator.every(tag => photoTags.includes(tag));

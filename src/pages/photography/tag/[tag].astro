@@ -1,6 +1,6 @@
 ---
 import PhotoLayout from "../../../layouts/PhotoLayout.astro";
-import { getPhotosWithExif } from "../../../utils/photo-helpers";
+import { getPhotosWithExif, sortPhotos } from "../../../utils/photo-helpers";
 import { getPhotoUrl } from "../../../utils/url-helper";
 import PhotoLightbox from "../../../components/photo/PhotoLightbox.astro";
 import { getCollection } from "astro:content";
@@ -35,15 +35,7 @@ const decodedTag = decodeURIComponent(tag || "");
 const albums = await getCollection("albums");
 const albumTitleMap = new Map(albums.map((a) => [a.slug, a.data.title]));
 
-const allPhotos = await getPhotosWithExif();
-allPhotos.sort((a, b) => {
-  const scoreA = a.data.order_score ?? 0;
-  const scoreB = b.data.order_score ?? 0;
-  if (scoreB !== scoreA) {
-    return scoreB - scoreA;
-  }
-  return b.data.date.getTime() - a.data.date.getTime();
-});
+const allPhotos = sortPhotos(await getPhotosWithExif());
 
 // Get all unique tags for the filter pills
 const allTagsSet = new Set<string>();
@@ -57,16 +49,7 @@ const allTags = Array.from(allTagsSet).sort();
 const filteredPhotos = allPhotos.filter((photo) =>
   photo.data.tags.some((t) => t.toLowerCase() === decodedTag.toLowerCase()),
 );
-const sortedPhotos = filteredPhotos.sort((a, b) => {
-  // First sort by order_score (highest first)
-  const scoreA = a.data.order_score ?? 0;
-  const scoreB = b.data.order_score ?? 0;
-  if (scoreB !== scoreA) {
-    return scoreB - scoreA;
-  }
-  // Then sort by date (latest first)
-  return b.data.date.getTime() - a.data.date.getTime();
-});
+const sortedPhotos = sortPhotos(filteredPhotos);
 ---
 
 <PhotoLayout
