@@ -10,7 +10,7 @@ const { chromium, firefox, webkit } = require('playwright');
  */
 async function launchBrowser(browserType = 'chromium', options = {}) {
   const defaultOptions = {
-    headless: process.env.HEADLESS !== 'false',
+    headless: process.env.HEADLESS === 'true',
     slowMo: process.env.SLOW_MO ? parseInt(process.env.SLOW_MO) : 0,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   };

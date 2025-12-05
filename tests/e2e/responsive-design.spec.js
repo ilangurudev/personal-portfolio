@@ -10,6 +10,19 @@ const { chromium } = require('playwright');
 const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 const SCREENSHOT_DIR = process.env.SCREENSHOT_DIR || './tests/screenshots';
 
+const HAMBURGER_SELECTORS = {
+  professional: {
+    button: '#blog-hamburger-btn',
+    menu: '#blog-mobile-menu',
+    close: '#blog-mobile-menu-close'
+  },
+  photography: {
+    button: '#hamburger-btn',
+    menu: '#mobile-menu',
+    close: '#mobile-menu-close'
+  }
+};
+
 (async () => {
   const browser = await chromium.launch({
     headless: process.env.HEADLESS === 'true',
@@ -27,7 +40,7 @@ const SCREENSHOT_DIR = process.env.SCREENSHOT_DIR || './tests/screenshots';
 
   const pages = [
     { path: '/', name: 'professional' },
-    { path: '/photo', name: 'photography' }
+    { path: '/photography', name: 'photography' }
   ];
 
   for (const pageConfig of pages) {
@@ -42,6 +55,54 @@ const SCREENSHOT_DIR = process.env.SCREENSHOT_DIR || './tests/screenshots';
       await page.goto(`${TARGET_URL}${pageConfig.path}`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(500); // Let animations settle
+
+      if (viewport.name === 'mobile') {
+        const selectors = HAMBURGER_SELECTORS[pageConfig.name];
+        const normalizePath = (path) => (path === '/' ? '/' : path.replace(/\/$/, ''));
+
+        await page.click(selectors.button);
+        await page.waitForSelector(`${selectors.menu}.active`);
+
+        await page.click(selectors.close);
+        await page.waitForFunction(
+          (menuSelector) => !document.querySelector(menuSelector)?.classList.contains('active'),
+          selectors.menu
+        );
+
+        console.log(`   ✓ mobile hamburger menu opens/closes (${pageConfig.name})`);
+
+        await page.click(selectors.button); // reopen to test space toggle from within menu
+        await page.waitForSelector(`${selectors.menu}.active`);
+
+        const toggleTargetPath = pageConfig.path === '/' ? '/photography' : '/';
+        const toggleLink = page.locator(
+          `${selectors.menu} .mobile-space-toggle .toggle-link.toggle-inactive`
+        );
+
+        const targetBodySelector =
+          pageConfig.name === 'professional' ? 'body.photo-space' : 'body.blog-space';
+
+        await toggleLink.scrollIntoViewIfNeeded();
+        await toggleLink.click({ timeout: 5000, force: true }); // dev toolbar can intercept pointer events
+        await page.waitForLoadState('networkidle');
+
+        const currentPath = new URL(page.url()).pathname;
+        if (normalizePath(currentPath) !== normalizePath(toggleTargetPath)) {
+          throw new Error(
+            `Space toggle did not navigate as expected: now at ${currentPath}, expected ${toggleTargetPath}`
+          );
+        }
+
+        await page.waitForSelector(targetBodySelector);
+
+        console.log(
+          `   ✓ space toggle navigates from mobile menu (${pageConfig.name} → ${toggleTargetPath})`
+        );
+
+        await page.goto(`${TARGET_URL}${pageConfig.path}`); // return for rest of viewport checks
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(200);
+      }
 
       const screenshotPath = `${SCREENSHOT_DIR}/${pageConfig.name}-${viewport.name}.png`;
       await page.screenshot({

@@ -69,6 +69,8 @@ tagsArray.forEach(item => {
               class="tag-cloud-item"
               style={`font-size: ${normalizedSize}rem;`}
               data-count={count}
+              data-tag-link
+              data-tag={displayTag.toLowerCase()}
             >
               #{displayTag.toLowerCase()}
             </a>

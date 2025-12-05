@@ -43,7 +43,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
   // Test Photography Space Aesthetics
   console.log('\n📍 Photography Space (Bright Editorial Theme)');
-  await page.goto(`${TARGET_URL}/photo`);
+  await page.goto(`${TARGET_URL}/photography`);
   await page.waitForLoadState('networkidle');
 
   const photoBgColor = await page.locator('body.photo-space').evaluate(

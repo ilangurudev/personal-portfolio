@@ -72,6 +72,8 @@ const sortedPhotos = featuredPhotos.sort((a, b) => {
           <div 
             class="photo-card"
             data-photo-id={photo.id}
+            data-order-score={photo.data.order_score ?? 0}
+            data-photo-date={photo.data.date?.toISOString?.() || photo.data.date}
           >
             <div class="photo-image">
               <img

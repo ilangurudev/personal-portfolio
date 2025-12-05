@@ -17,6 +17,32 @@ const { execSync } = require('child_process');
 // Change to skill directory for proper module resolution
 process.chdir(__dirname);
 
+// Track console output that indicates failures so we can exit non-zero
+let testFailureDetected = false;
+const originalLog = console.log;
+const originalError = console.error;
+
+console.log = (...args) => {
+  if (args.some(arg => typeof arg === 'string' && arg.includes('✗'))) {
+    testFailureDetected = true;
+  }
+  originalLog(...args);
+};
+
+console.error = (...args) => {
+  testFailureDetected = true;
+  originalError(...args);
+};
+
+process.on('exit', () => {
+  if (testFailureDetected) {
+    originalError('\n❌ Test output reported failures.');
+    if (!process.exitCode || process.exitCode === 0) {
+      process.exitCode = 1;
+    }
+  }
+});
+
 /**
  * Check if Playwright is installed
  */

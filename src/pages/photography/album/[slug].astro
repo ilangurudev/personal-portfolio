@@ -47,6 +47,7 @@ const galleryPhotos = sortedPhotos.map(p => ({
   body: p.body || '',
   data: {
     title: p.data.title,
+    order_score: p.data.order_score ?? 0,
     filename: p.data.filename,
     album: p.data.album,
     albumTitle: album.data.title,
