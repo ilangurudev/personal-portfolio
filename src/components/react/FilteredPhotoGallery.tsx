@@ -7,6 +7,7 @@ interface Photo {
   data: {
     title: string;
     filename: string;
+    order_score?: number;
     album?: string;
     albumTitle?: string;
     tags?: string[];
@@ -115,6 +116,7 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
       ...p,
       data: {
         ...p.data,
+        order_score: typeof p.data.order_score === 'number' ? p.data.order_score : 0,
         date: typeof p.data.date === 'string' ? p.data.date : p.data.date.toISOString()
       }
     }));

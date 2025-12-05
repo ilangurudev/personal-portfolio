@@ -12,7 +12,7 @@
     "remove": "node scripts/remove-media.js",
     "copy-exif": "node scripts/copy-exif-to-frontmatter.js",
     "fix-frontmatter": "node scripts/fix-frontmatter-types.js",
-    "test": "npm run test:navigation && npm run test:responsive && npm run test:visual",
+    "test": "npm run test:navigation && npm run test:sorting && npm run test:responsive && npm run test:visual && npm run test:filters && npm run test:tag-and-or && npm run test:lightbox && npm run test:story && npm run test:nav-links && npm run test:scroll && npm run test:advanced-filters && npm run test:slideshow && npm run test:albums",
     "test:navigation": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/dual-space-navigation.spec.js",
     "test:responsive": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/responsive-design.spec.js",
     "test:visual": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/visual-aesthetics.spec.js",
@@ -26,8 +26,6 @@
     "test:slideshow": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/slideshow-mode.spec.cjs",
     "test:albums": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/album-pages.spec.cjs",
     "test:sorting": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/sorting.spec.cjs",
-    "test:gallery": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/gallery-navigation.spec.js",
-    "test:all": "npm run test && npm run test:filters && npm run test:tag-and-or && npm run test:lightbox && npm run test:story && npm run test:nav-links && npm run test:scroll && npm run test:advanced-filters && npm run test:slideshow && npm run test:albums",
     "sync_keywords": "node scripts/sync-keywords.js"
   },
   "dependencies": {

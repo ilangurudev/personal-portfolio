@@ -14,7 +14,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
 (async () => {
   const browser = await chromium.launch({
-    headless: true,
+    headless: process.env.HEADLESS === 'true',
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
     slowMo: 100
   });

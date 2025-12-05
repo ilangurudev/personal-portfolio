@@ -32,20 +32,21 @@ npm run test:advanced-filters # 8-dimensional filter panel
 npm run test:slideshow    # Slideshow mode
 npm run test:albums       # Album pages functionality
 npm run test:sorting      # Photo sorting
-npm run test:gallery      # Gallery keyboard navigation
 ```
+
+**Headless vs headed:**
+- Browsers run headed by default so you can watch interactions.
+- Set `HEADLESS=true` to run all Playwright tests in headless mode.
 
 **Test Files:**
 
 | File | Description | Features Tested |
 |------|-------------|-----------------|
 | `dual-space-navigation.spec.js` | Space toggle | Professional ↔ Photography switching |
-| `gallery-navigation.spec.js` | Gallery keyboard nav | Arrow keys, ESC, URL updates |
 | `photo-filter-toggle.spec.cjs` | Simple filter | All/Street/Landscape toggle |
-| `responsive-design.spec.js` | Responsive layouts | Mobile/tablet/desktop |
+| `responsive-design.spec.js` | Responsive layouts | Mobile/tablet/desktop, hamburger + space toggle in mobile menu |
 | `visual-aesthetics.spec.js` | Design consistency | Colors, typography, themes |
 | `tag-filtering-and-or.spec.cjs` | Tag filtering | AND/OR modes, tag availability, clear filters |
-| `lightbox-interactions.spec.cjs` | Lightbox core | Open/close, navigation, metadata, keyboard |
 | `story-drawer.spec.cjs` | Story drawer | Open/close, content display, auto-close |
 | `lightbox-navigation-links.spec.cjs` | Link navigation | Tag click → tag page, album click → album page |
 | `infinite-scroll.spec.cjs` | Lazy loading | Initial batch, scroll loading, photo counts |
@@ -53,8 +54,9 @@ npm run test:gallery      # Gallery keyboard navigation
 | `slideshow-mode.spec.cjs` | Slideshow | Intervals, auto-advance, stop on close |
 | `album-pages.spec.cjs` | Album pages | Listing, detail pages, album filtering |
 | `sorting.spec.cjs` | Photo sorting | order_score, date sorting |
+| `lightbox-interactions.spec.cjs` | Lightbox core | Open/close, navigation, metadata, keyboard (home + all-photos + all-photos after tag filter + first album + first tag pages from listings) |
 
-**Note:** Tests are run via Playwright. Ensure the dev server is running (`npm run dev`) before running tests.
+**Note:** Tests are run via Playwright. Ensure the dev server is running (`npm run dev`) before running tests. The Playwright runner now watches for any `✗` output or `console.error` in specs and exits non-zero so failures are visible.
 
 ## 3. Build Gotchas
 

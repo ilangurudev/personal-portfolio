@@ -43,7 +43,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
   console.log('   ✓ Navigated to photography space');
 
   // Test 3: Photography Homepage (Bright Editorial Theme)
-  console.log('\n📍 Test 3: Photography Homepage (/photo)');
+  console.log('\n📍 Test 3: Photography Homepage (/photography)');
   const photoTitle = await page.title();
   console.log(`   ✓ Page loaded: ${photoTitle}`);
 

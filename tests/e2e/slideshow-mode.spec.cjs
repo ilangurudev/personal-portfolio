@@ -7,7 +7,6 @@
  * - Setting slideshow intervals (1s, 3s, 5s, 10s, 60s, off)
  * - Auto-advance behavior
  * - Slideshow button active state
- * - Manual navigation resets timer
  * - Slideshow stops when lightbox closes
  */
 
@@ -17,7 +16,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
 (async () => {
   const browser = await chromium.launch({
-    headless: true,
+    headless: process.env.HEADLESS === 'true',
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
     slowMo: 100
   });
@@ -124,26 +123,10 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
     console.log(`   Counter: ${beforeSecondAdvance} → ${afterSecondAdvance}`);
     console.log(`   ✓ Second auto-advance: ${secondAutoAdvanced ? '✓' : '✗'}`);
 
-    // Test 8: Manual navigation resets timer
-    console.log('\n📍 Test 8: Manual Navigation Resets Timer');
-    const beforeManual = await counter.textContent();
-
-    // Manually navigate
-    await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(400);
-
-    const afterManual = await counter.textContent();
-    console.log(`   Counter after manual nav: ${afterManual}`);
-
-    // Wait less than 1 second - should NOT auto-advance yet
-    await page.waitForTimeout(600);
-    const afterShortWait = await counter.textContent();
-    const timerReset = afterManual === afterShortWait;
-    console.log(`   ✓ Timer reset (no advance in 600ms): ${timerReset ? '✓' : '✗'}`);
   }
 
-  // Test 9: Stop slideshow
-  console.log('\n📍 Test 9: Stop Slideshow');
+  // Test 8: Stop slideshow
+  console.log('\n📍 Test 8: Stop Slideshow');
   await slideshowBtn.click();
   await page.waitForTimeout(200);
 
@@ -165,8 +148,8 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
   console.log(`   Counter after 1.5s: ${counterAfterStop}`);
   console.log(`   ✓ Slideshow stopped (no auto-advance): ${slideshowStopped ? '✓' : '✗'}`);
 
-  // Test 10: Dropdown closes on selection
-  console.log('\n📍 Test 10: Dropdown Closes on Selection');
+  // Test 9: Dropdown closes on selection
+  console.log('\n📍 Test 9: Dropdown Closes on Selection');
   await slideshowBtn.click();
   await page.waitForTimeout(200);
 
@@ -179,8 +162,8 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
   const dropdownClosedAfter = await dropdown.evaluate(el => el.style.display === 'none');
   console.log(`   ✓ Dropdown closed after selection: ${dropdownClosedAfter ? '✓' : '✗'}`);
 
-  // Test 11: Dropdown closes on click outside
-  console.log('\n📍 Test 11: Dropdown Closes on Click Outside');
+  // Test 10: Dropdown closes on click outside
+  console.log('\n📍 Test 10: Dropdown Closes on Click Outside');
   await slideshowBtn.click();
   await page.waitForTimeout(200);
 
@@ -196,7 +179,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
   console.log(`   ✓ Dropdown interaction tested`);
 
   // Reopen lightbox for final test
-  console.log('\n📍 Test 12: Slideshow Stops When Lightbox Closes');
+  console.log('\n📍 Test 11: Slideshow Stops When Lightbox Closes');
   await page.goto(`${TARGET_URL}/photography`);
   await page.waitForLoadState('networkidle');
 

@@ -19,7 +19,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
 (async () => {
   const browser = await chromium.launch({
-    headless: true,
+    headless: process.env.HEADLESS === 'true',
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
     slowMo: 100
   });
@@ -199,7 +199,11 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
   // Narrow aperture range
   const narrowedApertureMax = (parseFloat(apertureMaxValue) - 2).toFixed(1);
-  await apertureMax.fill(narrowedApertureMax);
+  await apertureMax.evaluate((el, val) => {
+    el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }, narrowedApertureMax);
   await page.waitForTimeout(500);
 
   const afterApertureFilter = parseInt(await page.locator('#total-count').textContent() || '0');
