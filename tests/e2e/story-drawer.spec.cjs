@@ -8,6 +8,7 @@
  * - Closing story drawer via X button
  * - Closing story drawer via backdrop
  * - Story drawer auto-close when navigating photos
+ * - Story drawer resets when closing lightbox and opening different photo
  */
 
 const { chromium } = require('playwright');
@@ -151,13 +152,65 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
       el.style.display === 'none' || !el.classList.contains('active')
     );
     console.log(`   ✓ Drawer auto-closed after navigation: ${drawerClosedAfterNav ? '✓' : '✗'}`);
+
+    // Test 10: Story drawer resets when closing and reopening lightbox with different photo
+    console.log('\n📍 Test 10: Story Drawer Resets on Lightbox Close/Reopen');
+
+    // First, navigate back to find a photo with story
+    let foundStoryAgain = false;
+    for (let i = 0; i < maxAttempts && !foundStoryAgain; i++) {
+      await page.keyboard.press('ArrowLeft');
+      await page.waitForTimeout(300);
+      const btnDisplay = await storyBtn.evaluate(el => window.getComputedStyle(el).display);
+      foundStoryAgain = btnDisplay !== 'none';
+    }
+
+    if (foundStoryAgain) {
+      // Open story drawer
+      await storyBtn.click();
+      await page.waitForTimeout(400);
+
+      const drawerOpenBeforeClose = await storyDrawer.evaluate(el =>
+        el.style.display !== 'none' && el.classList.contains('active')
+      );
+      console.log(`   Drawer open before closing lightbox: ${drawerOpenBeforeClose ? '✓' : '✗'}`);
+
+      // Close lightbox WITHOUT closing drawer (bug trigger scenario)
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+
+      const lightboxClosedCheck = await lightbox.evaluate(el =>
+        el.style.display === 'none' || !el.classList.contains('active')
+      );
+      console.log(`   Lightbox closed: ${lightboxClosedCheck ? '✓' : '✗'}`);
+
+      // Click on a different photo
+      const secondPhoto = await photoCards.nth(1);
+      await secondPhoto.click();
+      await page.waitForTimeout(600);
+
+      // Check that drawer is NOT visible
+      const drawerActiveAfterReopen = await storyDrawer.evaluate(el =>
+        el.style.display !== 'none' && el.classList.contains('active')
+      );
+
+      if (drawerActiveAfterReopen) {
+        console.log('   ✗ Story drawer incorrectly persisted after close/reopen');
+        console.error('   ✗ BUG: Story drawer should reset when lightbox is closed and reopened');
+        process.exit(1);
+      } else {
+        console.log('   ✓ Story drawer correctly reset after close/reopen');
+      }
+    } else {
+      console.log('   ⚠ Could not find photo with story for close/reopen test');
+    }
   } else {
     console.log(`   ⚠ No photos with stories found in first ${maxAttempts} photos`);
     console.log('   ⚠ Skipping story-specific tests (no story content in test data)');
   }
 
-  // Test 10: Verify story button hidden for photos without story
-  console.log('\n📍 Test 10: Verify Story Button Hidden for Photos Without Story');
+  // Test 11: Verify story button hidden for photos without story
+  console.log('\n📍 Test 11: Verify Story Button Hidden for Photos Without Story');
   // Navigate to find a photo without story
   let foundPhotoWithoutStory = false;
   attempts = 0;
