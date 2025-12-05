@@ -13,9 +13,16 @@ Playwright is installed in the skill directory: `.claude/skills/playwright-skill
 npm run dev
 ```
 
-**Run all tests:**
+**Run all tests (parallel by default):**
 ```bash
 npm test
+# Tune concurrency (defaults to CPU count)
+E2E_CONCURRENCY=4 npm test
+# Stream per-spec output while running
+E2E_LOG_THROUGH=true npm test
+
+# Legacy sequential flow
+npm run test:serial
 ```
 
 **Run individual test suites:**
@@ -62,8 +69,10 @@ Ensures page scrolling is disabled while the lightbox is open and restored after
 ## Environment Variables
 
 - `TEST_URL`: Override base URL (default: `http://localhost:4321`)
-- `HEADLESS`: Run in headless mode (default: `false`)
+- `HEADLESS`: Headless toggle (default: `true` via runner). Set `HEADLESS=false` to watch.
 - `SCREENSHOT_DIR`: Screenshot output directory (default: `./tests/screenshots`)
+- `E2E_CONCURRENCY`: Parallel workers for specs (default: CPU count, capped to spec count)
+- `E2E_LOG_THROUGH`: If `true`, stream each spec's output with `[spec]` prefixes
 
 **Example:**
 ```bash
