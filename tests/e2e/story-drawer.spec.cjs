@@ -7,7 +7,8 @@
  * - Story content display
  * - Closing story drawer via X button
  * - Closing story drawer via backdrop
- * - Story drawer auto-close when navigating photos
+ * - Story drawer stays open when navigating to photos with stories (content updates)
+ * - Story drawer closes when navigating to photos without stories
  * - Story drawer resets when closing lightbox and opening different photo
  */
 
@@ -135,8 +136,10 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
     );
     console.log(`   ✓ Story drawer closed via backdrop: ${drawerClosedBackdrop ? '✓' : '✗'}`);
 
-    // Test 9: Story drawer closes when navigating photos
-    console.log('\n📍 Test 9: Story Drawer Auto-Close on Navigation');
+    // Test 9: Story drawer behavior during navigation
+    // - Stays open if new photo has a story (content updates)
+    // - Closes if new photo has no story
+    console.log('\n📍 Test 9: Story Drawer Behavior During Navigation');
     await storyBtn.click();
     await page.waitForTimeout(400);
 
@@ -145,13 +148,34 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
     );
     console.log(`   Drawer open before navigation: ${drawerOpenBeforeNav ? '✓' : '✗'}`);
 
+    // Get current story content
+    const storyContentBefore = await storyContent.textContent();
+    console.log(`   Story before: "${storyContentBefore?.substring(0, 40)}..."`);
+
     await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(400);
 
-    const drawerClosedAfterNav = await storyDrawer.evaluate(el =>
-      el.style.display === 'none' || !el.classList.contains('active')
+    // Check if new photo has a story
+    const newPhotoHasStory = await storyBtn.evaluate(el => window.getComputedStyle(el).display !== 'none');
+
+    const drawerStateAfterNav = await storyDrawer.evaluate(el =>
+      el.style.display !== 'none' && el.classList.contains('active')
     );
-    console.log(`   ✓ Drawer auto-closed after navigation: ${drawerClosedAfterNav ? '✓' : '✗'}`);
+
+    if (newPhotoHasStory) {
+      // Drawer should stay open with updated content
+      console.log(`   New photo has story: ✓`);
+      console.log(`   ✓ Drawer stayed open: ${drawerStateAfterNav ? '✓' : '✗'}`);
+
+      const storyContentAfter = await storyContent.textContent();
+      const contentUpdated = storyContentAfter !== storyContentBefore;
+      console.log(`   Story after: "${storyContentAfter?.substring(0, 40)}..."`);
+      console.log(`   ✓ Story content updated: ${contentUpdated ? '✓' : '✗'}`);
+    } else {
+      // Drawer should close when navigating to photo without story
+      console.log(`   New photo has no story`);
+      console.log(`   ✓ Drawer closed (no story on new photo): ${!drawerStateAfterNav ? '✓' : '✗'}`);
+    }
 
     // Test 10: Story drawer resets when closing and reopening lightbox with different photo
     console.log('\n📍 Test 10: Story Drawer Resets on Lightbox Close/Reopen');
