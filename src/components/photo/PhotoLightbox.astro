@@ -137,6 +137,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     private storyContent: HTMLElement | null;
     private storyDrawerOpen: boolean = false;
     private env: string;
+    private originalBodyOverflow: string | null = null;
+    private originalHtmlOverflow: string | null = null;
 
     constructor(photos: Photo[], env: string = 'PROD') {
       this.photos = photos;
@@ -187,15 +189,6 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
         imageContainer.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: true });
         imageContainer.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
       }
-
-      // Prevent body scroll when open
-      this.lightbox.addEventListener('transitionend', () => {
-        if (this.isOpen) {
-          document.body.style.overflow = 'hidden';
-        } else {
-          document.body.style.overflow = '';
-        }
-      });
 
       // Slideshow button
       this.slideshowBtn?.addEventListener('click', (e) => {
@@ -333,12 +326,40 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       this.isSwiping = false;
     }
 
+    private lockScroll() {
+      if (this.originalBodyOverflow === null) {
+        this.originalBodyOverflow = document.body.style.overflow;
+      }
+      if (this.originalHtmlOverflow === null) {
+        this.originalHtmlOverflow = document.documentElement.style.overflow;
+      }
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+
+    private unlockScroll() {
+      if (this.originalBodyOverflow !== null) {
+        document.body.style.overflow = this.originalBodyOverflow;
+        this.originalBodyOverflow = null;
+      } else {
+        document.body.style.overflow = '';
+      }
+
+      if (this.originalHtmlOverflow !== null) {
+        document.documentElement.style.overflow = this.originalHtmlOverflow;
+        this.originalHtmlOverflow = null;
+      } else {
+        document.documentElement.style.overflow = '';
+      }
+    }
+
     public open(index: number) {
       if (index < 0 || index >= this.photos.length) return;
 
       this.currentIndex = index;
       this.isOpen = true;
       this.isTransitioning = false;
+      this.lockScroll();
 
       // Ensure story drawer is closed when opening a new photo
       this.closeStoryDrawer();
@@ -382,7 +403,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
           }
         }, 300);
       }
-      document.body.style.overflow = '';
+      this.unlockScroll();
       if (this.slideshowDropdown) {
         this.slideshowDropdown.style.display = 'none';
       }
