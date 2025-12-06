@@ -120,26 +120,6 @@ const sortedPhotos = sortPhotos(filteredPhotos);
       padding: 4rem 2rem;
     }
 
-    .gallery-container {
-      margin-top: 2rem;
-      flex: 1;
-      min-height: 0; /* Allow flex child to shrink */
-    }
-
-    /* Photo card base styles imported via PhotoLayout from photo-card.css */
-    /* Overrides for virtualized grid (React Window positions absolutely) */
-    :global(.photo-card) {
-      position: absolute;
-    }
-
-    :global(.photo-card:hover) {
-      z-index: 10; /* Ensure hovered item is above */
-    }
-
-    :global(.photo-image) {
-      height: 100%; /* Override aspect-ratio for virtualized grid */
-    }
-
     @media (max-width: 768px) {
       .tag-page {
         padding: 1.5rem 1rem;
@@ -165,10 +145,6 @@ const sortedPhotos = sortPhotos(filteredPhotos);
       .tag-pill {
         font-size: 0.8rem;
         padding: 0.4rem 0.8rem;
-      }
-
-      .gallery-container {
-        margin-top: 1.5rem;
       }
     }
   </style>

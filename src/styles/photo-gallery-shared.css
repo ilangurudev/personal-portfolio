@@ -1,0 +1,28 @@
+/* Shared gallery layout overrides for virtualized React grids on photography pages */
+.gallery-container {
+  margin-top: 2rem;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Keep virtualized cards stacked correctly inside react-window */
+.gallery-container :global(.photo-card) {
+  position: absolute;
+}
+
+.gallery-container :global(.photo-card:hover) {
+  z-index: 10;
+}
+
+/* Replace aspect-ratio with height-based sizing for virtualized rows */
+.gallery-container :global(.photo-image) {
+  height: 100%;
+}
+
+@media (max-width: 768px) {
+  .gallery-container {
+    margin-top: 1.5rem;
+  }
+}
+

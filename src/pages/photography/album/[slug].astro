@@ -59,7 +59,7 @@ const galleryPhotos = sortedPhotos.map(p => serializePhotoForGallery(
         {albumTags.length > 0 && (
           <TagFilterBar tags={albumTags} photos={galleryPhotos} />
         )}
-        <div class="gallery-container" style="flex: 1;">
+        <div class="gallery-container">
           <FilteredPhotoGallery 
             client:load
             allPhotos={galleryPhotos}
@@ -121,27 +121,6 @@ const galleryPhotos = sortedPhotos.map(p => serializePhotoForGallery(
       padding: 4rem 2rem;
     }
 
-    .gallery-container {
-      margin-top: 2rem;
-      width: 100%;
-      flex: 1;
-      min-height: 0; /* Allow flex child to shrink */
-    }
-
-    /* Photo card base styles imported via PhotoLayout from photo-card.css */
-    /* Overrides for virtualized grid (React Window positions absolutely) */
-    :global(.photo-card) {
-      position: absolute;
-    }
-
-    :global(.photo-card:hover) {
-      z-index: 10; /* Ensure hovered item is above */
-    }
-
-    :global(.photo-image) {
-      height: 100%; /* Override aspect-ratio for virtualized grid */
-    }
-
     @media (max-width: 768px) {
       .album-page {
         padding: 1.5rem 1rem;
@@ -153,10 +132,6 @@ const galleryPhotos = sortedPhotos.map(p => serializePhotoForGallery(
 
       .album-description {
         font-size: 1.125rem;
-      }
-
-      .gallery-container {
-        margin-top: 1.5rem;
       }
 
       .tag-filter-controls {
