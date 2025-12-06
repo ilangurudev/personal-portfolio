@@ -6,6 +6,7 @@ import {
   type LightboxPhoto,
   toIsoDateString
 } from '../../utils/lightbox-transform';
+import { pushFilteredPhotosToLightbox } from '../../utils/client/lightbox-sync';
 
 interface Photo {
   id: string;
@@ -89,22 +90,18 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
       onFilterChange(filteredPhotos);
     }
 
-    // Update lightbox via global function
-    if (typeof window !== 'undefined' && (window as any).updateLightboxFromFilter) {
-      // Convert to lightbox format
-      const lightboxPhotos: LightboxPhoto[] = filteredPhotos.map(p =>
-        transformForLightbox({
-          ...p,
-          body: p.body,
-          data: {
-            ...p.data,
-            album: p.data.album || '',
-            tags: p.data.tags || [],
-          },
-        })
-      );
-      (window as any).updateLightboxFromFilter(lightboxPhotos);
-    }
+    const lightboxPhotos: LightboxPhoto[] = filteredPhotos.map(p =>
+      transformForLightbox({
+        ...p,
+        body: p.body,
+        data: {
+          ...p.data,
+          album: p.data.album || '',
+          tags: p.data.tags || [],
+        },
+      })
+    );
+    pushFilteredPhotosToLightbox(lightboxPhotos);
   }, [filteredPhotos, onFilterChange]);
 
   // Prepare photos for PhotoGallery (convert dates to strings)

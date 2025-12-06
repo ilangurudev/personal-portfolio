@@ -1,12 +1,114 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { augmentPhotosWithExif } from '../content/loaders/exif-augmenter';
-import { formatShutterSpeed } from './shared/exif';
+import { formatShutterSpeed, parseSettings, type ParsedExifSettings } from './shared/exif';
+import { getPhotoUrl, getResizedPhotoUrl } from './url-helper';
+import {
+  transformForLightbox,
+  toIsoDateString,
+  type LightboxPhoto
+} from './lightbox-transform';
 export { transformForLightbox, type LightboxPhoto } from './lightbox-transform';
 
-export { formatShutterSpeed };
+export { formatShutterSpeed, parseSettings };
+export type { ParsedExifSettings };
 
 export type Photo = CollectionEntry<'photos'>;
 export type Album = CollectionEntry<'albums'>;
+
+export interface GalleryPhoto {
+  id: string;
+  url: string;
+  resizedUrl?: string;
+  body: string;
+  data: {
+    title: string;
+    filename: string;
+    album: string;
+    albumTitle?: string;
+    tags: string[];
+    camera?: string;
+    settings?: string;
+    focalLength?: number;
+    location?: string;
+    date: string;
+    position?: 'top' | 'middle' | 'bottom';
+    order_score?: number;
+  };
+}
+
+type GallerySource = {
+  id: string;
+  body?: string;
+  data: {
+    title: string;
+    filename: string;
+    album: string;
+    albumTitle?: string;
+    tags?: string[];
+    camera?: string;
+    settings?: string;
+    focalLength?: number;
+    location?: string;
+    date: Date | string;
+    position?: 'top' | 'middle' | 'bottom';
+    order_score?: number;
+  };
+};
+
+interface SerializeOptions {
+  includeResized?: boolean;
+}
+
+/**
+ * Normalize a photo into the gallery payload used by both Astro pages and React islands.
+ * - Ensures URLs are present
+ * - Normalizes tags and dates for client-safe use
+ * - Optionally includes resized URL for progressive grids
+ */
+export function serializePhotoForGallery(
+  photo: GallerySource,
+  albumTitleMap?: Map<string, string>,
+  options: SerializeOptions = {}
+): GalleryPhoto {
+  const { includeResized = false } = options;
+
+  const tags = (photo.data.tags || [])
+    .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
+    .filter(Boolean);
+
+  const normalized: GalleryPhoto = {
+    id: photo.id,
+    url: getPhotoUrl(photo.data.filename),
+    ...(includeResized && { resizedUrl: getResizedPhotoUrl(photo.data.filename, 600) }),
+    body: photo.body || '',
+    data: {
+      title: photo.data.title,
+      filename: photo.data.filename,
+      album: photo.data.album,
+      albumTitle: photo.data.albumTitle ?? albumTitleMap?.get(photo.data.album),
+      tags,
+      camera: photo.data.camera,
+      settings: photo.data.settings,
+      focalLength: photo.data.focalLength,
+      location: photo.data.location,
+      date: toIsoDateString(photo.data.date),
+      position: photo.data.position,
+      order_score: typeof photo.data.order_score === 'number' ? photo.data.order_score : 0
+    }
+  };
+
+  return normalized;
+}
+
+/**
+ * Convenience wrapper for mapping any photo list to lightbox payloads.
+ */
+export function mapToLightboxPhotos(
+  photos: Array<Parameters<typeof transformForLightbox>[0]>,
+  albumTitleMap?: Map<string, string>
+): LightboxPhoto[] {
+  return photos.map(photo => transformForLightbox(photo, albumTitleMap));
+}
 
 /**
  * Get all photos with EXIF data augmented from the actual photo files
@@ -128,52 +230,6 @@ export function sortAlbums<T extends { data: { featured?: boolean; order_score: 
 export async function getAlbumTitleMap(albums?: Album[]): Promise<Map<string, string>> {
   const albumEntries = albums ?? await getCollection('albums');
   return new Map(albumEntries.map(a => [a.slug, a.data.title]));
-}
-
-/**
- * Parsed EXIF settings from a settings string
- */
-export interface ParsedExifSettings {
-  aperture?: number;
-  shutterSpeed?: number;
-  iso?: number;
-}
-
-/**
- * Parse camera settings string into structured EXIF data
- * @param settings - Raw settings string (e.g., "f/2.8, 1/1000s, ISO 400")
- * @returns Parsed settings object with aperture, shutterSpeed, and iso
- */
-export function parseSettings(settings?: string): ParsedExifSettings {
-  if (!settings) return {};
-
-  const result: ParsedExifSettings = {};
-
-  // Parse aperture (f/2.8 -> 2.8)
-  const apertureMatch = settings.match(/f\/([\d.]+)/);
-  if (apertureMatch) {
-    result.aperture = parseFloat(apertureMatch[1]);
-  }
-
-  // Parse shutter speed (1/1000s -> 0.001, 2s -> 2)
-  const shutterMatch = settings.match(/(\d+)\/(\d+)s|(\d+(?:\.\d+)?)s/);
-  if (shutterMatch) {
-    if (shutterMatch[1] && shutterMatch[2]) {
-      // Fractional shutter speed (e.g., 1/1000s)
-      result.shutterSpeed = parseInt(shutterMatch[1]) / parseInt(shutterMatch[2]);
-    } else if (shutterMatch[3]) {
-      // Whole number shutter speed (e.g., 2s)
-      result.shutterSpeed = parseFloat(shutterMatch[3]);
-    }
-  }
-
-  // Parse ISO (ISO 400 -> 400)
-  const isoMatch = settings.match(/ISO\s*(\d+)/);
-  if (isoMatch) {
-    result.iso = parseInt(isoMatch[1]);
-  }
-
-  return result;
 }
 
 /**

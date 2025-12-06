@@ -34,21 +34,14 @@ The codebase strictly separates two distinct "spaces" via Layouts. This is a fun
     }
     ```
 
-## 3. Shared Styles (`src/styles/photo-card.css`)
+## 3. Shared Styles
 
-Photo card component styles used across all photography pages. Imported via `PhotoLayout.astro` to ensure global availability.
-
-**Contains:**
-- `.photo-card` - Base card container with hover effects
-- `.photo-image` - Image container with aspect ratio
-- `.viewfinder-overlay` - Overlay container for viewfinder effect
-- `.viewfinder-corners` - SVG corners animation
-- `.focus-locked` - Green focus lock state
-- `@keyframes viewfinderFocus` - Animation keyframes
-
-**Page-Specific Overrides:**
-- Album and tag pages override `.photo-card { position: absolute; }` for virtualized grids (React Window)
-- Album and tag pages override `.photo-image { height: 100%; }` to replace `aspect-ratio` for virtualized grids
+- `src/styles/photo-card.css`: Base photo card styling (hover states, viewfinder overlay, aspect ratio) imported globally by `PhotoLayout.astro`.
+- `src/styles/photo-gallery-shared.css`: Gallery layout helpers + virtualization overrides imported by `PhotoLayout.astro` so photography pages share a single source of truth:
+  - `.gallery-container` spacing/flex behavior
+  - `.gallery-container :global(.photo-card) { position: absolute; }` to support react-window
+  - `.gallery-container :global(.photo-image) { height: 100%; }` to replace aspect-ratio for virtualized rows
+  - Mobile margin tweaks for gallery blocks
 
 > [!IMPORTANT]
 > **Do not edit `global.css` for theme colors.**

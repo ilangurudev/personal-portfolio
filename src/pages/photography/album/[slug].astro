@@ -1,7 +1,14 @@
 ---
 import PhotoLayout from '../../../layouts/PhotoLayout.astro';
 import { getCollection, getEntry } from 'astro:content';
-import { getAlbumPhotosWithExif, getAlbumTitleMap, sortPhotos, extractTagNames, transformForLightbox } from '../../../utils/photo-helpers';
+import {
+  getAlbumPhotosWithExif,
+  getAlbumTitleMap,
+  sortPhotos,
+  extractTagNames,
+  serializePhotoForGallery,
+  mapToLightboxPhotos
+} from '../../../utils/photo-helpers';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../../components/photo/PhotoIcons.astro';
 import { FilteredPhotoGallery } from '../../../components/react/FilteredPhotoGallery';
@@ -24,24 +31,10 @@ const albumTags = extractTagNames(photos, 'alpha');
 const albumTitleMap = await getAlbumTitleMap([album]);
 
 // Map to serializable structure for client component
-const galleryPhotos = sortedPhotos.map(p => ({
-  id: p.id,
-  body: p.body || '',
-  data: {
-    title: p.data.title,
-    order_score: p.data.order_score ?? 0,
-    filename: p.data.filename,
-    album: p.data.album,
-    albumTitle: album.data.title,
-    tags: p.data.tags,
-    camera: p.data.camera,
-    settings: p.data.settings,
-    focalLength: p.data.focalLength,
-    location: p.data.location,
-    date: p.data.date.toISOString(),
-    position: p.data.position
-  }
-}));
+const galleryPhotos = sortedPhotos.map(p => serializePhotoForGallery(
+  { ...p, data: { ...p.data, albumTitle: album.data.title } },
+  albumTitleMap
+));
 ---
 
 <PhotoLayout title={album.data.title} description={album.data.description}>
@@ -66,14 +59,14 @@ const galleryPhotos = sortedPhotos.map(p => ({
         {albumTags.length > 0 && (
           <TagFilterBar tags={albumTags} photos={galleryPhotos} />
         )}
-        <div class="gallery-container" style="flex: 1;">
+        <div class="gallery-container">
           <FilteredPhotoGallery 
             client:load
             allPhotos={galleryPhotos}
             initialActiveTags={[]}
           />
         </div>
-        <PhotoLightbox photos={sortedPhotos.map(p => transformForLightbox(p, albumTitleMap))} />
+        <PhotoLightbox photos={mapToLightboxPhotos(sortedPhotos, albumTitleMap)} />
       </>
     )}
   </div>
@@ -128,27 +121,6 @@ const galleryPhotos = sortedPhotos.map(p => ({
       padding: 4rem 2rem;
     }
 
-    .gallery-container {
-      margin-top: 2rem;
-      width: 100%;
-      flex: 1;
-      min-height: 0; /* Allow flex child to shrink */
-    }
-
-    /* Photo card base styles imported via PhotoLayout from photo-card.css */
-    /* Overrides for virtualized grid (React Window positions absolutely) */
-    :global(.photo-card) {
-      position: absolute;
-    }
-
-    :global(.photo-card:hover) {
-      z-index: 10; /* Ensure hovered item is above */
-    }
-
-    :global(.photo-image) {
-      height: 100%; /* Override aspect-ratio for virtualized grid */
-    }
-
     @media (max-width: 768px) {
       .album-page {
         padding: 1.5rem 1rem;
@@ -160,10 +132,6 @@ const galleryPhotos = sortedPhotos.map(p => ({
 
       .album-description {
         font-size: 1.125rem;
-      }
-
-      .gallery-container {
-        margin-top: 1.5rem;
       }
 
       .tag-filter-controls {
@@ -182,11 +150,7 @@ const galleryPhotos = sortedPhotos.map(p => ({
   </style>
 
   <script>
-    if (typeof window !== 'undefined') {
-      window.updateLightboxFromFilter = function (filteredPhotos) {
-        if (!window.photoLightbox) return;
-        window.photoLightbox.updatePhotos(filteredPhotos);
-      };
-    }
+    import { setupLightboxSync } from '../../../utils/client/lightbox-sync';
+    setupLightboxSync();
   </script>
 </PhotoLayout>
