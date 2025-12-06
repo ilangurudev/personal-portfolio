@@ -440,9 +440,9 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
 
   <script>
     import { filterPhotosByTags, getAvailableTags, normalizeTag, setupTagLogicToggle } from '../../utils/client/tag-utils';
-    import { formatShutterSpeed } from '../../utils/shared/exif';
+    import { formatShutterSpeed, parseSettings } from '../../utils/shared/exif';
     (window as any).photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag, setupTagLogicToggle };
-    (window as any).photoFormatters = { formatShutterSpeed };
+    (window as any).photoFormatters = { formatShutterSpeed, parseSettings };
   </script>
 
   <script define:vars={{
@@ -532,6 +532,35 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
         return `${seconds.toFixed(1)}s`;
       });
 
+    const parseSettings =
+      (window.photoFormatters && window.photoFormatters.parseSettings) ||
+      ((settings) => {
+        if (!settings) return {};
+
+        const result = {};
+
+        const apertureMatch = settings.match(/f\/([\d.]+)/);
+        if (apertureMatch) {
+          result.aperture = parseFloat(apertureMatch[1]);
+        }
+
+        const shutterMatch = settings.match(/(\d+)\/(\d+)s|(\d+(?:\.\d+)?)s/);
+        if (shutterMatch) {
+          if (shutterMatch[1] && shutterMatch[2]) {
+            result.shutterSpeed = parseInt(shutterMatch[1]) / parseInt(shutterMatch[2]);
+          } else if (shutterMatch[3]) {
+            result.shutterSpeed = parseFloat(shutterMatch[3]);
+          }
+        }
+
+        const isoMatch = settings.match(/ISO\s*(\d+)/);
+        if (isoMatch) {
+          result.iso = parseInt(isoMatch[1]);
+        }
+
+        return result;
+      });
+
     // Photo filtering and progressive loading
     const BATCH_SIZE = 20;
     console.log('EXIF Ranges:', exifRangesData);
@@ -540,34 +569,6 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
     let displayedPhotos = [];
     const viewfinderTemplate = document.getElementById('viewfinder-template');
     const viewfinderMarkup = viewfinderTemplate?.innerHTML?.trim?.() || '';
-
-    // Parse settings helper
-    function parseSettings(settings) {
-      if (!settings) return {};
-
-      const result = {};
-
-      const apertureMatch = settings.match(/f\/([\d.]+)/);
-      if (apertureMatch) {
-        result.aperture = parseFloat(apertureMatch[1]);
-      }
-
-      const shutterMatch = settings.match(/(\d+)\/(\d+)s|(\d+(?:\.\d+)?)s/);
-      if (shutterMatch) {
-        if (shutterMatch[1] && shutterMatch[2]) {
-          result.shutterSpeed = parseInt(shutterMatch[1]) / parseInt(shutterMatch[2]);
-        } else if (shutterMatch[3]) {
-          result.shutterSpeed = parseFloat(shutterMatch[3]);
-        }
-      }
-
-      const isoMatch = settings.match(/ISO\s*(\d+)/);
-      if (isoMatch) {
-        result.iso = parseInt(isoMatch[1]);
-      }
-
-      return result;
-    }
 
     // Get current filter state
     function getFilterState() {
@@ -624,6 +625,21 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
       const filters = getFilterState();
 
       filteredPhotos = allPhotosData.filter(photo => {
+        const exif = parseSettings(photo.data.settings);
+
+        const apertureFiltering =
+          filters.apertureMin > exifRangesData.aperture.min ||
+          filters.apertureMax < exifRangesData.aperture.max;
+        const shutterFiltering =
+          filters.shutterMin > exifRangesData.shutterSpeed.min ||
+          filters.shutterMax < exifRangesData.shutterSpeed.max;
+        const isoFiltering =
+          filters.isoMin > exifRangesData.iso.min ||
+          filters.isoMax < exifRangesData.iso.max;
+        const focalFiltering =
+          filters.focalMin > exifRangesData.focalLength.min ||
+          filters.focalMax < exifRangesData.focalLength.max;
+
         // Tag filter
         let hasTag = true;
         if (filters.tags.length > 0) {
@@ -665,28 +681,30 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
           return false;
         }
 
-        // EXIF filters
-        const exif = parseSettings(photo.data.settings);
-
-        if (exif.aperture !== undefined) {
+        // EXIF filters - if a slider is narrowed and the photo lacks that value, exclude it.
+        if (apertureFiltering) {
+          if (exif.aperture === undefined) return false;
           if (exif.aperture < filters.apertureMin || exif.aperture > filters.apertureMax) {
             return false;
           }
         }
 
-        if (exif.shutterSpeed !== undefined) {
+        if (shutterFiltering) {
+          if (exif.shutterSpeed === undefined) return false;
           if (exif.shutterSpeed < filters.shutterMin || exif.shutterSpeed > filters.shutterMax) {
             return false;
           }
         }
 
-        if (exif.iso !== undefined) {
+        if (isoFiltering) {
+          if (exif.iso === undefined) return false;
           if (exif.iso < filters.isoMin || exif.iso > filters.isoMax) {
             return false;
           }
         }
 
-        if (photo.data.focalLength !== undefined) {
+        if (focalFiltering) {
+          if (photo.data.focalLength === undefined) return false;
           if (photo.data.focalLength < filters.focalMin || photo.data.focalLength > filters.focalMax) {
             return false;
           }

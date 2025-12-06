@@ -67,6 +67,7 @@ npm run test:viewfinder   # Viewfinder overlay CSS functionality
 | `lightbox-navigation-links.spec.cjs` | Link navigation | Tag click → tag page, album click → album page |
 | `infinite-scroll.spec.cjs` | Lazy loading | Initial batch, scroll loading, photo counts |
 | `advanced-filters.spec.cjs` | Filter panel | All 8 dimensions, persistence, clear all |
+| `exif-filters.spec.cjs` | EXIF sliders | Aperture/shutter/ISO sliders reduce results (regression guard) |
 | `slideshow-mode.spec.cjs` | Slideshow | Intervals, auto-advance, stop on close |
 | `album-pages.spec.cjs` | Album pages | Listing, detail pages, album filtering |
 | `sorting.spec.cjs` | Photo sorting | order_score, date sorting |

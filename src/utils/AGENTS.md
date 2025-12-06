@@ -76,7 +76,7 @@ const display = formatShutterSpeed(0.001);
 // → "1/1000s"
 ```
 
-**Shared client/server formatters:** `formatShutterSpeed` now lives in `src/utils/shared/exif.ts` and is re-exported from `photo-helpers.ts` for server usage. Client scripts should import from `../../utils/shared/exif` (or read from `window.photoFormatters` on the all-photos page) to avoid duplicating the formatter logic in inline scripts.
+**Shared client/server formatters and parsers:** `formatShutterSpeed` and `parseSettings` live in `src/utils/shared/exif.ts` and are re-exported from `photo-helpers.ts` for server usage. Client scripts should import from `../../utils/shared/exif` (or read from `window.photoFormatters` on the all-photos page) to avoid duplicating EXIF parsing/formatting logic in inline scripts.
 
 ### Tag Extraction
 
