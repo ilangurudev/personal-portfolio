@@ -51,7 +51,7 @@
 2. **Filtering Logic:** `FilteredPhotoGallery.tsx` maintains a list of active photos.
 3. **Memoization:** `useMemo` recalculates the visible list only when tags or photos change.
 4. **Rendering:** The virtualized grid receives the new list and updates the DOM efficiently.
-5. **Shared helpers:** Client tag normalization/filtering/availability lives in `src/utils/client/tag-utils.ts`; inline scripts should omit `type="module"` so Astro/Vite rewrites the imports, and use relative paths (e.g., `../../utils/client/tag-utils`) instead of `/src/...` which 404s after build.
+5. **Shared helpers:** Client tag normalization/filtering/availability (and `setupTagLogicToggle` for the OR/AND buttons) live in `src/utils/client/tag-utils.ts`; inline scripts should omit `type="module"` so Astro/Vite rewrites the imports, and use relative paths (e.g., `../../utils/client/tag-utils`) instead of `/src/...` which 404s after build.
 
 ### Performance Patterns
 - **Infinite Scroll:** Batch loading (20 photos/batch) via Intersection Observer

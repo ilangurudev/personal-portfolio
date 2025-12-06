@@ -6,6 +6,7 @@ export { transformForLightbox, type LightboxPhoto } from './lightbox-transform';
 export { formatShutterSpeed };
 
 export type Photo = CollectionEntry<'photos'>;
+export type Album = CollectionEntry<'albums'>;
 
 /**
  * Get all photos with EXIF data augmented from the actual photo files
@@ -118,6 +119,15 @@ export function sortAlbums<T extends { data: { featured?: boolean; order_score: 
     // Finally by date (descending)
     return b.data.date.getTime() - a.data.date.getTime();
   });
+}
+
+/**
+ * Build a map of album slug → title for lightbox and gallery metadata
+ * @param albums Optional preloaded album entries to avoid duplicate queries
+ */
+export async function getAlbumTitleMap(albums?: Album[]): Promise<Map<string, string>> {
+  const albumEntries = albums ?? await getCollection('albums');
+  return new Map(albumEntries.map(a => [a.slug, a.data.title]));
 }
 
 /**

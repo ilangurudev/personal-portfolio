@@ -180,3 +180,9 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 - **Locations:** `src/components/photo/ViewfinderSVG.astro`, `src/components/react/ViewfinderSVG.tsx`
 - **Purpose:** Single source of truth for the viewfinder corner overlay SVG used on photo cards (server-rendered grids and the React infinite gallery).
 - **Usage:** Import in Astro pages/components for markup; the all-photos page also consumes it via a `<template id="viewfinder-template">` for JS-inserted cards to avoid duplicated SVG strings.
+
+### `TagFilterBar.astro`
+- **Location:** `src/components/photo/TagFilterBar.astro`
+- **Purpose:** Shared, collapsible tag filter bar for album + tag pages (pills + AND/OR toggle).
+- **Behavior:** Uses `setupTagLogicToggle` from `src/utils/client/tag-utils` for DRY toggle handling, dispatches `tagFilterChange` on pill or mode changes, manages tag availability in AND mode, and optionally locks an initial tag (for tag pages) while keeping the clear button state in sync.
+- **Props:** `tags: string[]`, `photos: { data: { tags: string[] } }[]`, `initialActiveTag?: string` (preselect + cannot fully clear when provided).

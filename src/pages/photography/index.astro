@@ -1,15 +1,13 @@
 ---
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
-import { getFeaturedPhotosWithExif, sortPhotos, transformForLightbox } from '../../utils/photo-helpers';
+import { getFeaturedPhotosWithExif, getAlbumTitleMap, sortPhotos, transformForLightbox } from '../../utils/photo-helpers';
 import { getPhotoUrl, getResizedPhotoUrl } from '../../utils/url-helper';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
 import PhotoAbout from '../../components/photo/PhotoAbout.astro';
 import PhotoIcons from '../../components/photo/PhotoIcons.astro';
 import ViewfinderSVG from '../../components/photo/ViewfinderSVG.astro';
-import { getCollection } from 'astro:content';
 
-const albums = await getCollection('albums');
-const albumTitleMap = new Map(albums.map(a => [a.slug, a.data.title]));
+const albumTitleMap = await getAlbumTitleMap();
 
 const featuredPhotos = await getFeaturedPhotosWithExif();
 const sortedPhotos = sortPhotos(featuredPhotos);
