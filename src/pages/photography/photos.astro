@@ -8,10 +8,10 @@ import {
   extractTags,
   extractTagNames,
   formatShutterSpeed,
-  transformForLightbox
+  serializePhotoForGallery,
+  mapToLightboxPhotos
 } from '../../utils/photo-helpers';
 import { getCollection } from 'astro:content';
-import { getPhotoUrl, getResizedPhotoUrl } from '../../utils/url-helper';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../components/photo/PhotoIcons.astro';
 import ViewfinderSVG from '../../components/photo/ViewfinderSVG.astro';
@@ -436,7 +436,7 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
     </div>
   </div>
 
-  <PhotoLightbox photos={sortedPhotos.map(p => transformForLightbox(p, albumTitleMap))} />
+  <PhotoLightbox photos={mapToLightboxPhotos(sortedPhotos, albumTitleMap)} />
 
   <script>
     import { filterPhotosByTags, getAvailableTags, normalizeTag, setupTagLogicToggle } from '../../utils/client/tag-utils';
@@ -446,25 +446,9 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
   </script>
 
   <script define:vars={{
-    allPhotosData: sortedPhotos.map(p => ({
-      id: p.id,
-      url: getPhotoUrl(p.data.filename),
-      resizedUrl: getResizedPhotoUrl(p.data.filename, 600),
-      body: p.body || '',
-      data: {
-        title: p.data.title,
-        filename: p.data.filename,
-        album: p.data.album,
-        albumTitle: albumTitleMap.get(p.data.album),
-        tags: (p.data.tags || []).map(t => (t || '').trim()).filter(t => t),
-        camera: p.data.camera,
-        settings: p.data.settings,
-        focalLength: p.data.focalLength,
-        location: p.data.location,
-        date: p.data.date.toISOString(),
-        position: p.data.position
-      }
-    })),
+    allPhotosData: sortedPhotos.map(p =>
+      serializePhotoForGallery(p, albumTitleMap, { includeResized: true })
+    ),
     exifRangesData: {
       aperture: { min: exifRanges.aperture.min, max: exifRanges.aperture.max },
       shutterSpeed: { min: exifRanges.shutterSpeed.min, max: exifRanges.shutterSpeed.max },

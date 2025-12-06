@@ -56,8 +56,9 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
 
 2.  **`window.updateLightboxFromFilter(photos)`**:
     -   **Type:** `(photos: LightboxPhoto[]) => void`
-    -   **Source:** `src/pages/photography/tag/[tag].astro` (inline script)
+    -   **Source:** `setupLightboxSync()` in `src/utils/client/lightbox-sync`
     -   **Usage:** Called by React components to sync the lightbox state when the visible grid changes.
+    -   **Helper:** `setupLightboxSync` wires the global updater and optional callbacks for page-specific UI (e.g., tag page count/title). `pushFilteredPhotosToLightbox` lets React components trigger the sync without touching `window` directly.
 
 ## 3. Photo Lightbox
 

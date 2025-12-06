@@ -37,6 +37,21 @@ const lightboxPhotos = photos.map(photo => transformForLightbox(photo, albumTitl
 // → Ensures url, albumTitle, tags (default []), body (''), date ISO are present
 // → Invalid/malformed date values are coerced to '' to avoid runtime errors
 ```
+Use `mapToLightboxPhotos` when transforming arrays for clarity:
+
+```typescript
+const lightboxPhotos = mapToLightboxPhotos(sortedPhotos, albumTitleMap);
+```
+
+### Gallery Serialization
+
+```typescript
+const galleryPhotos = photos.map(photo =>
+  serializePhotoForGallery(photo, albumTitleMap, { includeResized: true })
+);
+// → Returns { id, url, (resizedUrl?), body, data: { title, filename, album(+title), tags[], camera, settings, focalLength, location, date ISO, position, order_score } }
+// → Safe on both server + client (normalizes tags + dates)
+```
 Location: `src/utils/lightbox-transform.ts` (re-exported from `photo-helpers.ts`) so it can be safely used from both Astro server code and React islands.
 
 ### Sorting Utilities

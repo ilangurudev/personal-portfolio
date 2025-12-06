@@ -1,6 +1,14 @@
 ---
 import PhotoLayout from "../../../layouts/PhotoLayout.astro";
-import { getAlbumTitleMap, getPhotosWithExif, sortPhotos, extractTags, extractTagNames, transformForLightbox } from "../../../utils/photo-helpers";
+import {
+  getAlbumTitleMap,
+  getPhotosWithExif,
+  sortPhotos,
+  extractTags,
+  extractTagNames,
+  serializePhotoForGallery,
+  mapToLightboxPhotos
+} from "../../../utils/photo-helpers";
 import PhotoLightbox from "../../../components/photo/PhotoLightbox.astro";
 import { FilteredPhotoGallery } from "../../../components/react/FilteredPhotoGallery";
 import TagFilterBar from "../../../components/photo/TagFilterBar.astro";
@@ -23,9 +31,7 @@ const decodedTag = decodeURIComponent(tag || "");
 const albumTitleMap = await getAlbumTitleMap();
 
 const allPhotos = sortPhotos(await getPhotosWithExif());
-const tagFilterPhotos = allPhotos.map((photo) => ({
-  data: { tags: photo.data.tags }
-}));
+const galleryPhotos = allPhotos.map(photo => serializePhotoForGallery(photo, albumTitleMap));
 
 // Get all unique tags for the filter pills (sorted alphabetically)
 const allTags = extractTagNames(allPhotos, 'alpha');
@@ -51,7 +57,7 @@ const sortedPhotos = sortPhotos(filteredPhotos);
 
     <TagFilterBar
       tags={allTags}
-      photos={tagFilterPhotos}
+      photos={galleryPhotos}
       initialActiveTag={decodedTag.toLowerCase()}
     />
 
@@ -63,20 +69,12 @@ const sortedPhotos = sortPhotos(filteredPhotos);
           <div class="gallery-container">
             <FilteredPhotoGallery
               client:load
-              allPhotos={allPhotos.map((p) => ({
-                ...p,
-                data: {
-                  ...p.data,
-                  albumTitle: albumTitleMap.get(p.data.album),
-                  date: p.data.date.toISOString(),
-                  position: p.data.position,
-                },
-              }))}
+            allPhotos={galleryPhotos}
               initialActiveTags={[decodedTag.toLowerCase()]}
             />
           </div>
           <PhotoLightbox
-            photos={sortedPhotos.map((p) => transformForLightbox(p, albumTitleMap))}
+          photos={mapToLightboxPhotos(sortedPhotos, albumTitleMap)}
           />
         </>
       )
@@ -176,24 +174,18 @@ const sortedPhotos = sortPhotos(filteredPhotos);
   </style>
 
   <script>
-    if (typeof window !== 'undefined') {
-      window.updateLightboxFromFilter = function (filteredPhotos) {
-        if (window.photoLightbox) {
-          window.photoLightbox.updatePhotos(filteredPhotos);
-        }
+    import { setupLightboxSync } from "../../../utils/client/lightbox-sync";
 
+    setupLightboxSync({
+      onFilteredPhotosChange: (filteredPhotos) => {
         const photoCount = document.getElementById('photo-count');
         if (photoCount) {
           const count = filteredPhotos.length;
           photoCount.textContent = `${count} ${count === 1 ? 'photo' : 'photos'}`;
         }
-      };
-
-      window.addEventListener('tagFilterChange', (event: Event) => {
-        const detail = (event as CustomEvent)?.detail || {};
-        const activeTags = Array.isArray(detail.activeTags) ? detail.activeTags : [];
+      },
+      onActiveTagsChange: (activeTags) => {
         const tagTitle = document.querySelector('.tag-title');
-
         if (!tagTitle) return;
 
         if (activeTags.length > 1) {
@@ -202,7 +194,7 @@ const sortedPhotos = sortPhotos(filteredPhotos);
         } else if (activeTags.length === 1) {
           tagTitle.textContent = `#${activeTags[0]}`;
         }
-      });
-    }
+      },
+    });
   </script>
 </PhotoLayout>
