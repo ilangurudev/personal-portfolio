@@ -189,8 +189,8 @@ const sortedPhotos = sortPhotos(filteredPhotos);
         }
       };
 
-      window.addEventListener('tagFilterChange', (event) => {
-        const detail = event.detail || {};
+      window.addEventListener('tagFilterChange', (event: Event) => {
+        const detail = (event as CustomEvent)?.detail || {};
         const activeTags = Array.isArray(detail.activeTags) ? detail.activeTags : [];
         const tagTitle = document.querySelector('.tag-title');
 
