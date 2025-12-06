@@ -1,6 +1,7 @@
 ---
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
 import {
+  getAlbumTitleMap,
   getPhotosWithExif,
   sortPhotos,
   parseSettings,
@@ -24,7 +25,7 @@ const sortedPhotos = sortPhotos(allPhotos);
 // Get all albums for filter
 const albums = await getCollection('albums');
 const sortedAlbums = albums.sort((a, b) => a.data.title.localeCompare(b.data.title));
-const albumTitleMap = new Map(albums.map(a => [a.slug, a.data.title]));
+const albumTitleMap = await getAlbumTitleMap(albums);
 
 // Extract unique tags with photo counts (sorted by count, then alphabetically)
 const tagsWithCounts = extractTags(allPhotos, { sortBy: 'count' });
@@ -184,7 +185,7 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
           <div class="filter-section">
             <div class="filter-section-header">
               <h3 class="filter-section-title">Tags</h3>
-              <div class="tag-logic-toggle" id="tag-logic-toggle">
+              <div class="tag-logic-toggle" id="tag-logic-toggle" role="group" aria-label="Tag filter mode">
                 <button
                   type="button"
                   class="toggle-option"
@@ -438,9 +439,9 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
   <PhotoLightbox photos={sortedPhotos.map(p => transformForLightbox(p, albumTitleMap))} />
 
   <script>
-    import { filterPhotosByTags, getAvailableTags, normalizeTag } from '../../utils/client/tag-utils';
+    import { filterPhotosByTags, getAvailableTags, normalizeTag, setupTagLogicToggle } from '../../utils/client/tag-utils';
     import { formatShutterSpeed } from '../../utils/shared/exif';
-    (window as any).photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
+    (window as any).photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag, setupTagLogicToggle };
     (window as any).photoFormatters = { formatShutterSpeed };
   </script>
 
@@ -519,6 +520,22 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
 
         selectedTags.forEach(tag => available.add(normalizeTag(tag)));
         return available;
+      });
+
+    const setupTagLogicToggle =
+      (window.photoTagUtils && window.photoTagUtils.setupTagLogicToggle) ||
+      ((toggleContainer, onModeChange) => {
+        if (!toggleContainer) return;
+        const buttons = toggleContainer.querySelectorAll('.toggle-option');
+        buttons.forEach(button => {
+          button.addEventListener('click', () => {
+            const mode = button.dataset.mode === 'and' ? 'and' : 'or';
+            buttons.forEach(btn => {
+              btn.setAttribute('aria-pressed', btn.dataset.mode === mode ? 'true' : 'false');
+            });
+            onModeChange(mode);
+          });
+        });
       });
 
     const formatShutterSpeed =
@@ -863,13 +880,8 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
         });
       }
 
-      // Reset tag logic to OR
-      const toggleOr = document.getElementById('toggle-or');
-      const toggleAnd = document.getElementById('toggle-and');
-      if (toggleOr && toggleAnd) {
-        toggleOr.setAttribute('aria-pressed', 'true');
-        toggleAnd.setAttribute('aria-pressed', 'false');
-      }
+    // Reset tag logic to OR
+    setTagLogic('or');
 
       // Reset date range
       document.getElementById('date-min').value = exifRangesData.date.min.split('T')[0];
@@ -994,8 +1006,7 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
     });
 
     // Tag logic toggle handlers
-    const toggleOr = document.getElementById('toggle-or');
-    const toggleAnd = document.getElementById('toggle-and');
+    const tagLogicToggle = document.getElementById('tag-logic-toggle');
     const tagSearchInput = document.getElementById('tag-search');
 
     // Get all tag checkbox labels
@@ -1094,19 +1105,16 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
     tagSearchInput.addEventListener('input', handleTagSearch);
 
     function setTagLogic(mode) {
-      if (mode === 'or') {
-        toggleOr.setAttribute('aria-pressed', 'true');
-        toggleAnd.setAttribute('aria-pressed', 'false');
-      } else {
-        toggleOr.setAttribute('aria-pressed', 'false');
-        toggleAnd.setAttribute('aria-pressed', 'true');
-      }
+      const normalizedMode = mode === 'and' ? 'and' : 'or';
+      const toggleButtons = tagLogicToggle?.querySelectorAll('.toggle-option') || [];
+      toggleButtons.forEach(btn => {
+        btn.setAttribute('aria-pressed', btn.getAttribute('data-mode') === normalizedMode ? 'true' : 'false');
+      });
       applyFilters();
       updateTagAvailability();
     }
 
-    toggleOr.addEventListener('click', () => setTagLogic('or'));
-    toggleAnd.addEventListener('click', () => setTagLogic('and'));
+    setupTagLogicToggle(tagLogicToggle, setTagLogic);
 
     // Update tag availability when tags change
     document.querySelectorAll('input[name="tag"]').forEach(cb => {

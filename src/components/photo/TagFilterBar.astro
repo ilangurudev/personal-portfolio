@@ -1,0 +1,380 @@
+---
+interface PhotoLike {
+  data: {
+    tags: string[];
+  };
+}
+
+interface Props {
+  tags: string[];
+  photos: PhotoLike[];
+  initialActiveTag?: string;
+}
+
+const { tags = [], photos = [], initialActiveTag } = Astro.props;
+const normalizedInitialTag = initialActiveTag ? initialActiveTag.toLowerCase().trim() : '';
+---
+
+<div class="tag-filter-bar">
+  <button class="filter-toggle" id="filter-toggle" type="button">
+    <span class="filter-toggle-text">Refine by tags</span>
+    <svg class="filter-toggle-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </button>
+
+  <div class="tag-pills-container" id="tag-pills-container">
+    <div class="tag-filter-controls">
+      <div class="tag-logic-toggle" id="tag-logic-toggle" role="group" aria-label="Tag filter mode">
+        <button type="button" class="toggle-option" data-mode="or" aria-pressed="true">OR</button>
+        <button type="button" class="toggle-option" data-mode="and" aria-pressed="false">AND</button>
+      </div>
+    </div>
+
+    <div class="tag-pills" id="tag-pills">
+      {tags.map(tag => (
+        <button
+          class={`tag-pill ${normalizedInitialTag === tag ? 'active' : ''}`}
+          data-tag={tag}
+          type="button"
+        >
+          #{tag}
+        </button>
+      ))}
+    </div>
+
+    <button class="clear-filters" id="clear-filters" style="display: none;">
+      Clear filters
+    </button>
+  </div>
+</div>
+
+<script>
+  import { filterPhotosByTags, getAvailableTags, normalizeTag, setupTagLogicToggle } from '../../utils/client/tag-utils';
+  (window as any).photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag, setupTagLogicToggle };
+</script>
+
+<script define:vars={{ photosData: photos, initialActiveTag: normalizedInitialTag }}>
+  const normalize = (window.photoTagUtils && window.photoTagUtils.normalizeTag) ||
+    ((tag) => String(tag ?? '').toLowerCase().trim());
+
+  const filterTags =
+    (window.photoTagUtils && window.photoTagUtils.filterPhotosByTags) ||
+    ((photos, tags, logic = 'or') => {
+      if (!Array.isArray(photos)) return [];
+      if (!Array.isArray(tags) || tags.length === 0) return photos;
+
+      return photos.filter(photo => {
+        const photoTags = (photo.data?.tags || []).map(t => normalize(t)).filter(Boolean);
+        if (logic === 'and') {
+          return tags.every(tag => photoTags.includes(normalize(tag)));
+        }
+        return tags.some(tag => photoTags.includes(normalize(tag)));
+      });
+    });
+
+  const getAvailable =
+    (window.photoTagUtils && window.photoTagUtils.getAvailableTags) ||
+    ((photos, selectedTags, logic) => {
+      if (logic === 'or') {
+        const allTags = new Set();
+        (photos || []).forEach(photo => {
+          (photo.data?.tags || []).forEach(tag => {
+            const normalized = normalize(tag);
+            if (normalized) allTags.add(normalized);
+          });
+        });
+        return allTags;
+      }
+
+      const filtered = filterTags(photos || [], selectedTags, 'and');
+      const available = new Set();
+
+      filtered.forEach(photo => {
+        (photo.data?.tags || []).forEach(tag => {
+          const normalized = normalize(tag);
+          if (normalized) available.add(normalized);
+        });
+      });
+
+      selectedTags.forEach(tag => available.add(normalize(tag)));
+      return available;
+    });
+
+  const setupToggle =
+    (window.photoTagUtils && window.photoTagUtils.setupTagLogicToggle) ||
+    ((toggleContainer, onModeChange) => {
+      if (!toggleContainer) return;
+      const buttons = toggleContainer.querySelectorAll('.toggle-option');
+      buttons.forEach(button => {
+        button.addEventListener('click', () => {
+          const mode = button.dataset.mode === 'and' ? 'and' : 'or';
+          buttons.forEach(btn => {
+            btn.setAttribute('aria-pressed', btn.dataset.mode === mode ? 'true' : 'false');
+          });
+          onModeChange(mode);
+        });
+      });
+    });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const filterToggle = document.getElementById('filter-toggle');
+    const tagPillsContainer = document.getElementById('tag-pills-container');
+    const tagPills = Array.from(document.querySelectorAll('.tag-pill'));
+    const clearFiltersBtn = document.getElementById('clear-filters');
+    const tagLogicToggle = document.getElementById('tag-logic-toggle');
+
+    let currentTagLogic = 'or';
+    const mustKeepOne = Boolean(initialActiveTag);
+
+    const getActiveTags = () =>
+      tagPills
+        .filter(pill => pill.classList.contains('active'))
+        .map(pill => pill.getAttribute('data-tag') || '')
+        .filter(Boolean);
+
+    const dispatchFilterChange = () => {
+      const normalized = getActiveTags().map(tag => normalize(tag)).filter(Boolean);
+      window.dispatchEvent(new CustomEvent('tagFilterChange', {
+        detail: { activeTags: normalized, tagLogic: currentTagLogic }
+      }));
+    };
+
+    const updateClearFiltersVisibility = () => {
+      if (!clearFiltersBtn) return;
+      const activeCount = getActiveTags().length;
+      const threshold = mustKeepOne ? 1 : 0;
+      clearFiltersBtn.style.display = activeCount > threshold ? 'block' : 'none';
+    };
+
+    const updateTagAvailability = () => {
+      if (currentTagLogic === 'or') {
+        tagPills.forEach(pill => {
+          pill.style.display = '';
+        });
+        return;
+      }
+
+      const selectedTags = getActiveTags().map(tag => normalize(tag));
+      const availableTags = getAvailable(photosData, selectedTags, 'and');
+
+      tagPills.forEach(pill => {
+        const normalizedTag = normalize(pill.getAttribute('data-tag'));
+        pill.style.display = availableTags.has(normalizedTag) ? '' : 'none';
+      });
+    };
+
+    setupToggle(tagLogicToggle, (mode) => {
+      currentTagLogic = mode;
+      dispatchFilterChange();
+      updateTagAvailability();
+    });
+
+    tagPills.forEach(pill => {
+      pill.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const isActive = pill.classList.contains('active');
+        if (isActive) {
+          if (mustKeepOne && getActiveTags().length <= 1) {
+            return;
+          }
+          pill.classList.remove('active');
+        } else {
+          pill.classList.add('active');
+        }
+
+        dispatchFilterChange();
+        updateClearFiltersVisibility();
+        updateTagAvailability();
+      });
+    });
+
+    clearFiltersBtn?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      tagPills.forEach(pill => pill.classList.remove('active'));
+
+      if (initialActiveTag) {
+        const initialPill = tagPills.find(pill => normalize(pill.getAttribute('data-tag')) === normalize(initialActiveTag));
+        if (initialPill) {
+          initialPill.classList.add('active');
+        }
+      }
+
+      dispatchFilterChange();
+      updateClearFiltersVisibility();
+      updateTagAvailability();
+    });
+
+    filterToggle?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      filterToggle.classList.toggle('expanded');
+      tagPillsContainer?.classList.toggle('expanded');
+    });
+
+    // Ensure initial selection is reflected in UI/state
+    if (initialActiveTag) {
+      const initialPill = tagPills.find(pill => normalize(pill.getAttribute('data-tag')) === normalize(initialActiveTag));
+      if (initialPill) {
+        tagPills.forEach(pill => pill.classList.remove('active'));
+        initialPill.classList.add('active');
+      }
+    }
+
+    updateClearFiltersVisibility();
+    updateTagAvailability();
+    dispatchFilterChange();
+  });
+</script>
+
+<style>
+  .tag-filter-bar {
+    margin-bottom: 3rem;
+    background: var(--cream-dark);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .filter-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: transparent;
+    border: none;
+    color: var(--charcoal);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+
+  .filter-toggle:hover {
+    color: var(--amber);
+  }
+
+  .filter-toggle-icon {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .filter-toggle.expanded .filter-toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  .tag-pills-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tag-pills-container.expanded {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .tag-filter-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.75rem 1.25rem 0;
+  }
+
+  .tag-logic-toggle {
+    display: flex;
+    background: rgba(28, 25, 23, 0.05);
+    border-radius: 20px;
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .tag-logic-toggle .toggle-option {
+    padding: 0.25rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--gray);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 18px;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tag-logic-toggle .toggle-option:hover {
+    color: var(--charcoal);
+  }
+
+  .tag-logic-toggle .toggle-option[aria-pressed="true"] {
+    background: var(--amber);
+    color: white;
+  }
+
+  .tag-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  .tag-pill {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(28, 25, 23, 0.1);
+    background: white;
+    color: var(--charcoal);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .tag-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .tag-pill.active {
+    background: var(--amber);
+    color: white;
+    border-color: var(--amber);
+  }
+
+  .clear-filters {
+    background: transparent;
+    border: none;
+    color: var(--charcoal);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.75rem 1.25rem 1.25rem;
+    text-align: left;
+    width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    .tag-filter-bar {
+      margin-bottom: 2rem;
+    }
+
+    .tag-filter-controls {
+      justify-content: center;
+    }
+
+    .tag-pills {
+      gap: 0.5rem;
+    }
+
+    .tag-pill {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.8rem;
+    }
+  }
+</style>
+

@@ -19,6 +19,9 @@ const albumPhotos = await getAlbumPhotosWithExif('tokyo-nights');
 // Get featured photos only
 const featured = await getFeaturedPhotosWithExif();
 
+// Build album slug → title map (pass preloaded albums to avoid extra queries)
+const albumTitleMap = await getAlbumTitleMap(albums);
+
 // Check if photo has complete metadata
 const isComplete = hasCompleteMetadata(photo);
 
