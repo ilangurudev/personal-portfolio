@@ -234,6 +234,8 @@ The result is the website you're reading this on. Dual-space portfolio. Terminal
 
 Built entirely through conversation with AI agents.
 
+**Want the technical details?** Check out the [Technical Deep Dive](/projects/personal-portfolio)—a comprehensive walkthrough of the architecture, code snippets, and engineering decisions. It's written for Python developers curious about modern web architecture, with Pydantic-to-Zod comparisons and everything.
+
 ## So... Now What?
 
 Look, I'm not saying everyone should work this way. Some projects need the deep understanding that comes from writing every line yourself. Some codebases are too complex or sensitive for this approach.
