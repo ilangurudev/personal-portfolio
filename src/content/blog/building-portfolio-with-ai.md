@@ -12,7 +12,7 @@ Ten days. 208 commits. 68 pull requests. Zero lines of code written by hand.
 
 Yeah, you read that right. The website you're looking at? I didn't write a single line of it. AI agents did all the typing while I sat back, sipped coffee, and played the role of "guy with opinions who occasionally says no, that's ugly."
 
-Okay, it wasn't quite that simple. But it's close. Let me tell you how it went down.
+Okay, it wasn't quite that simple - I did sink in a ton of time into this. But still, it's close. Let me tell you how it went down.
 
 ## What I Wanted: Two Websites Pretending to Be One
 
@@ -25,7 +25,7 @@ So I came up with this dual-space concept:
 
 The catch? **Complete separation**. No style bleeding. Clicking between them should feel like visiting two different websites that just happen to share a URL. Dual layouts, separate color systems, the works.
 
-I certainly several exisitng solutions like squarespace but I wanted something that is infninitely customizable and cheap. 
+I certainly considered several existing solutions like squarespace but I wanted something that is infninitely customizable and cheap like being able to add arbitrary tags and filtering and sorting logic. 
 
 Now, I *could* have built this myself. I've done web stuff before—Flask apps, GitHub Pages, the usual. But doing this properly? With Astro, React islands, Tailwind, infinite scroll, a custom lightbox, EXIF extraction, Cloudflare CDN integration? That's easily a month of evenings and weekends.
 
@@ -37,11 +37,16 @@ Enter: the robots.
 
 I didn't just use one AI tool. I assembled a little squad:
 
-- **Claude Code**: The heavy lifter. Complex features, multi-file refactors, architectural debates
-- **Cursor**: Quick and snappy. Great for "just fix this one thing" energy
-- **Claude Code Web**: For when I wanted to work from a browser like a fancy person
+Local Development:
+- **Claude Code**: One of the best in class. Solid agentic coder.
+- **Cursor**: My personal favorite. Love the model interoperability. Composer 2 is stupidly fast for low complexity tasks but the ability to switch models is a huge plus.
+- **Google Anti-Gravity**: The opinionated plan, walkthrough interface is promising. Free public preview doesn't hurt either. 
 
-Here's the thing nobody tells you: **these tools are good at different stuff**. Claude Code is amazing when you need it to understand your whole project and make sweeping changes. Cursor is faster for surgical edits. Learning when to use which is half the battle.
+Sanboxed Agents when you want to work on the bed, in the restroom and from the gym.  
+- **Claude Code Web**: 
+- **Cursor Mobile Agents**
+
+Learned a lot during my usage - how my `AGENTS.md` files could be tweaked for best results
 
 I basically became a project manager for a team of very eager, very fast, occasionally confused junior developers who never need sleep and never complain about code reviews.
 
@@ -122,15 +127,12 @@ const navigated = initialCounter !== newCounter;
 console.log(`   Navigation successful: ${navigated ? '✓' : '✗'}`);
 ```
 
-Once these tests existed, the whole workflow changed:
+Once these tests existed, the whole workflow changed. I just tweaked the prompt and the AI handled everything end to end:
 
-1. Me: "Hey, can you refactor the tag filtering?"
-2. AI: *does the thing*
-3. Me: `npm test`
-4. Tests: "3 failures lol"
-5. Me: *shares failures*
-6. AI: *fixes stuff*
-7. Repeat until green
+1. Prompt: "Implement tag filtering (or any feature). Write a failing test and run it so it’s red, use the browser to build the feature, then run `npm run test:all` to confirm everything passes."
+2. AI writes the failing test and runs it to show the red.
+3. AI opens the browser and builds the feature until it works.
+4. AI runs `npm run test:all` to prove the new test and the whole suite are green—no regressions.
 
 This isn't some revolutionary insight—TDD has been around forever. But for AI-assisted development specifically? It's a game-changer. Tests become your safety net. You can ask for aggressive refactors without holding your breath.
 

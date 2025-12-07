@@ -187,3 +187,8 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 - **Purpose:** Shared, collapsible tag filter bar for album + tag pages (pills + AND/OR toggle).
 - **Behavior:** Uses `setupTagLogicToggle` from `src/utils/client/tag-utils` for DRY toggle handling, dispatches `tagFilterChange` on pill or mode changes, manages tag availability in AND mode, and optionally locks an initial tag (for tag pages) while keeping the clear button state in sync.
 - **Props:** `tags: string[]`, `photos: { data: { tags: string[] } }[]`, `initialActiveTag?: string` (preselect + cannot fully clear when provided).
+
+### `TagPills.astro`
+- **Location:** `src/components/TagPills.astro`
+- **Purpose:** Reusable tag chip renderer for the professional space (blog + projects).
+- **Behavior:** Renders clickable pills linking to `/tags/{tag}`, with terminal-theme hover states. Accepts `tags: string[]` and optional `class` for wrapper styling.

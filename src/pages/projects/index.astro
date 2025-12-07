@@ -26,11 +26,6 @@ const projects = (await getCollection('projects'))
           <div class="card-content">
             <h3 class="project-title">{project.data.title}</h3>
             <p class="project-description">// {project.data.description}</p>
-            <div class="tags">
-              {project.data.tags.map(tag => (
-                <span class="tag">#{tag}</span>
-              ))}
-            </div>
           </div>
         </a>
       ))}
@@ -156,21 +151,6 @@ const projects = (await getCollection('projects'))
     line-height: 1.6;
     margin: 0 0 1rem 0;
     flex: 1;
-  }
-
-  .tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .tag {
-    color: var(--terminal-cyan);
-    font-size: 0.75rem;
-    font-family: 'Fira Code', monospace;
-    padding: 0.2rem 0.5rem;
-    background: rgba(6, 182, 212, 0.1);
-    border-radius: 4px;
   }
 
   @keyframes blink {

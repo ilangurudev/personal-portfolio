@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
+import TagPills from '../../components/TagPills.astro';
 
 export async function getStaticPaths() {
   const projects = await getCollection('projects');
@@ -36,11 +37,7 @@ const { Content } = await project.render();
             month: 'long',
           })}
         </time>
-        <div class="tags">
-          {project.data.tags.map(tag => (
-            <span class="tag">#{tag}</span>
-          ))}
-        </div>
+        <TagPills tags={project.data.tags} />
       </div>
 
       <div class="links">
@@ -132,15 +129,6 @@ const { Content } = await project.render();
     font-family: 'Fira Code', monospace;
     font-size: 0.9rem;
     margin-bottom: 1.5rem;
-  }
-
-  .tags {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .tag {
-    color: var(--terminal-cyan);
   }
 
   .links {
