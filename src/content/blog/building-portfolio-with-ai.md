@@ -1,6 +1,6 @@
 ---
 title: "I Built This Portfolio Without Writing a Single Line of Code"
-description: "A technical deep-dive into building a dual-space portfolio website using AI coding agents in 10 days, and what I learned about responsible AI-assisted development."
+description: "How I built a dual-space portfolio website using AI coding agents in 10 days, and what I learned along the way about working with robot collaborators."
 date: 2025-12-06
 tags: ["ai", "llm", "engineering", "web-development"]
 isNotebook: false
@@ -10,44 +10,56 @@ isNotebook: false
 
 Ten days. 208 commits. 68 pull requests. Zero lines of code written by hand.
 
-This is the story of how I built this portfolio website—a dual-space platform showcasing both my AI/ML engineering work and my photography—using AI coding agents as my sole implementation partners. Not as a gimmick, but as a genuine experiment in what AI-assisted development looks like when you approach it responsibly and opinionately.
+Yeah, you read that right. The website you're looking at? I didn't write a single line of it. AI agents did all the typing while I sat back, sipped coffee, and played the role of "guy with opinions who occasionally says no, that's ugly."
 
-## The Concept: Dual Identities, Complete Separation
+Okay, it wasn't quite that simple. But it's close. Let me tell you how it went down.
 
-Before diving into the "how," let me explain the "what." I wanted a portfolio that represented two distinct aspects of my work:
+## What I Wanted: Two Websites Pretending to Be One
 
-1. **Professional Space** (`/`): My AI/ML engineering blog, learnings, and projects—with a dark, terminal-inspired "hacker" aesthetic
-2. **Photography Space** (`/photography/*`): My street and landscape photography—with a bright, editorial magazine feel
+Here's the deal. I'm an AI/ML engineer by day, street photographer by... also day (and sometimes golden hour). I wanted a portfolio that showed both sides without making them fight each other aesthetically.
 
-The key constraint was **complete aesthetic separation**. No mixing of styles. Each space should feel like a different website while sharing the same underlying architecture. This meant dual layouts, separate CSS variable systems, and theme-aware components.
+So I came up with this dual-space concept:
 
-I knew what I wanted. I had opinions on the architecture. What I lacked was the time (and frankly, the modern frontend expertise) to implement it from scratch. A project like this would normally take me at least a month of evenings and weekends. With the help of AI agents, I did it in 10 days.
+1. **Professional Space** (`/`): My AI blog and projects—dark, terminal-vibes, very "I hack things" energy
+2. **Photography Space** (`/photography/*`): My photos—bright, editorial, magazine-ish, very "I have feelings about light"
 
-## The Tools: A Multi-Agent Approach
+The catch? **Complete separation**. No style bleeding. Clicking between them should feel like visiting two different websites that just happen to share a URL. Dual layouts, separate color systems, the works.
 
-I didn't rely on a single AI tool. I used a combination of:
+Now, I *could* have built this myself. I've done web stuff before—Flask apps, GitHub Pages, the usual. But doing this properly? With Astro, React islands, Tailwind, infinite scroll, a custom lightbox, EXIF extraction, Cloudflare CDN integration? That's easily a month of evenings and weekends.
 
-- **Claude Code**: My primary partner for complex features, refactoring, and architectural decisions
-- **Cursor**: Great for focused, file-specific edits and quick iterations
-- **Claude Code Web**: For sessions when I wanted to work from a browser
+I had 10 days and the attention span of a mass extinction event.
 
-Each tool has its strengths. Claude Code excels at multi-file refactoring and understanding project-wide context. Cursor is snappy for targeted edits. I found myself naturally switching between them based on the task at hand.
+Enter: the robots.
 
-The key insight: **AI agents are not a monolith**. Different tools excel at different tasks, and learning when to use which is a skill in itself.
+## The Squad: My AI Collaborators
 
-## Phase 1: Foundation (Days 1-2)
+I didn't just use one AI tool. I assembled a little squad:
 
-The journey started on November 27th with a simple `init` commit. Within the first two days, we had:
+- **Claude Code**: The heavy lifter. Complex features, multi-file refactors, architectural debates
+- **Cursor**: Quick and snappy. Great for "just fix this one thing" energy
+- **Claude Code Web**: For when I wanted to work from a browser like a fancy person
 
-- Astro 5.x project scaffold with React islands architecture
-- Tailwind CSS 4.x integration
-- Netlify deployment configured
-- Photo import pipeline (extracting EXIF metadata, uploading to Cloudflare R2)
+Here's the thing nobody tells you: **these tools are good at different stuff**. Claude Code is amazing when you need it to understand your whole project and make sweeping changes. Cursor is faster for surgical edits. Learning when to use which is half the battle.
+
+I basically became a project manager for a team of very eager, very fast, occasionally confused junior developers who never need sleep and never complain about code reviews.
+
+## Days 1-2: Getting the Bones Together
+
+November 27th. The `init` commit. The "hello world" of ambition.
+
+Within 48 hours, we had:
+
+- Astro 5.x project with React islands (fancy way of saying "mostly static, interactive where needed")
+- Tailwind CSS hooked up
+- Netlify deployment working
+- A photo import script that extracts EXIF metadata and uploads to Cloudflare R2
 - Basic dual-layout system
 
-I described what I wanted in natural language. The AI proposed architectures. We iterated. When I disagreed with an approach, I said so—and the AI adapted.
+My job? Describe what I wanted in plain English. Argue about architecture. Say things like "no, I don't like that shade of green" and "can we make it feel more like a terminal?"
 
-Here's an example of the kind of architectural decision the AI helped crystallize. From the `AGENTS.md` documentation it generated:
+The AI would propose something. I'd push back. We'd iterate. It's like pair programming except my partner types 10x faster than me and never gets annoyed when I change my mind.
+
+One thing I did early that paid off big: I had the AI create documentation files explaining our architectural decisions. Here's a snippet from `AGENTS.md`:
 
 ```markdown
 ### Why Islands Architecture?
@@ -58,22 +70,20 @@ Here's an example of the kind of architectural decision the AI helped crystalliz
 ### Why Separate Layouts?
 - **Aesthetic Integrity:** Prevents "style creep" between the Hacker
   (Professional) and Editorial (Photography) personas.
-- **Maintainability:** Changing the blog font will never accidentally
-  break the photo gallery grid.
 ```
 
-This documentation wasn't busywork—it became the source of truth that helped AI agents understand the codebase in future sessions.
+This wasn't just busywork. These docs became the AI's cheat sheet for future sessions. More on that later.
 
-## Phase 2: Core Features (Days 3-5)
+## Days 3-5: The Fun Stuff
 
-With the foundation in place, we moved to user-facing features:
+With the foundation set, we got to the features that actually make a portfolio interesting:
 
-- **Terminal-style landing page**: A dashboard layout that felt like a command-line interface
-- **Lightbox with swipe gestures**: Touch-friendly mobile navigation for the photo gallery
-- **Multi-tag filtering with AND/OR logic**: An 8-dimensional filter system (tags, albums, camera, date range, aperture, shutter speed, ISO, focal length)
-- **Infinite scroll gallery**: Virtualized rendering with Intersection Observer for smooth performance
+- **Terminal-style landing page**: Dashboard layout, command-prompt vibes, very "hackerman"
+- **Lightbox with swipe gestures**: Because nobody wants to tap tiny arrows on mobile
+- **Multi-tag filtering with AND/OR logic**: 8 different filter dimensions (tags, albums, camera, date, aperture, shutter speed, ISO, focal length). Yes, 8. I may have gone overboard.
+- **Infinite scroll gallery**: Virtualized rendering so your browser doesn't cry when loading 200 photos
 
-The branch names in my git history tell the story of the AI collaboration:
+My git history tells the story of the collaboration:
 
 ```
 claude/add-lightbox-swipe-...
@@ -82,20 +92,22 @@ cursor/integrate-google-analytics-...
 claude/multi-tag-filter-design-...
 ```
 
-Each branch represents a conversation with an AI agent, a feature implemented, tested, and merged.
+Each branch = one conversation with an AI = one feature shipped. It's weirdly satisfying to watch the commit graph grow.
 
-## The Aha Moment: Test-Driven Development with AI
+## The Big Aha Moment: Tests Are Your Best Friend
 
-Around day 5, I added Playwright for end-to-end testing. This changed everything.
+Okay, here's where it gets real.
 
-Here's the thing about working with AI agents: they're remarkably capable at implementing features, but they can also introduce subtle regressions. Early in the project, I'd ask for a new feature, get it implemented, and then discover that some previous functionality had broken.
+Around day 5, I noticed a pattern. I'd ask for a new feature. AI would implement it. I'd be happy. Then I'd discover that something *else* broke. The lightbox stopped working. The filters got weird. Little gremlins everywhere.
 
-The solution was obvious in hindsight: **write tests**.
+AI agents are remarkably capable, but they're also remarkably good at introducing subtle regressions while confidently telling you everything is fine.
 
-But not just any tests—I worked with the AI to create comprehensive E2E tests that automated exactly what I would manually check after each feature implementation:
+The solution was so obvious I felt dumb for not doing it earlier: **write tests**.
+
+I had the AI help me build a comprehensive Playwright test suite. End-to-end tests that automated exactly what I was manually checking after each change:
 
 ```javascript
-// From lightbox-interactions.spec.cjs - one of 19 test files
+// From lightbox-interactions.spec.cjs
 console.log('Test 9: Navigate to Next Photo (Button)');
 const nextBtn = await page.locator('.lightbox-next');
 const initialCounter = await counter.textContent();
@@ -108,31 +120,27 @@ const navigated = initialCounter !== newCounter;
 console.log(`   Navigation successful: ${navigated ? '✓' : '✗'}`);
 ```
 
-Once these tests existed, I could confidently ask the AI to refactor aggressively. The workflow became:
+Once these tests existed, the whole workflow changed:
 
-1. Describe the change I wanted
-2. AI implements the change
-3. Run `npm test`
-4. If tests fail, share the failures with the AI
-5. AI fixes the issues
-6. Repeat until green
+1. Me: "Hey, can you refactor the tag filtering?"
+2. AI: *does the thing*
+3. Me: `npm test`
+4. Tests: "3 failures lol"
+5. Me: *shares failures*
+6. AI: *fixes stuff*
+7. Repeat until green
 
-This isn't revolutionary—TDD has been known for decades. But for AI-assisted development specifically, it's transformational. Tests became my safety net, allowing me to move fast without breaking things.
+This isn't some revolutionary insight—TDD has been around forever. But for AI-assisted development specifically? It's a game-changer. Tests become your safety net. You can ask for aggressive refactors without holding your breath.
 
-By the end of the project, I had 19 test files covering:
-- Dual-space navigation
-- Responsive layouts across devices
-- Tag filtering with AND/OR modes
-- Lightbox interactions (keyboard, touch, mouse)
-- Infinite scroll behavior
-- Story drawer functionality
-- CSS rendering regression detection
+By the end, I had 19 test files covering everything from dual-space navigation to CSS regression detection. The AI could break things, but it couldn't break things *quietly*.
 
-## Phase 3: The DRY Refactoring Sprint (Days 8-10)
+## Days 8-10: The Great Cleanup
 
-Armed with comprehensive tests, the final phase was aggressive refactoring. The codebase had accumulated some duplication—multiple components implementing similar tag filtering logic, repeated CSS patterns, duplicated utility functions.
+Armed with a solid test suite, the final stretch was all about refactoring.
 
-I asked the AI to identify DRY (Don't Repeat Yourself) violations and propose a refactoring plan. What emerged was a systematic cleanup:
+See, when you're moving fast with AI, code duplication creeps in. You've got three components doing similar tag filtering. Copy-pasted CSS everywhere. Utility functions that exist in two places.
+
+I asked the AI to find all the DRY violations and propose a cleanup plan. What followed was beautiful systematic murder of duplicate code:
 
 ```
 refactor: DRY implementation for sorting and tag utilities (1.1, 1.2, 1.3)
@@ -140,15 +148,15 @@ refactor: DRY implementation for parseSettings, extractTags, and photo-card CSS
 DRY: share viewfinder SVG and shutter formatter
 ```
 
-Each refactoring PR was validated by the test suite. When tests failed, we knew exactly what broke. When tests passed, I had confidence to merge.
+Each refactor validated by the test suite. Red tests = something broke. Green tests = ship it.
 
-The result is a codebase that's not just functional, but maintainable. Shared utilities in `src/utils/`, consistent component patterns, and comprehensive documentation.
+The codebase went from "it works but don't look too closely" to "actually pretty clean." Shared utilities, consistent patterns, proper documentation.
 
-## The AGENTS.md System: Teaching AI About Your Codebase
+## The Secret Sauce: AGENTS.md Files
 
-One investment that paid dividends was maintaining structured documentation specifically for AI consumption. I call them `AGENTS.md` files—documentation designed to give AI agents context about how the codebase works.
+Remember that documentation I mentioned earlier? Let me explain why it's so important.
 
-The root `AGENTS.md` provides a project overview and links to directory-specific docs:
+I maintain these files called `AGENTS.md` throughout the codebase. They're basically cheat sheets for AI agents—structured docs that explain how everything works.
 
 ```markdown
 ## 2. Documentation Map
@@ -161,72 +169,81 @@ The root `AGENTS.md` provides a project overview and links to directory-specific
 | **Testing** | `tests/AGENTS.md` | E2E tests, development commands |
 ```
 
-When I start a new AI session, the agent reads these files and immediately understands:
-- The project's architectural decisions and why they were made
-- Which utilities exist and where to find them
-- The testing workflow and how to validate changes
-- Critical rules (like keeping the two aesthetics separate)
+When I start a new AI session, it reads these files and immediately knows:
+- Why we made certain architectural choices
+- Where to find existing utilities (so it doesn't reinvent them)
+- The testing workflow
+- Critical rules (like "never mix the two visual themes, I will cry")
 
-The key is keeping these docs current and concise. Every significant change gets documented. It's an investment, but it compounds—each future session is more productive because the AI has better context.
+The investment compounds. Each session is more productive because the AI has better context. It's like onboarding a new developer, except you only have to do it once and they actually read the docs.
 
-## Honest Reflections: The Tradeoffs
+## The Honest Part: What Worries Me
 
-I'd be dishonest if I claimed this approach has no downsides. Here are my genuine concerns:
+Alright, let's get real for a second. This approach isn't all sunshine and rainbows.
 
-### The "Brainrot" Risk
+### Am I Getting Dumber?
 
-There's a real possibility that by delegating all implementation to AI, I'm losing the muscle memory and deep understanding that comes from writing code yourself. If I had to implement this site without AI tomorrow, I genuinely don't think I could. The Astro/React/Tailwind specifics would require significant relearning.
+Genuine concern. By delegating all implementation to AI, am I losing the muscle memory that comes from writing code yourself?
 
-This troubles me. As someone who has spent years building software, the idea of skills atrophying is uncomfortable. My current rationalization is that I've traded implementation-level expertise for architecture-level leverage—I can now build more ambitious things faster. But I'm not fully at peace with this tradeoff.
+If you asked me to rebuild this site without AI tomorrow, I'd struggle. The Astro specifics, the React patterns, the Tailwind utilities—I know them conceptually but I haven't drilled them into my fingers.
 
-### The Supervision Burden
+This kind of freaks me out. I've been writing code for years. The idea of skills atrophying is uncomfortable.
 
-AI-assisted development is not "hands off." I reviewed every PR. I read through implementations at a high level. I caught issues the AI missed. This project worked because I stayed engaged and opinionated.
+My current cope: I've traded implementation-level expertise for architecture-level leverage. I can build more ambitious things faster. I'm working at a higher level of abstraction.
 
-I worry about the temptation to trust AI outputs blindly as the tools get better. The velocity is intoxicating, but quality requires human judgment—at least for now.
+But yeah. I'm not 100% at peace with it. The "brainrot" is real, and I don't have a perfect answer.
 
-### Testing Is Non-Negotiable
+### You Still Have to Pay Attention
 
-Without the Playwright test suite, this project would have been chaos. Every time I skipped writing tests for a "quick feature," I regretted it later. The AI would break something, I'd miss it, and I'd waste time debugging.
+AI-assisted development is not "set it and forget it." I reviewed every PR. I read through implementations. I caught issues the AI missed.
 
-If you're doing AI-assisted development, invest heavily in automated testing. It's not optional.
+The velocity is intoxicating. It's tempting to just trust the output and move on. But quality still requires human judgment. At least for now.
 
-## What I Actually Learned
+### Tests Aren't Optional
 
-After 10 days of intensive AI-assisted development, here's what I believe:
+Every time I skipped writing tests for a "quick feature," I regretted it within 24 hours. Something would break. I'd waste time debugging. Lesson learned the hard way, multiple times, because apparently I'm a slow learner.
 
-1. **Engineers can move significantly faster with AI**—but the multiplier depends on the quality of your guidance. You need to be opinionated about architecture and willing to push back on suboptimal suggestions.
+If you're doing AI-assisted development: **invest in automated testing**. It's the difference between controlled speed and chaos.
 
-2. **Testing enables aggressive iteration**. The combination of AI implementation speed + comprehensive test coverage is powerful. You can refactor fearlessly.
+## What I Actually Took Away From This
 
-3. **Documentation for AI is worth the investment**. Structured, current docs like `AGENTS.md` files pay dividends across sessions.
+After 10 days of building with AI, here's what I think I know:
 
-4. **Multiple AI tools have different strengths**. Don't marry yourself to one agent. Use Claude Code for complex multi-file work, Cursor for quick edits, etc.
+1. **AI makes engineers faster, but you have to steer.** The multiplier depends on how opinionated you are. You can't just say "build me a website" and expect magic. You need to have opinions and push back on bad suggestions.
 
-5. **The human role is shifting, not disappearing**. I didn't write code, but I made countless decisions about architecture, aesthetics, user experience, and quality. The AI implemented my vision—it didn't generate the vision.
+2. **Tests + AI = fearless refactoring.** This combo is powerful. You can ask for aggressive changes and know immediately if something broke.
 
-## The Numbers
+3. **Document for your AI.** Structured docs like `AGENTS.md` pay dividends across sessions. It's worth the investment.
 
-Final tally for this project:
+4. **Use multiple tools.** They're good at different things. Don't marry yourself to one.
+
+5. **The human role is changing, not disappearing.** I didn't write code, but I made a thousand decisions about architecture, UX, aesthetics, and quality. The AI implemented my vision—it didn't come up with the vision.
+
+## The Final Tally
+
+Here's where we ended up:
 
 - **Timeline**: 10 days (Nov 27 - Dec 6, 2025)
 - **Commits**: 208
 - **Pull Requests**: 68
 - **Test Files**: 19
 - **Lines of Code Written By Hand**: 0
+- **Cups of Coffee**: Don't ask
 
-The website you're reading this on is the result. A dual-space portfolio with a terminal-aesthetic professional section and an editorial-style photography gallery. Infinite scroll, 8-dimensional filtering, EXIF metadata extraction, lightbox with slideshow mode and story drawer, mobile-optimized responsive design.
+The result is the website you're reading this on. Dual-space portfolio. Terminal aesthetic on one side, editorial magazine on the other. Infinite scroll, 8-dimensional filtering, EXIF metadata, lightbox with slideshow mode and story drawer, responsive design.
 
 Built entirely through conversation with AI agents.
 
-## Closing Thoughts
+## So... Now What?
 
-I'm not claiming this is how everyone should work. Different projects have different needs. Sometimes you need the deep understanding that comes from writing every line yourself.
+Look, I'm not saying everyone should work this way. Some projects need the deep understanding that comes from writing every line yourself. Some codebases are too complex or sensitive for this approach.
 
-But for a personal portfolio—a project where I had clear vision but limited time—AI-assisted development was transformative. I built something I'm proud of, faster than I thought possible, while learning a new way of working.
+But for a personal portfolio? A project where I had clear vision but limited time and a serious allergy to CSS debugging? AI-assisted development was kind of perfect.
 
-The tools are only getting better. The question isn't whether AI will change how we build software—it's how we adapt our practices to stay responsible and effective.
+The tools are only getting better. The question isn't whether AI will change how we build software—it already has. The question is how we adapt while staying responsible and keeping our skills sharp.
 
-For me, that means: strong opinions, comprehensive tests, current documentation, and constant supervision. AI as a collaborator, not a replacement.
+For me, that means: strong opinions, comprehensive tests, good documentation, and staying engaged even when it's tempting to just let the robots do their thing.
+
+Also, regular breaks to actually write code by hand. Gotta keep the neurons firing.
 
 Let's see where this goes.
