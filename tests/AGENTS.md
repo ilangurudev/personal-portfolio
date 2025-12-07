@@ -71,6 +71,7 @@ npm run test:viewfinder   # Viewfinder overlay CSS functionality
 | `slideshow-mode.spec.cjs` | Slideshow | Intervals, auto-advance, stop on close |
 | `album-pages.spec.cjs` | Album pages | Listing, detail pages, album filtering |
 | `sorting.spec.cjs` | Photo sorting | order_score, date sorting |
+| `project-tags-visibility.spec.cjs` | Project tags | Project list hides tags; project detail shows clickable tags to /tags/* |
 | `lightbox-interactions.spec.cjs` | Lightbox core | Open/close, navigation, metadata, keyboard (home + all-photos + all-photos after tag filter + first album + first tag pages from listings) |
 | `lightbox-scroll-lock.spec.cjs` | Lightbox scroll lock | Body scroll disabled while open and restored after closing |
 | `css-rendering-leaks.spec.cjs` | CSS leak detection | Regression test for CSS code appearing as plain text before header on photography pages |

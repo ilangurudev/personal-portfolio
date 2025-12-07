@@ -147,3 +147,8 @@
 }
 ```
 **Homepage Display:** Shows 5 projects, featured first (with ★ indicator), then by date desc.
+
+### Professional Tags Pages
+- **Routes:** `/tags` (cloud) and `/tags/[tag]` (detail).
+- **Data:** Aggregates tags across `blog` (excluding `about`) and `projects` using `src/utils/professional-tags.ts`.
+- **Behavior:** Tag cloud scales font size by usage; hover reveals total item count. Detail pages show a single unified grid of posts/projects (type pill + title + description + date + tags), sorted by date descending with no separate sections.

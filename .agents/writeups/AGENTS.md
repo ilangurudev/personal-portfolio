@@ -1,0 +1,1 @@
+Unless explicitly asked to refer to a document here, please ignore the contents of this folder. 

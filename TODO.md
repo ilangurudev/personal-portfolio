@@ -1,1 +1,1 @@
-- Search bar
+- Search bar for both spaces

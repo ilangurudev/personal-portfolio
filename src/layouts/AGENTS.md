@@ -10,6 +10,7 @@ The codebase strictly separates two distinct "spaces" via Layouts. This is a fun
 - **Key Features:**
   - **Scanlines:** CSS overlay effect defined in `BlogLayout`.
   - **Terminal Prompt:** Header styling mimics a command line.
+  - **Prose Styling:** Markdown prose uses cyan links (yellow on hover) and terminal-style chevron bullets (`>`) across blog, about, and project pages for consistent professional-space formatting.
   - **Scoped Variables:**
     ```css
     :root {

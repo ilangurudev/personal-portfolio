@@ -6,26 +6,20 @@ tags: ["about"]
 isNotebook: false
 ---
 
-# About Me
+I'm **Gurudev "Guru" Ilangovan**, a Data Science Manager at Capital One building AI systems with large language models. I solve real problems at the intersection of LLMs, generative AI, and software engineering.
 
-I'm **Gurudev "Guru" Ilangovan**, a Data Science Manager at Capital One, focused on **AI and large language models** for the past 2 years. I'm passionate about solving real-world problems through data-driven, tech-powered solutions.
 
-## Professional Background
+I've spent 6+ years at Capital One, climbing from Senior Data Analyst to my current role leading AI initiatives. Before that, I earned dual Master's degrees in Computer Science and Industrial Engineering from Texas A&M, researching machine learning, sequential data mining, and privacy-preserving record linkage for the US Department of Veterans Affairs.
 
-With over 6 years at Capital One, I've progressed from Senior Data Analyst to Principal Data Scientist and now Data Science Manager, leading initiatives that drive data-powered decision making. Prior to that, I was a graduate research assistant at Texas A&M University, where I earned dual Master's degrees in Computer Science and Industrial Engineering.
-
-My research focused on **machine learning**, **sequential data mining**, and **entity deduplication**, including work on privacy-preserving record linkage systems and sequential analysis of healthcare data for the US Department of Veterans Affairs.
-
-## Skills & Interests
-
-For the past 2 years, I've been deeply focused on **AI and large language models**, working at the intersection of **LLMs**, **generative AI**, and **software development** to build systems that balance technical rigor with practical impact. Beyond work, I'm passionate about **street and landscape photography**, which you can explore in the photography space of this site.
+When I'm not building AI systems, I'm shooting street and landscape photography — check out my work in the [photography](/photography) section.
 
 ## This Site
 
 This portfolio has two spaces:
+
 - **[Professional](/)**: AI blog, technical learnings, and research notes
 - **[Photography](/photography)**: Street & landscape photography portfolio
 
 ---
 
-*Interested in connecting? Reach out via [LinkedIn](https://www.linkedin.com/in/gurudevilangovan) or email at gurudevilango@gmail.com*
+*Interested in connecting? Reach out via [LinkedIn](https://www.linkedin.com/in/gurudevilangovan) or email at gurudev.ilango@gmail.com*
