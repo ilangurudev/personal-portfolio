@@ -1,10 +1,18 @@
 ---
 import PhotoLayout from '../../../layouts/PhotoLayout.astro';
 import { getCollection, getEntry } from 'astro:content';
-import { getAlbumPhotosWithExif, sortPhotos, extractTagNames, transformForLightbox } from '../../../utils/photo-helpers';
+import {
+  getAlbumPhotosWithExif,
+  getAlbumTitleMap,
+  sortPhotos,
+  extractTagNames,
+  serializePhotoForGallery,
+  mapToLightboxPhotos
+} from '../../../utils/photo-helpers';
 import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../../components/photo/PhotoIcons.astro';
 import { FilteredPhotoGallery } from '../../../components/react/FilteredPhotoGallery';
+import TagFilterBar from '../../../components/photo/TagFilterBar.astro';
 
 export async function getStaticPaths() {
   const albums = await getCollection('albums');
@@ -20,27 +28,13 @@ const sortedPhotos = sortPhotos(photos);
 
 // Get all unique tags from this album's photos only (sorted alphabetically)
 const albumTags = extractTagNames(photos, 'alpha');
-const albumTitleMap = new Map([[album.slug, album.data.title]]);
+const albumTitleMap = await getAlbumTitleMap([album]);
 
 // Map to serializable structure for client component
-const galleryPhotos = sortedPhotos.map(p => ({
-  id: p.id,
-  body: p.body || '',
-  data: {
-    title: p.data.title,
-    order_score: p.data.order_score ?? 0,
-    filename: p.data.filename,
-    album: p.data.album,
-    albumTitle: album.data.title,
-    tags: p.data.tags,
-    camera: p.data.camera,
-    settings: p.data.settings,
-    focalLength: p.data.focalLength,
-    location: p.data.location,
-    date: p.data.date.toISOString(),
-    position: p.data.position
-  }
-}));
+const galleryPhotos = sortedPhotos.map(p => serializePhotoForGallery(
+  { ...p, data: { ...p.data, albumTitle: album.data.title } },
+  albumTitleMap
+));
 ---
 
 <PhotoLayout title={album.data.title} description={album.data.description}>
@@ -63,59 +57,16 @@ const galleryPhotos = sortedPhotos.map(p => ({
     ) : (
       <>
         {albumTags.length > 0 && (
-          <div class="tag-filter-bar">
-            <button class="filter-toggle" id="filter-toggle" type="button">
-              <span class="filter-toggle-text">Refine by tags</span>
-              <svg class="filter-toggle-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-            <div class="tag-pills-container" id="tag-pills-container">
-              <div class="tag-filter-controls">
-                <div class="tag-logic-toggle" id="tag-logic-toggle" role="group" aria-label="Tag filter mode">
-                  <button
-                    type="button"
-                    class="toggle-option"
-                    data-mode="or"
-                    aria-pressed="true"
-                  >
-                    OR
-                  </button>
-                  <button
-                    type="button"
-                    class="toggle-option"
-                    data-mode="and"
-                    aria-pressed="false"
-                  >
-                    AND
-                  </button>
-                </div>
-              </div>
-              <div class="tag-pills" id="tag-pills">
-                {albumTags.map((t) => (
-                  <button
-                    class="tag-pill"
-                    data-tag={t}
-                    type="button"
-                  >
-                    #{t}
-                  </button>
-                ))}
-              </div>
-              <button class="clear-filters" id="clear-filters" style="display: none;">
-                Clear filters
-              </button>
-            </div>
-          </div>
+          <TagFilterBar tags={albumTags} photos={galleryPhotos} />
         )}
-        <div class="gallery-container" style="flex: 1;">
+        <div class="gallery-container">
           <FilteredPhotoGallery 
             client:load
             allPhotos={galleryPhotos}
             initialActiveTags={[]}
           />
         </div>
-        <PhotoLightbox photos={sortedPhotos.map(p => transformForLightbox(p, albumTitleMap))} />
+        <PhotoLightbox photos={mapToLightboxPhotos(sortedPhotos, albumTitleMap)} />
       </>
     )}
   </div>
@@ -170,164 +121,6 @@ const galleryPhotos = sortedPhotos.map(p => ({
       padding: 4rem 2rem;
     }
 
-    .tag-filter-bar {
-      margin-bottom: 3rem;
-      background: var(--cream-dark);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .filter-toggle {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 1rem 1.25rem;
-      background: transparent;
-      border: none;
-      color: var(--charcoal);
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-
-    .filter-toggle:hover {
-      color: var(--amber);
-    }
-
-    .filter-toggle-icon {
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .filter-toggle.expanded .filter-toggle-icon {
-      transform: rotate(180deg);
-    }
-
-    .tag-pills-container {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .tag-pills-container.expanded {
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    .tag-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      padding: 0 1.25rem 1.25rem;
-    }
-
-    .tag-filter-controls {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding: 0.75rem 1.25rem 0;
-    }
-
-    .tag-logic-toggle {
-      display: inline-flex;
-      border: 1px solid rgba(28, 25, 23, 0.15);
-      border-radius: 999px;
-      overflow: hidden;
-      background: white;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-    }
-
-    .tag-logic-toggle .toggle-option {
-      border: none;
-      background: transparent;
-      padding: 0.3rem 1.1rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--gray);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .tag-logic-toggle .toggle-option:hover {
-      color: var(--charcoal);
-    }
-
-    .tag-logic-toggle .toggle-option[aria-pressed="true"] {
-      background: var(--charcoal);
-      color: white;
-    }
-
-    .tag-pill {
-      padding: 0.5rem 1rem;
-      border: 1.5px solid rgba(28, 25, 23, 0.2);
-      border-radius: 20px;
-      background: transparent;
-      color: var(--charcoal);
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      font-family: inherit;
-    }
-
-    .tag-pill:hover {
-      border-color: var(--amber);
-      transform: translateY(-2px);
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
-    }
-
-    .tag-pill.active {
-      background: var(--amber);
-      border-color: var(--amber);
-      color: white;
-    }
-
-    .clear-filters {
-      padding: 0.5rem 1.25rem 1.25rem;
-      border: none;
-      background: transparent;
-      color: var(--gray);
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: color 0.2s ease;
-      font-family: inherit;
-      text-decoration: underline;
-      white-space: nowrap;
-      text-align: left;
-      width: 100%;
-    }
-
-    .clear-filters:hover {
-      color: var(--amber);
-    }
-
-    .gallery-container {
-      margin-top: 2rem;
-      width: 100%;
-      flex: 1;
-      min-height: 0; /* Allow flex child to shrink */
-    }
-
-    /* Photo card base styles imported via PhotoLayout from photo-card.css */
-    /* Overrides for virtualized grid (React Window positions absolutely) */
-    :global(.photo-card) {
-      position: absolute;
-    }
-
-    :global(.photo-card:hover) {
-      z-index: 10; /* Ensure hovered item is above */
-    }
-
-    :global(.photo-image) {
-      height: 100%; /* Override aspect-ratio for virtualized grid */
-    }
-
     @media (max-width: 768px) {
       .album-page {
         padding: 1.5rem 1rem;
@@ -339,14 +132,6 @@ const galleryPhotos = sortedPhotos.map(p => ({
 
       .album-description {
         font-size: 1.125rem;
-      }
-
-      .gallery-container {
-        margin-top: 1.5rem;
-      }
-
-      .tag-filter-bar {
-        margin-bottom: 2rem;
       }
 
       .tag-filter-controls {
@@ -365,175 +150,7 @@ const galleryPhotos = sortedPhotos.map(p => ({
   </style>
 
   <script>
-    import { filterPhotosByTags, getAvailableTags, normalizeTag } from '../../../utils/client/tag-utils';
-    (window as any).photoTagUtils = { filterPhotosByTags, getAvailableTags, normalizeTag };
-  </script>
-
-  <script define:vars={{ albumPhotosData: galleryPhotos }}>
-    const normalizeTag =
-      (window.photoTagUtils && window.photoTagUtils.normalizeTag) ||
-      ((tag) => String(tag ?? '').toLowerCase().trim());
-
-    const filterPhotosByTags =
-      (window.photoTagUtils && window.photoTagUtils.filterPhotosByTags) ||
-      ((photos, tags, logic = 'or') => {
-        if (tags.length === 0) return photos;
-
-        return photos.filter(photo => {
-          const photoTags = (photo.data?.tags || []).map((t) => normalizeTag(t)).filter(Boolean);
-          if (logic === 'and') {
-            return tags.every(tag => photoTags.includes(normalizeTag(tag)));
-          }
-          return tags.some(tag => photoTags.includes(normalizeTag(tag)));
-        });
-      });
-
-    const getAvailableTags =
-      (window.photoTagUtils && window.photoTagUtils.getAvailableTags) ||
-      ((photos, selectedTags, logic) => {
-        if (logic === 'or') {
-          const allTags = new Set();
-          photos.forEach(photo => {
-            (photo.data?.tags || []).forEach(tag => {
-              const normalized = normalizeTag(tag);
-              if (normalized) allTags.add(normalized);
-            });
-          });
-          return allTags;
-        }
-
-        const filtered = filterPhotosByTags(photos, selectedTags, 'and');
-        const available = new Set();
-
-        filtered.forEach(photo => {
-          (photo.data?.tags || []).forEach((tag) => {
-            const normalized = normalizeTag(tag);
-            if (normalized) available.add(normalized);
-          });
-        });
-
-        selectedTags.forEach(tag => available.add(normalizeTag(tag)));
-        return available;
-      });
-
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        const tagPills = Array.from(document.querySelectorAll('.tag-pill'));
-        const clearFiltersBtn = document.getElementById('clear-filters');
-        const filterToggle = document.getElementById('filter-toggle');
-        const tagPillsContainer = document.getElementById('tag-pills-container');
-        const tagLogicToggle = document.getElementById('tag-logic-toggle');
-
-        if (!filterToggle || !tagPillsContainer || tagPills.length === 0) {
-          return;
-        }
-
-        let currentTagLogic = 'or';
-        const photoDataset = Array.isArray(albumPhotosData) ? albumPhotosData : [];
-
-        const getRawActiveTags = () =>
-          tagPills
-            .filter(pill => pill.classList.contains('active'))
-            .map(pill => pill.getAttribute('data-tag') || '')
-            .filter(Boolean);
-
-        const dispatchFilterChange = () => {
-          const normalized = getRawActiveTags().map(tag => normalizeTag(tag));
-          window.dispatchEvent(new CustomEvent('tagFilterChange', { 
-            detail: { 
-              activeTags: normalized,
-              tagLogic: currentTagLogic
-            } 
-          }));
-        };
-
-        const updateTagAvailability = () => {
-          if (currentTagLogic === 'or') {
-            tagPills.forEach(pill => {
-              pill.style.display = '';
-            });
-            return;
-          }
-
-          const normalizedActiveTags = getRawActiveTags().map(tag => normalizeTag(tag));
-          const filtered = filterPhotosByTags(photoDataset, normalizedActiveTags, 'and');
-          const available = getAvailableTags(photoDataset, normalizedActiveTags, 'and');
-
-          tagPills.forEach(pill => {
-            const normalized = normalizeTag(pill.getAttribute('data-tag'));
-            pill.style.display = available.has(normalized) ? '' : 'none';
-          });
-        };
-
-        const updateClearFiltersVisibility = () => {
-          if (!clearFiltersBtn) return;
-          clearFiltersBtn.style.display = getRawActiveTags().length > 0 ? 'block' : 'none';
-        };
-
-        // Update lightbox when filters change - will be called by React component
-        window.updateLightboxFromFilter = function(filteredPhotos) {
-          if (!window.photoLightbox) return;
-          window.photoLightbox.updatePhotos(filteredPhotos);
-        };
-
-        // Toggle filter bar
-        filterToggle.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          filterToggle.classList.toggle('expanded');
-          tagPillsContainer.classList.toggle('expanded');
-        });
-
-        // Handle tag logic toggle
-        const logicButtons = Array.from(tagLogicToggle?.querySelectorAll('.toggle-option') || []);
-        logicButtons.forEach(button => {
-          button.addEventListener('click', () => {
-            const mode = button.getAttribute('data-mode') || 'or';
-            if (mode === currentTagLogic) return;
-
-            currentTagLogic = mode;
-            logicButtons.forEach(btn => {
-              const isActive = btn.getAttribute('data-mode') === currentTagLogic;
-              btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-            });
-
-            dispatchFilterChange();
-            updateTagAvailability();
-          });
-        });
-
-        // Tag pill click handler - will trigger React component update
-        tagPills.forEach(pill => {
-          pill.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            pill.classList.toggle('active');
-
-            dispatchFilterChange();
-            updateClearFiltersVisibility();
-            updateTagAvailability();
-          });
-        });
-
-        // Clear filters handler
-        if (clearFiltersBtn) {
-          clearFiltersBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            tagPills.forEach(pill => {
-              pill.classList.remove('active');
-            });
-
-            dispatchFilterChange();
-            updateClearFiltersVisibility();
-            updateTagAvailability();
-          });
-        }
-
-        // Initialize UI
-        updateClearFiltersVisibility();
-        updateTagAvailability();
-      }, 100);
-    });
+    import { setupLightboxSync } from '../../../utils/client/lightbox-sync';
+    setupLightboxSync();
   </script>
 </PhotoLayout>
