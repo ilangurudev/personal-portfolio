@@ -1,0 +1,734 @@
+---
+import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
+import PhotoIcons from '../../components/photo/PhotoIcons.astro';
+import PhotoLayout from '../../layouts/PhotoLayout.astro';
+---
+
+<PhotoIcons />
+<PhotoLayout title="Search" description="Search across albums and photos">
+  <section class="search-page">
+    <header class="search-header">
+      <div>
+        <p class="eyebrow">Photography search</p>
+        <h1 class="title">Find albums and photos</h1>
+        <p class="hint">Frontmatter and markdown body content are both searchable.</p>
+      </div>
+      <form class="search-form" id="photo-search-form">
+        <input
+          type="text"
+          name="q"
+          placeholder="Search albums, titles, tags, locations, EXIF..."
+          autocomplete="off"
+          data-search-input
+          aria-label="Search"
+        />
+        <div class="actions">
+          <button type="submit" id="photo-search-submit">Search</button>
+          <a class="shortcut" href="/photography/search" aria-label="Clear search">
+            Cmd / Ctrl + K
+          </a>
+        </div>
+      </form>
+    </header>
+
+    <div id="photo-results" class="results-grid" hidden></div>
+    <div id="photo-empty-initial" class="empty">
+      <p>Start typing to search the photography space.</p>
+    </div>
+    <div id="photo-empty-none" class="empty" hidden>
+      <p id="photo-empty-none-text">No results found.</p>
+    </div>
+  </section>
+
+  <PhotoLightbox photos={[]} />
+
+  <script is:inline>
+    const form = document.getElementById('photo-search-form');
+    const input = form ? form.querySelector('[name="q"]') : null;
+    const resultsContainer = document.getElementById('photo-results');
+    const emptyInitial = document.getElementById('photo-empty-initial');
+    const emptyNone = document.getElementById('photo-empty-none');
+    const emptyNoneText = document.getElementById('photo-empty-none-text');
+
+    const normalizeTag =
+      (window.photoTagUtils && window.photoTagUtils.normalizeTag) ||
+      ((tag) => String(tag ?? '').toLowerCase().trim());
+
+    const focusInput = () => {
+      if (!(input instanceof HTMLElement)) return;
+
+      const attemptFocus = () => {
+        input.focus({ preventScroll: true });
+        if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+          input.select();
+        }
+      };
+
+      requestAnimationFrame(attemptFocus);
+    };
+
+    let allResults = [];
+    let visibleCount = 0;
+    let observer = null;
+    const INITIAL_LOAD = 20;
+    const LOAD_MORE = 20;
+    let currentSearchId = 0;
+    let debounceTimer = null;
+    const DEBOUNCE_MS = 180;
+
+    const escapeHtml = (value = '') =>
+      value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const formatDate = (value) => {
+      if (!value) return '';
+      const d = new Date(value);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    const fallbackFolderIconSvg = `
+      <svg aria-hidden="true" class="folder-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 7V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V9C21 7.9 20.1 7 19 7H12L10 5H5C3.9 5 3 5.9 3 7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+
+    const getFolderIconSvg = () => {
+      if (typeof window !== 'undefined' && typeof window.getPhotoIcon === 'function') {
+        const icon = window.getPhotoIcon('icon-folder');
+        if (icon) return icon;
+      }
+      return fallbackFolderIconSvg;
+    };
+    const folderIconSvg = getFolderIconSvg();
+
+    const clampTagRows = (container, maxRows = 2) => {
+      if (!container) return;
+      const tagLists = container.querySelectorAll('.tags');
+
+      tagLists.forEach((tagsEl) => {
+        const firstTag = tagsEl.querySelector('.tag');
+        if (!firstTag) {
+          tagsEl.classList.remove('clamped-tags');
+          tagsEl.style.removeProperty('--tag-max-height');
+          return;
+        }
+
+        const styles = window.getComputedStyle(tagsEl);
+        const gap = parseFloat(styles.rowGap || styles.gap || '0') || 0;
+        const tagHeight = firstTag.getBoundingClientRect().height;
+        const maxHeight = tagHeight * maxRows + gap * (maxRows - 1);
+
+        if (tagsEl.scrollHeight > maxHeight + 1) {
+          tagsEl.style.setProperty('--tag-max-height', `${maxHeight}px`);
+          tagsEl.classList.add('clamped-tags');
+        } else {
+          tagsEl.classList.remove('clamped-tags');
+          tagsEl.style.removeProperty('--tag-max-height');
+        }
+      });
+    };
+
+    const setState = (state) => {
+      if (!resultsContainer || !emptyInitial || !emptyNone) return;
+      resultsContainer.hidden = state !== 'results';
+      emptyInitial.hidden = state !== 'initial';
+      emptyNone.hidden = state !== 'none';
+    };
+
+    const updateUrl = (value) => {
+      if (!history.replaceState) return;
+      const params = new URLSearchParams(window.location.search);
+      const q = value.trim();
+      if (q) {
+        params.set('q', q);
+      } else {
+        params.delete('q');
+      }
+      history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+    };
+
+    const toLightboxPhoto = (result) => ({
+      id: result.id || result.url,
+      url: result.url,
+      body: result.body || '',
+      data: {
+        title: result.title,
+        filename: result.filename || '',
+        album: result.albumSlug || '',
+        albumTitle: result.albumTitle,
+        tags: (result.tags || []).map(normalizeTag).filter(Boolean),
+        camera: result.camera,
+        settings: result.settings,
+        focalLength: result.focalLength,
+        location: result.location,
+        date: result.date || '',
+        position: result.position
+      }
+    });
+
+    let pendingLightboxPhotos = [];
+
+    const applyLightboxPhotos = (photos) => {
+      pendingLightboxPhotos = photos;
+      if (window.photoLightbox && typeof window.photoLightbox.updatePhotos === 'function') {
+        window.photoLightbox.updatePhotos(photos);
+      }
+    };
+
+    window.addEventListener('photoLightboxReady', () => {
+      if (pendingLightboxPhotos.length) {
+        applyLightboxPhotos(pendingLightboxPhotos);
+      }
+    });
+
+    const syncLightbox = () => {
+      const lightboxPhotos = allResults
+        .filter((r) => r.kind === 'photo')
+        .map(toLightboxPhoto);
+
+      applyLightboxPhotos(lightboxPhotos);
+    };
+
+    const renderCard = (result) => {
+      const isAlbum = result.kind === 'album';
+      const mediaUrl = isAlbum ? result.coverUrl : (result.thumbUrl || result.url);
+      const date = result.date ? `<time datetime="${result.date}">${formatDate(result.date)}</time>` : '';
+      const normalizedTags = !isAlbum ? (result.tags || []).map(normalizeTag).filter(Boolean) : [];
+      const tags = !isAlbum ? normalizedTags.map((tag) => `<span class="tag">#${tag}</span>`).join('') : '';
+      const description = isAlbum ? escapeHtml(result.snippet || '') : '';
+      const target = '_self';
+      const albumName = !isAlbum
+        ? escapeHtml(result.albumTitle || result.albumSlug || 'Album')
+        : escapeHtml(result.title || '');
+      const albumHref = !isAlbum && result.albumSlug ? `/photography/album/${result.albumSlug}` : result.url;
+      const titleMarkup = isAlbum
+        ? `<a class="title" href="${result.url}" target="${target}">${albumName}</a>`
+        : '';
+      const dateMarkup = date ? `<span class="date">${date}</span>` : '';
+      const albumTitleRow = isAlbum
+        ? `<div class="title-row">
+            ${titleMarkup}
+            ${dateMarkup}
+          </div>`
+        : '';
+      const photoDateRow = !isAlbum && dateMarkup ? `<div class="date-row">${dateMarkup}</div>` : '';
+      const albumPill = !isAlbum
+        ? `<a class="tag album-pill" href="${albumHref}" target="${target}" aria-label="View album ${albumName}">${folderIconSvg}<span>${albumName}</span></a>`
+        : '';
+      const photoTagsRow =
+        !isAlbum && (albumPill || tags)
+          ? `<div class="tags">${albumPill}${tags}</div>`
+          : '';
+
+      return `
+        <article class="search-card ${isAlbum ? 'album-card' : 'photo-card'}" ${!isAlbum ? `data-photo-id="${result.id || ''}"` : ''}>
+          <a class="media" href="${result.url}" target="${target}">
+            ${mediaUrl ? `<img src="${mediaUrl}" alt="${result.title}" loading="lazy" decoding="async" />` : ''}
+            ${isAlbum ? '<span class="kind-pill">Album</span>' : ''}
+          </a>
+          <div class="info">
+            ${albumTitleRow}
+            ${photoDateRow}
+            ${description ? `<p class="description" title="${description}">${description}</p>` : ''}
+            ${photoTagsRow}
+          </div>
+        </article>
+      `;
+    };
+
+    const loadMoreResults = () => {
+      const newCount = Math.min(visibleCount + LOAD_MORE, allResults.length);
+      const fragment = document.createDocumentFragment();
+      const tempDiv = document.createElement('div');
+
+      for (let i = visibleCount; i < newCount; i++) {
+        tempDiv.innerHTML = renderCard(allResults[i]);
+        fragment.appendChild(tempDiv.firstElementChild);
+      }
+
+      resultsContainer.appendChild(fragment);
+      clampTagRows(resultsContainer);
+      visibleCount = newCount;
+
+      // Keep lightbox photos in sync as we append more results
+      syncLightbox();
+
+      // Update or remove sentinel
+      updateSentinel();
+    };
+
+    const updateSentinel = () => {
+      const existingSentinel = document.getElementById('scroll-sentinel');
+      if (existingSentinel) {
+        existingSentinel.remove();
+      }
+
+      if (visibleCount < allResults.length) {
+        const sentinel = document.createElement('div');
+        sentinel.id = 'scroll-sentinel';
+        sentinel.style.height = '20px';
+        sentinel.style.width = '100%';
+        resultsContainer.appendChild(sentinel);
+
+        if (observer) {
+          observer.observe(sentinel);
+        }
+      }
+    };
+
+    const setupInfiniteScroll = () => {
+      if (observer) {
+        observer.disconnect();
+      }
+
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && visibleCount < allResults.length) {
+            loadMoreResults();
+          }
+        },
+        { rootMargin: '200px' }
+      );
+
+      updateSentinel();
+    };
+
+    const renderResults = (query, results) => {
+      if (!resultsContainer) return;
+
+      if (!query) {
+        setState('initial');
+        resultsContainer.innerHTML = '';
+        allResults = [];
+        visibleCount = 0;
+        syncLightbox();
+        if (observer) observer.disconnect();
+        return;
+      }
+
+      if (results.length === 0) {
+        setState('none');
+        if (emptyNoneText) {
+          emptyNoneText.textContent = `No results for "${query}". Try album names, tags, or locations.`;
+        }
+        resultsContainer.innerHTML = '';
+        allResults = [];
+        visibleCount = 0;
+        syncLightbox();
+        if (observer) observer.disconnect();
+        return;
+      }
+
+      setState('results');
+      allResults = results;
+      visibleCount = 0;
+      resultsContainer.innerHTML = '';
+
+      // Load initial batch
+      loadMoreResults();
+
+      // Setup infinite scroll
+      setupInfiniteScroll();
+      syncLightbox();
+      // Retry shortly to catch late lightbox initialization
+      setTimeout(syncLightbox, 50);
+      setTimeout(syncLightbox, 300);
+    };
+
+    const performSearch = async (query) => {
+      const trimmed = query.trim();
+      if (!trimmed) {
+        renderResults('', []);
+        return;
+      }
+
+      const searchId = ++currentSearchId;
+      try {
+        const params = new URLSearchParams({ q: trimmed, space: 'photography' });
+        const res = await fetch(`/api/search.json?${params.toString()}`);
+        if (!res.ok) {
+          if (searchId === currentSearchId) renderResults(trimmed, []);
+          return;
+        }
+        const data = await res.json();
+        if (searchId === currentSearchId) {
+          renderResults(trimmed, data.results || []);
+        }
+      } catch (err) {
+        if (searchId === currentSearchId) renderResults(trimmed, []);
+      }
+    };
+
+    const triggerSearch = (value, { syncUrl = true } = {}) => {
+      const query = (value || '').toString();
+      if (syncUrl) updateUrl(query);
+      performSearch(query);
+    };
+
+    const handleInput = (value) => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(() => triggerSearch(value), DEBOUNCE_MS);
+    };
+
+    // Directly open lightbox on search photo clicks (belt-and-suspenders)
+    if (resultsContainer) {
+      resultsContainer.addEventListener('click', (event) => {
+        const target = event.target;
+        const card =
+          target instanceof HTMLElement
+            ? target.closest('.photo-card[data-photo-id]')
+            : null;
+        if (!card) return;
+
+        const photoId = card.getAttribute('data-photo-id');
+        if (!photoId) return;
+
+        event.preventDefault();
+
+        const lightboxPhotos = allResults
+          .filter((r) => r.kind === 'photo')
+          .map(toLightboxPhoto);
+
+        applyLightboxPhotos(lightboxPhotos);
+
+        const index = lightboxPhotos.findIndex((p) => p.id === photoId);
+        if (index >= 0 && window.photoLightbox && typeof window.photoLightbox.open === 'function') {
+          window.photoLightbox.open(index);
+        }
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        triggerSearch((input && input.value) || '');
+      });
+
+      form.addEventListener('input', (e) => {
+        const target = e.target;
+        if (target && 'value' in target) {
+          handleInput(target.value);
+        }
+      });
+    }
+
+    const initialParams = new URLSearchParams(window.location.search);
+    const initialQ = initialParams.get('q') || '';
+    if (input) input.value = initialQ;
+    performSearch(initialQ);
+    focusInput();
+  </script>
+
+  <style>
+    :global(body.photo-space) {
+      background: var(--cream);
+    }
+
+    .search-page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .search-header {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--amber);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+
+    .title {
+      margin: 0;
+      font-family: 'Crimson Text', serif;
+      font-size: 2.4rem;
+      color: var(--charcoal);
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--gray);
+      font-size: 1rem;
+    }
+
+    .search-form {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-form input {
+      flex: 1;
+      background: white;
+      border: 1px solid rgba(28, 25, 23, 0.15);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      font-size: 1rem;
+      color: var(--charcoal);
+      font-family: 'Work Sans', sans-serif;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .search-form input:focus {
+      border-color: var(--amber);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+      outline: none;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .search-form button {
+      background: var(--amber);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.9rem 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(217, 119, 6, 0.25);
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+    }
+
+    .search-form button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 32px rgba(217, 119, 6, 0.35);
+    }
+
+    .shortcut {
+      color: var(--gray);
+      text-decoration: none;
+      border: 1px solid rgba(28, 25, 23, 0.12);
+      padding: 0.65rem 0.8rem;
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .empty {
+      padding: 2rem;
+      border: 1px dashed rgba(28, 25, 23, 0.15);
+      border-radius: 12px;
+      color: var(--gray);
+      background: rgba(255, 251, 245, 0.6);
+      text-align: center;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    :global(.search-card) {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(28, 25, 23, 0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    :global(.search-card:hover) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    :global(.search-card .media) {
+      position: relative;
+      display: block;
+      aspect-ratio: 3 / 2;
+      overflow: hidden;
+    }
+
+    :global(.search-card .media img) {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.2s ease;
+    }
+
+    :global(.search-card .media:hover img) {
+      transform: scale(1.03);
+    }
+
+    :global(.kind-pill) {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(28, 25, 23, 0.75);
+      color: white;
+      font-weight: 500;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    :global(.search-card.album-card .kind-pill) {
+      background: rgba(217, 119, 6, 0.9);
+    }
+
+    :global(.search-card .info) {
+      padding: 0.85rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    :global(.search-card .description) {
+      margin: 0.2rem 0 0;
+      color: var(--gray);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    :global(.search-card .title-row) {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    :global(.search-card .title) {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--charcoal);
+      text-decoration: none;
+      line-height: 1.35;
+    }
+
+    :global(.search-card .title.album-link) {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    :global(.search-card .album-row) {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.1rem;
+    }
+
+    :global(.search-card .date-row) {
+      margin: 0;
+    }
+
+    :global(.search-card .folder-icon) {
+      width: 1.05em;
+      height: 1.05em;
+      color: var(--amber);
+      flex-shrink: 0;
+    }
+
+    :global(.search-card .title:hover) {
+      color: var(--amber);
+    }
+
+    :global(.search-card .date) {
+      color: var(--gray);
+      font-size: 0.9rem;
+    }
+
+    :global(.search-card .tags) {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    :global(.search-card .tags.clamped-tags) {
+      position: relative;
+      max-height: var(--tag-max-height, 999px);
+      overflow: hidden;
+    }
+
+    :global(.search-card .tags.clamped-tags::after) {
+      content: '…';
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      padding-left: 0.3rem;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95));
+      color: var(--charcoal);
+      font-weight: 700;
+    }
+
+    :global(.search-card .tag) {
+      color: var(--charcoal);
+      background: rgba(28, 25, 23, 0.06);
+      padding: 0.22rem 0.5rem;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 0.82rem;
+    }
+
+    :global(.search-card .tag.album-pill) {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      text-decoration: none;
+    }
+
+    :global(.search-card .tag.album-pill .folder-icon) {
+      width: 1em;
+      height: 1em;
+      color: var(--amber);
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .results-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .search-form {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .results-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+    }
+  </style>
+</PhotoLayout>
+

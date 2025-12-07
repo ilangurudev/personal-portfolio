@@ -14,7 +14,7 @@
     "fix-frontmatter": "node scripts/fix-frontmatter-types.js",
     "test": "npm run test:parallel",
     "test:parallel": "node tests/run-all-parallel.js",
-    "test:serial": "npm run test:navigation && npm run test:sorting && npm run test:responsive && npm run test:visual && npm run test:filters && npm run test:tag-and-or && npm run test:lightbox && npm run test:lightbox-scroll && npm run test:story && npm run test:story-pages && npm run test:nav-links && npm run test:scroll && npm run test:advanced-filters && npm run test:slideshow && npm run test:albums && npm run test:css-leaks && npm run test:viewfinder && npm run test:project-tags ",
+    "test:serial": "npm run test:navigation && npm run test:sorting && npm run test:responsive && npm run test:visual && npm run test:search-styling && npm run test:search-professional && npm run test:search-photography && npm run test:filters && npm run test:tag-and-or && npm run test:lightbox && npm run test:lightbox-scroll && npm run test:story && npm run test:story-pages && npm run test:nav-links && npm run test:scroll && npm run test:advanced-filters && npm run test:slideshow && npm run test:albums && npm run test:css-leaks && npm run test:viewfinder && npm run test:project-tags ",
     "test:navigation": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/dual-space-navigation.spec.js",
     "test:responsive": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/responsive-design.spec.js",
     "test:visual": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/visual-aesthetics.spec.js",
@@ -33,6 +33,9 @@
     "test:css-leaks": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/css-rendering-leaks.spec.cjs",
     "test:viewfinder": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/viewfinder-css.spec.cjs",
     "test:project-tags": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/project-tags-visibility.spec.cjs",
+    "test:search-styling": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/professional-search-styling.spec.js",
+    "test:search-professional": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/professional-search-results.spec.js",
+    "test:search-photography": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/photography-search-results.spec.js",
     "sync_keywords": "node scripts/sync-keywords.js"
   },
   "dependencies": {

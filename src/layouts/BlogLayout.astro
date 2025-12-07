@@ -52,6 +52,9 @@ const { title, description } = Astro.props;
         <a href="/tags" class="nav-link">
           <span class="nav-symbol">&gt;</span> tags
         </a>
+        <a href="/search" class="nav-link">
+          <span class="nav-symbol">&gt;</span> search
+        </a>
         <div class="space-toggle">
           <span class="toggle-link toggle-active">Professional</span>
           <a href="/photography" class="toggle-link toggle-inactive">Personal</a>
@@ -90,6 +93,9 @@ const { title, description } = Astro.props;
         </a>
         <a href="/tags" class="mobile-menu-link">
           <span class="nav-symbol">&gt;</span> tags
+        </a>
+        <a href="/search" class="mobile-menu-link">
+          <span class="nav-symbol">&gt;</span> search
         </a>
       </div>
       <div class="mobile-menu-divider"></div>
@@ -168,6 +174,20 @@ const { title, description } = Astro.props;
         document.body.style.overflow = '';
       }
 
+      function focusSearchOrNavigate() {
+        const searchInput = document.querySelector('[data-search-input]');
+        if (searchInput instanceof HTMLElement) {
+          searchInput.focus();
+          // Select text when possible so typing replaces existing query
+          if (searchInput instanceof HTMLInputElement || searchInput instanceof HTMLTextAreaElement) {
+            searchInput.select();
+          }
+          return;
+        }
+
+        window.location.href = '/search';
+      }
+
       if (hamburgerBtn) {
         hamburgerBtn.addEventListener('click', openMobileMenu);
       }
@@ -184,6 +204,12 @@ const { title, description } = Astro.props;
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && mobileMenu.classList.contains('active')) {
           closeMobileMenu();
+        }
+
+        const isSearchShortcut = (e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K');
+        if (isSearchShortcut) {
+          e.preventDefault();
+          focusSearchOrNavigate();
         }
       });
     })();

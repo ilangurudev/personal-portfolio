@@ -7,4 +7,4 @@ featured: true
 order_score: 1
 ---
 
-A collection of photography from Shenandoah Fall 2024.
+Fall photography in Shenandoah.

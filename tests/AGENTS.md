@@ -61,6 +61,9 @@ npm run test:viewfinder   # Viewfinder overlay CSS functionality
 | `photo-filter-toggle.spec.cjs` | Simple filter | All/Street/Landscape toggle |
 | `responsive-design.spec.js` | Responsive layouts | Mobile/tablet/desktop, hamburger + space toggle in mobile menu |
 | `visual-aesthetics.spec.js` | Design consistency | Colors, typography, themes |
+| `search-focus-shortcut.spec.js` | Search shortcut | Cmd/Ctrl + K navigates/focuses inputs in both spaces |
+| `professional-search-results.spec.js` | Professional search | Results for blog + projects, tag/snippet rendering, URL sync |
+| `photography-search-results.spec.js` | Photography search | Album-first ordering, album pill on photos, lightbox opens from results |
 | `tag-filtering-and-or.spec.cjs` | Tag filtering | AND/OR modes, tag availability, clear filters |
 | `story-drawer.spec.cjs` | Story drawer | Open/close, content display, auto-close |
 | `story-drawer-album-tag.spec.cjs` | Story drawer (album/tag pages) | Finds photos with story metadata dynamically; verifies drawer on album + tag pages |
