@@ -25,6 +25,8 @@ So I came up with this dual-space concept:
 
 The catch? **Complete separation**. No style bleeding. Clicking between them should feel like visiting two different websites that just happen to share a URL. Dual layouts, separate color systems, the works.
 
+I certainly several exisitng solutions like squarespace but I wanted something that is infninitely customizable and cheap. 
+
 Now, I *could* have built this myself. I've done web stuff before—Flask apps, GitHub Pages, the usual. But doing this properly? With Astro, React islands, Tailwind, infinite scroll, a custom lightbox, EXIF extraction, Cloudflare CDN integration? That's easily a month of evenings and weekends.
 
 I had 10 days and the attention span of a mass extinction event.

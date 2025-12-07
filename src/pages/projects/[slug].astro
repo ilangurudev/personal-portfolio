@@ -46,8 +46,13 @@ const { Content } = await project.render();
       <div class="links">
         {project.data.repo && (
           <a href={project.data.repo} target="_blank" rel="noopener noreferrer" class="project-link">
-            <span class="icon">git</span>
-            Repository
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.68c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.1-1.47-1.1-1.47-.9-.61.07-.6.07-.6 1 .07 1.53 1.05 1.53 1.05.89 1.52 2.34 1.08 2.9.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.28.1-2.67 0 0 .85-.27 2.78 1.02a9.62 9.62 0 0 1 5.06 0c1.93-1.29 2.78-1.02 2.78-1.02.55 1.39.2 2.42.1 2.67.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.93.68 1.88v2.79c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"
+                fill="currentColor"
+              />
+            </svg>
+            git Repository
           </a>
         )}
         {project.data.link && (
@@ -165,7 +170,11 @@ const { Content } = await project.render();
   }
 
   .icon {
-    font-weight: 700;
+    width: 1rem;
+    height: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* Markdown Prose Styling */

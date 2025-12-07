@@ -42,6 +42,8 @@ The catch? **Complete aesthetic isolation**. These two spaces should feel like d
 └───────────────────────────┴─────────────────────────────────────┘
 ```
 
+While I considered several exisitng solutions like squarespace, I wanted something that is infninitely customizable and cheap. 
+
 ---
 
 ## Tech Stack Overview

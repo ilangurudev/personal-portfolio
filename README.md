@@ -2,7 +2,7 @@
 
 A dual-space portfolio showcasing two distinct identities: **AI/LLM Engineering** and **Photography**. Built with Astro, powered by AI-driven development.
 
-![Professional Space](docs/screenshots/screenshot-professional.png)
+![Professional Space](docs/screenshots/professional.png)
 
 ## Dual-Space Design
 
@@ -15,7 +15,7 @@ Two completely separate aesthetics under one roof:
 | Cyan/green/yellow accents | Amber/terracotta warmth |
 | Blog posts & projects | Photo galleries & albums |
 
-![Photography Space](docs/screenshots/screenshot-photography.png)
+![Photography Space](docs/screenshots/photography.png)
 
 ## Key Features
 
@@ -32,7 +32,7 @@ Two completely separate aesthetics under one roof:
 - **ISO** - Dual-range slider
 - **Focal Length** - Dual-range mm slider
 
-![Gallery with Filters](docs/screenshots/screenshot-gallery.png)
+![Gallery with Filters](docs/screenshots/gallery.png)
 
 ### Full-Featured Lightbox
 
@@ -44,7 +44,7 @@ Two completely separate aesthetics under one roof:
 - Film counter ("5 / 42")
 - Preloading for instant navigation
 
-![Lightbox View](docs/screenshots/screenshot-lightbox.png)
+![Lightbox View](docs/screenshots/lightbox.png)
 
 ### Albums & Organization
 
@@ -54,7 +54,7 @@ Photos organized into themed albums with:
 - Per-album tag filtering
 - Custom sort ordering
 
-![Albums Page](docs/screenshots/screenshot-albums.png)
+![Albums Page](docs/screenshots/albums.png)
 
 ### Responsive Design
 
@@ -64,7 +64,7 @@ Fully responsive across all devices:
 - Touch-friendly controls
 - Hamburger menu with space toggle
 
-![Mobile View](docs/screenshots/screenshot-mobile.png)
+![Mobile View](docs/screenshots/mobile.png)
 
 ## Technical Architecture
 
