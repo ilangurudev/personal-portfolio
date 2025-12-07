@@ -1,0 +1,178 @@
+---
+import BlogLayout from '../layouts/BlogLayout.astro';
+import { aggregateProfessionalTags, getProfessionalEntries } from '../utils/professional-tags';
+
+const allEntries = await getProfessionalEntries();
+const tags = aggregateProfessionalTags(allEntries);
+
+const maxCount = tags.length ? Math.max(...tags.map(t => t.count)) : 0;
+const minCount = tags.length ? Math.min(...tags.map(t => t.count)) : 0;
+---
+
+<BlogLayout title="Tags" description="Browse posts and projects by tag">
+  <section class="tags-page">
+    <div class="terminal-header">
+      <span class="command-prompt">$ ls -la tags/</span>
+    </div>
+
+    <div class="tags-header">
+      <h1 class="tags-title">Tags</h1>
+      <p class="tags-subtitle">Posts + projects grouped by topic</p>
+    </div>
+
+    {tags.length === 0 ? (
+      <p class="empty">No tags available yet.</p>
+    ) : (
+      <div class="tag-cloud">
+        {tags.map(({ tag, count, displayTag }) => {
+          const sizeRange = 1.625; // 2.5 - 0.875
+          const normalizedSize = minCount === maxCount
+            ? 1.5
+            : 0.875 + (sizeRange * (count - minCount) / (maxCount - minCount));
+
+          return (
+            <a
+              href={`/tags/${encodeURIComponent(displayTag)}`}
+              class="tag-cloud-item"
+              style={`font-size: ${normalizedSize}rem;`}
+              data-count={count}
+              data-tag={tag}
+              title={`${count} item${count === 1 ? '' : 's'}`}
+            >
+              #{displayTag.toLowerCase()}
+            </a>
+          );
+        })}
+      </div>
+    )}
+  </section>
+
+  <style>
+    .tags-page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+    }
+
+    .terminal-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--slate-800);
+    }
+
+    .command-prompt {
+      color: var(--terminal-cyan);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .command-prompt::after {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--terminal-green);
+      margin-left: 4px;
+      animation: blink 1s step-end infinite;
+    }
+
+    .tags-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .tags-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.75rem;
+      color: var(--terminal-green);
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .tags-subtitle {
+      color: var(--terminal-gray);
+      font-size: 1.05rem;
+      margin: 0;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--terminal-gray);
+      font-size: 1rem;
+      padding: 3rem 1.5rem;
+      border: 1px dashed var(--slate-800);
+      border-radius: 8px;
+      background: rgba(2, 6, 23, 0.4);
+    }
+
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 1.25rem 1.75rem;
+      padding: 2rem 1.5rem;
+      background: rgba(2, 6, 23, 0.35);
+      border: 1px solid var(--slate-800);
+      border-radius: 12px;
+    }
+
+    .tag-cloud-item {
+      position: relative;
+      text-decoration: none;
+      color: var(--terminal-gray);
+      font-weight: 600;
+      transition: all 0.25s ease;
+      opacity: 0.8;
+      letter-spacing: -0.01em;
+    }
+
+    .tag-cloud-item:hover {
+      color: var(--terminal-cyan);
+      opacity: 1;
+      transform: translateY(-2px);
+      text-shadow: 0 0 12px rgba(6, 182, 212, 0.35);
+    }
+
+    .tag-cloud-item::after {
+      content: attr(data-count);
+      position: absolute;
+      top: -0.65rem;
+      right: -0.9rem;
+      font-size: 0.65rem;
+      color: var(--terminal-green);
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      padding: 0.1rem 0.35rem;
+      border-radius: 6px;
+    }
+
+    .tag-cloud-item:hover::after {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .tags-title {
+        font-size: 2.2rem;
+      }
+
+      .tags-subtitle {
+        font-size: 0.95rem;
+      }
+
+      .tag-cloud {
+        gap: 1rem 1.25rem;
+        padding: 1.5rem 1rem;
+      }
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+  </style>
+</BlogLayout>
+

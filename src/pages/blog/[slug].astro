@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
+import TagPills from '../../components/TagPills.astro';
 
 export async function getStaticPaths() {
   const blogEntries = await getCollection('blog');
@@ -32,11 +33,7 @@ const { Content } = await entry.render();
             day: 'numeric'
           })}
         </time>
-        <div class="tags">
-          {entry.data.tags.map(tag => (
-            <span class="tag">#{tag}</span>
-          ))}
-        </div>
+        <TagPills tags={entry.data.tags} />
       </div>
     </header>
 
@@ -94,20 +91,15 @@ const { Content } = await entry.render();
     font-size: 0.9rem;
   }
 
-  .tags {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .tag {
-    color: var(--terminal-cyan);
-  }
-
   /* Markdown Prose Styling - Inherited from BlogLayout mostly, but ensuring specifics */
   .prose {
     color: var(--terminal-gray);
     font-size: 1.1rem;
     line-height: 1.8;
+  }
+
+  .prose :global(p) {
+    margin: 0 0 1.4rem;
   }
 
   .prose :global(h2) {
@@ -141,6 +133,35 @@ const { Content } = await entry.render();
     padding: 0.2rem 0.4rem;
     border-radius: 4px;
     font-size: 0.9em;
+  }
+
+  .prose :global(ul) {
+    list-style: none;
+    padding-left: 1.5rem;
+  }
+
+  .prose :global(li) {
+    position: relative;
+    margin: 0.5rem 0;
+  }
+
+  .prose :global(li::before) {
+    content: '>';
+    position: absolute;
+    left: -1.5rem;
+    color: var(--terminal-cyan);
+  }
+
+  .prose :global(a) {
+    color: var(--terminal-cyan);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s ease;
+  }
+
+  .prose :global(a:hover) {
+    color: var(--terminal-yellow);
+    border-bottom-color: var(--terminal-yellow);
   }
 
   @keyframes blink {

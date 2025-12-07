@@ -42,6 +42,8 @@ The catch? **Complete aesthetic isolation**. These two spaces should feel like d
 └───────────────────────────┴─────────────────────────────────────┘
 ```
 
+I certainly considered several existing solutions like squarespace but I wanted something that is infninitely customizable and cheap like being able to add arbitrary tags and filtering and sorting logic. 
+
 ---
 
 ## Tech Stack Overview
@@ -397,10 +399,9 @@ npm run import ~/Desktop/tokyo-night-photos
 This single command:
 1. Extracts the album slug from the path (`tokyo-night-photos`)
 2. Spins up a **temporary web UI** for selecting cover image and featured photos
-3. Copies photos to `public/photos/{album}/`
+3. Copies photos to `<Cloudfare R2 Bucket>>/{album}/`
 4. Extracts EXIF data (camera, settings, GPS coordinates, IPTC keywords)
-5. Optionally uploads to Cloudflare R2
-6. Generates a batch Markdown file for review
+5. Generates a batch Markdown file for review
 
 ### The Temporary Import UI
 
@@ -436,7 +437,7 @@ export async function getAlbumDetails(sourcePath, photos, defaultTitle) {
 - Use a clunky CLI and eyeball photo filenames
 - Manually edit each Markdown file
 
-With AI agents, I described what I wanted and got a fully functional import UI in ~30 minutes. It's **disposable convenience**—if I never use it again, no big deal. If I use it twice, it's already paid for itself.
+With AI agents, I described what I wanted and got a fully functional import UI in ~3 minutes. It's **disposable convenience**—if I never use it again, no big deal. If I use it twice, it's already paid for itself.
 
 ---
 
@@ -509,13 +510,10 @@ npm run test:lightbox       # Just lightbox tests
 ```
 
 **The workflow with AI**:
-1. Ask for a new feature
-2. AI implements it
-3. Run `npm test`
-4. Tests fail (often subtle regressions)
-5. Share failures with AI
-6. AI fixes
-7. Repeat until green
+1. Prompt: "Implement tag filtering (or any feature). Write a failing test and run it so it’s red, use the browser to build the feature, then run `npm run test:all` to confirm everything passes."
+2. AI writes the failing test and runs it to show the red.
+3. AI opens the browser and builds the feature until it works.
+4. AI runs `npm run test:all` to prove the new test and the whole suite are green—no regressions.
 
 Tests transform AI-assisted development from "hope it works" to **verified correctness**. I can ask for aggressive refactors without holding my breath.
 
@@ -531,16 +529,13 @@ Don't hydrate what doesn't need interactivity. My blog posts are static HTML. On
 ### 2. Zod/Pydantic-Style Validation is Essential
 Type-safe content at build time catches errors before deployment. If you're using Markdown with frontmatter, validate it.
 
-### 3. CustomEvents Bridge Framework Boundaries
-When you have static HTML that needs to talk to React (or any framework), browser-native CustomEvents are simple and effective.
-
-### 4. CDN Image Resizing Beats Pre-Processing
+### 3. CDN Image Resizing Beats Pre-Processing
 Don't generate 5 sizes of every image. Let the CDN resize on-demand. Less storage, less build complexity, same performance.
 
-### 5. Document for Your AI
+### 4. Document for Your AI
 If you're using AI coding assistants, structured documentation like `AGENTS.md` pays dividends. The AI reads it, understands context, and makes fewer mistakes.
 
-### 6. Tests Enable Fearless Refactoring
+### 5. Tests Enable Fearless Refactoring
 With comprehensive E2E tests, you can ask AI to make sweeping changes and immediately know if something broke.
 
 ---

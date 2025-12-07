@@ -1,0 +1,269 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import {
+  aggregateProfessionalTags,
+  filterEntriesByTag,
+  getProfessionalEntries,
+} from '../../utils/professional-tags';
+
+export async function getStaticPaths() {
+  const entries = await getProfessionalEntries();
+  const tags = aggregateProfessionalTags(entries);
+
+  return tags.map(({ displayTag }) => ({
+    params: { tag: displayTag },
+  }));
+}
+
+const { tag } = Astro.params;
+const decodedTag = decodeURIComponent(tag || '');
+const normalizedTag = decodedTag.trim().toLowerCase();
+
+const allEntries = await getProfessionalEntries();
+const taggedEntries = normalizedTag ? filterEntriesByTag(allEntries, normalizedTag) : [];
+
+const posts = taggedEntries
+  .filter(entry => entry.collection === 'blog')
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const projects = taggedEntries
+  .filter(entry => entry.collection === 'projects')
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const entries = [...posts, ...projects].sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+
+const totalCount = entries.length;
+---
+
+<BlogLayout
+  title={`${decodedTag} | Tags`}
+  description={`Posts and projects tagged with ${decodedTag}`}
+>
+  <section class="tag-page">
+    <div class="terminal-header">
+      <span class="command-prompt">$ grep "{decodedTag}" blog/ projects/</span>
+      <a class="back-link" href="/tags">&lt; back to tags</a>
+    </div>
+
+    <header class="tag-header">
+      <p class="tag-label">#{decodedTag.toLowerCase()}</p>
+      <p class="tag-count">
+        {totalCount} item{totalCount === 1 ? '' : 's'}
+      </p>
+      <p class="tag-breakdown">
+        {posts.length} {posts.length === 1 ? 'post' : 'posts'} · {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+      </p>
+    </header>
+
+    {totalCount === 0 ? (
+      <p class="empty">No posts or projects found for this tag.</p>
+    ) : (
+      <div class="entries-list">
+        {entries.map(entry => (
+          <a href={`/${entry.collection}/${entry.slug}`} class="entry-card">
+            <div class="entry-top">
+              <span
+                class={`type-pill ${entry.collection === 'projects' ? 'project' : ''}`}
+              >
+                {entry.collection === 'projects' ? 'project' : 'post'}
+              </span>
+              <time datetime={entry.data.date.toISOString()}>
+                {entry.data.date.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </time>
+            </div>
+            <h3>{entry.data.title}</h3>
+            <p>// {entry.data.description}</p>
+            {entry.data.tags?.length ? (
+              <div class="tags">
+                {entry.data.tags.map(tag => (
+                  <span class="tag">#{tag}</span>
+                ))}
+              </div>
+            ) : null}
+          </a>
+        ))}
+      </div>
+    )}
+  </section>
+
+  <style>
+    .tag-page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--slate-800);
+    }
+
+    .command-prompt {
+      color: var(--terminal-cyan);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .command-prompt::after {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--terminal-green);
+      margin-left: 4px;
+      animation: blink 1s step-end infinite;
+    }
+
+    .back-link {
+      color: var(--terminal-gray);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s ease;
+    }
+
+    .back-link:hover {
+      color: var(--terminal-cyan);
+    }
+
+    .tag-header {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .tag-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.4rem;
+      color: var(--terminal-green);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .tag-count {
+      margin: 0;
+      color: var(--terminal-cyan);
+      font-weight: 600;
+    }
+
+    .tag-breakdown {
+      margin: 0;
+      color: var(--terminal-gray);
+      font-size: 0.95rem;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--terminal-gray);
+      padding: 3rem 1.5rem;
+      border: 1px dashed var(--slate-800);
+      border-radius: 10px;
+      background: rgba(2, 6, 23, 0.4);
+    }
+
+    .entries-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .entry-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 1.1rem 1.2rem;
+      border-radius: 12px;
+      border: 1px solid var(--slate-900);
+      background: rgba(15, 23, 42, 0.5);
+      text-decoration: none;
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+      width: 100%;
+    }
+
+    .entry-card:hover {
+      border-color: var(--terminal-cyan);
+      transform: translateY(-2px);
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .entry-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      color: var(--terminal-gray);
+      font-size: 0.9rem;
+    }
+
+    .type-pill {
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: var(--terminal-green);
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .entry-card h3 {
+      margin: 0;
+      color: #e2e8f0;
+      font-size: 1.1rem;
+      letter-spacing: -0.01em;
+    }
+
+    .entry-card p {
+      margin: 0;
+      color: var(--terminal-gray);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.25rem;
+    }
+
+    .tag {
+      color: var(--terminal-cyan);
+      font-size: 0.75rem;
+      font-family: 'Fira Code', monospace;
+      padding: 0.2rem 0.45rem;
+      background: rgba(6, 182, 212, 0.1);
+      border-radius: 5px;
+      border: 1px solid rgba(6, 182, 212, 0.4);
+    }
+
+    @media (max-width: 720px) {
+      .terminal-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .back-link {
+        margin-left: 0;
+      }
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+  </style>
+</BlogLayout>
+
