@@ -33,6 +33,7 @@
     "test:css-leaks": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/css-rendering-leaks.spec.cjs",
     "test:viewfinder": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/viewfinder-css.spec.cjs",
     "test:project-tags": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/project-tags-visibility.spec.cjs",
+    "test:projects-hamburger": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/projects-hamburger-menu.spec.cjs",
     "test:search-styling": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/professional-search-styling.spec.js",
     "test:search-professional": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/professional-search-results.spec.js",
     "test:search-photography": "cd .claude/skills/playwright-skill && node run.js ../../../tests/e2e/photography-search-results.spec.js",

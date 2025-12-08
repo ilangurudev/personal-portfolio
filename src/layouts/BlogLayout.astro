@@ -158,60 +158,73 @@ const { title, description } = Astro.props;
         subtree: true,
       });
 
-      // Mobile menu functionality
-      const hamburgerBtn = document.getElementById('blog-hamburger-btn');
-      const mobileMenu = document.getElementById('blog-mobile-menu');
-      const mobileMenuClose = document.getElementById('blog-mobile-menu-close');
-      const mobileMenuOverlay = document.getElementById('blog-mobile-menu-overlay');
+      // Mobile menu functionality - ensure DOM is ready
+      function initializeMobileMenu() {
+        const hamburgerBtn = document.getElementById('blog-hamburger-btn');
+        const mobileMenu = document.getElementById('blog-mobile-menu');
+        const mobileMenuClose = document.getElementById('blog-mobile-menu-close');
+        const mobileMenuOverlay = document.getElementById('blog-mobile-menu-overlay');
 
-      function openMobileMenu() {
-        mobileMenu.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeMobileMenu() {
-        mobileMenu.classList.remove('active');
-        document.body.style.overflow = '';
-      }
-
-      function focusSearchOrNavigate() {
-        const searchInput = document.querySelector('[data-search-input]');
-        if (searchInput instanceof HTMLElement) {
-          searchInput.focus();
-          // Select text when possible so typing replaces existing query
-          if (searchInput instanceof HTMLInputElement || searchInput instanceof HTMLTextAreaElement) {
-            searchInput.select();
+        function openMobileMenu() {
+          if (mobileMenu) {
+            mobileMenu.classList.add('active');
+            document.body.style.overflow = 'hidden';
           }
-          return;
         }
 
-        window.location.href = '/search';
-      }
-
-      if (hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', openMobileMenu);
-      }
-
-      if (mobileMenuClose) {
-        mobileMenuClose.addEventListener('click', closeMobileMenu);
-      }
-
-      if (mobileMenuOverlay) {
-        mobileMenuOverlay.addEventListener('click', closeMobileMenu);
-      }
-
-      // Close menu on escape key
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && mobileMenu.classList.contains('active')) {
-          closeMobileMenu();
+        function closeMobileMenu() {
+          if (mobileMenu) {
+            mobileMenu.classList.remove('active');
+            document.body.style.overflow = '';
+          }
         }
 
-        const isSearchShortcut = (e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K');
-        if (isSearchShortcut) {
-          e.preventDefault();
-          focusSearchOrNavigate();
+        function focusSearchOrNavigate() {
+          const searchInput = document.querySelector('[data-search-input]');
+          if (searchInput instanceof HTMLElement) {
+            searchInput.focus();
+            // Select text when possible so typing replaces existing query
+            if (searchInput instanceof HTMLInputElement || searchInput instanceof HTMLTextAreaElement) {
+              searchInput.select();
+            }
+            return;
+          }
+
+          window.location.href = '/search';
         }
-      });
+
+        if (hamburgerBtn) {
+          hamburgerBtn.addEventListener('click', openMobileMenu);
+        }
+
+        if (mobileMenuClose) {
+          mobileMenuClose.addEventListener('click', closeMobileMenu);
+        }
+
+        if (mobileMenuOverlay) {
+          mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+        }
+
+        // Close menu on escape key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && mobileMenu && mobileMenu.classList.contains('active')) {
+            closeMobileMenu();
+          }
+
+          const isSearchShortcut = (e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K');
+          if (isSearchShortcut) {
+            e.preventDefault();
+            focusSearchOrNavigate();
+          }
+        });
+      }
+
+      // Initialize mobile menu when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeMobileMenu, { once: true });
+      } else {
+        initializeMobileMenu();
+      }
     })();
   </script>
 
