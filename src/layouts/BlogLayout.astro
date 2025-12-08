@@ -160,32 +160,19 @@ const { title, description } = Astro.props;
 
       // Mobile menu functionality - ensure DOM is ready
       function initializeMobileMenu() {
-        console.log('[BlogLayout] initializeMobileMenu called, readyState:', document.readyState);
         const hamburgerBtn = document.getElementById('blog-hamburger-btn');
         const mobileMenu = document.getElementById('blog-mobile-menu');
         const mobileMenuClose = document.getElementById('blog-mobile-menu-close');
         const mobileMenuOverlay = document.getElementById('blog-mobile-menu-overlay');
 
-        console.log('[BlogLayout] Elements found:', {
-          hamburgerBtn: !!hamburgerBtn,
-          mobileMenu: !!mobileMenu,
-          mobileMenuClose: !!mobileMenuClose,
-          mobileMenuOverlay: !!mobileMenuOverlay
-        });
-
         function openMobileMenu() {
-          console.log('[BlogLayout] openMobileMenu called', { mobileMenu, hasActive: mobileMenu?.classList.contains('active') });
           if (mobileMenu) {
             mobileMenu.classList.add('active');
             document.body.style.overflow = 'hidden';
-            console.log('[BlogLayout] Menu opened, active class added:', mobileMenu.classList.contains('active'));
-          } else {
-            console.error('[BlogLayout] mobileMenu element not found!');
           }
         }
 
         function closeMobileMenu() {
-          console.log('[BlogLayout] closeMobileMenu called');
           if (mobileMenu) {
             mobileMenu.classList.remove('active');
             document.body.style.overflow = '';
