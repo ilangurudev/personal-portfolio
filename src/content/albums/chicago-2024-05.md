@@ -7,4 +7,4 @@ featured: true
 order_score: 1
 ---
 
-A collection of photography from Chicago 2024 .
+A collection of photography from my trip to Chicago in 2024 May.

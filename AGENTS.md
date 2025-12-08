@@ -38,6 +38,7 @@ For detailed information, refer to the `AGENTS.md` in specific directories:
 - **Styling:** Tailwind CSS 4.x (via `@tailwindcss/vite`)
 - **Interactivity:** React 18.x (islands architecture via `@astrojs/react`)
 - **Content:** Astro Content Collections with Zod schemas
+- **Deployment Adapter:** `@astrojs/netlify` configured in `astro.config.mjs`
 - **Images:** Sharp (via Astro `<Image>`) + exifr (EXIF extraction)
 - **Cloud Storage:** Cloudflare R2 (S3-compatible) with Image Resizing
 - **Testing:** Playwright (E2E)

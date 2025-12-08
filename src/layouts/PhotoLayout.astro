@@ -41,6 +41,7 @@ const { title, description } = Astro.props;
         <a href="/photography/photos">All Photos</a>
         <a href="/photography/albums">Albums</a>
         <a href="/photography/tags">Tags</a>
+        <a href="/photography/search">Search</a>
         <div class="space-toggle">
           <a href="/" class="toggle-link toggle-inactive">Professional</a>
           <span class="toggle-link toggle-active">Personal</span>
@@ -62,13 +63,14 @@ const { title, description } = Astro.props;
     <nav class="mobile-menu-content">
       <div class="mobile-menu-header">
         <h2>Menu</h2>
-        <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Close menu">×</button>
+        <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Close menu">&times;</button>
       </div>
       <div class="mobile-menu-links">
         <a href="/photography" class="mobile-menu-link">Home</a>
         <a href="/photography/photos" class="mobile-menu-link">All Photos</a>
         <a href="/photography/albums" class="mobile-menu-link">Albums</a>
         <a href="/photography/tags" class="mobile-menu-link">Tags</a>
+        <a href="/photography/search" class="mobile-menu-link">Search</a>
       </div>
       <div class="mobile-menu-divider"></div>
       <div class="mobile-space-toggle">
@@ -144,6 +146,19 @@ const { title, description } = Astro.props;
         document.body.style.overflow = '';
       }
 
+      function focusSearchOrNavigate() {
+        const searchInput = document.querySelector('[data-search-input]');
+        if (searchInput instanceof HTMLElement) {
+          searchInput.focus();
+          if (searchInput instanceof HTMLInputElement || searchInput instanceof HTMLTextAreaElement) {
+            searchInput.select();
+          }
+          return;
+        }
+
+        window.location.href = '/photography/search';
+      }
+
       if (hamburgerBtn) {
         hamburgerBtn.addEventListener('click', openMobileMenu);
       }
@@ -160,6 +175,12 @@ const { title, description } = Astro.props;
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && mobileMenu.classList.contains('active')) {
           closeMobileMenu();
+        }
+
+        const isSearchShortcut = (e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K');
+        if (isSearchShortcut) {
+          e.preventDefault();
+          focusSearchOrNavigate();
         }
       });
     })();
@@ -397,7 +418,7 @@ const { title, description } = Astro.props;
     /* Navigation - Refined */
     .photo-nav {
       display: flex;
-      gap: 1.75rem;
+      gap: 1.25rem;
       align-items: center;
     }
 

@@ -7,4 +7,4 @@ featured: true
 order_score: 1
 ---
 
-A collection of photography from Georgetown Metro - 2025.
+Street Photography in the metro and Georgetown.

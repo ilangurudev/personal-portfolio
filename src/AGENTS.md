@@ -152,3 +152,16 @@
 - **Routes:** `/tags` (cloud) and `/tags/[tag]` (detail).
 - **Data:** Aggregates tags across `blog` (excluding `about`) and `projects` using `src/utils/professional-tags.ts`.
 - **Behavior:** Tag cloud scales font size by usage; hover reveals total item count. Detail pages show a single unified grid of posts/projects (type pill + title + description + date + tags), sorted by date descending with no separate sections.
+
+### Search
+- **Routes:** `/search` (Professional) and `/photography/search` (Photography).
+- **Logic:** `src/utils/search.ts` searches both frontmatter and markdown body fields. Professional space covers `blog` (excludes `about.md`) + `projects`; photography covers `photos` (EXIF/frontmatter + body) and `albums`.
+- **Live Results:** Inputs are debounced (~180ms) and fetch results as you type; URL `?q` param stays in sync for reload/sharing.
+- **Shortcut:** Cmd/Ctrl + K focuses the search input if present or navigates to the space’s search page (wired in `BlogLayout.astro` and `PhotoLayout.astro`).
+- **Autofocus:** Search pages auto-focus/select the input on load so the caret/keyboard is ready immediately after shortcut navigation (desktop + mobile).
+- **Nav:** Desktop + mobile menus in both layouts include a Search item for quick access.
+- **Tags:** Search result tags are normalized to lowercase and clamped to two rows with an ellipsis when overflowed (both spaces).
+- **Photography ordering:** Search results show albums first (with an album pill). Photo results are ordered by `order_score` (desc) → relevance to the query (desc) → date (desc); photo cards omit a type pill.
+- **Photography photo titles:** Photo search cards show the album name with a folder icon (links to album) instead of the photo filename/title to reduce noise.
+- **Photography album cards:** Album search results render the album description/snippet with a 2-line clamp + ellipsis to match the album listing cards.
+- **Photography lightbox:** Photo results now hydrate the global lightbox; clicking a photo card opens the lightbox instead of navigating away (links still work as a no-JS fallback).
