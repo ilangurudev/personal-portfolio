@@ -192,3 +192,17 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 - **Location:** `src/components/TagPills.astro`
 - **Purpose:** Reusable tag chip renderer for the professional space (blog + projects).
 - **Behavior:** Renders clickable pills linking to `/tags/{tag}`, with terminal-theme hover states. Accepts `tags: string[]` and optional `class` for wrapper styling.
+
+### `TableOfContents` (React)
+- **Location:** `src/components/react/TableOfContents.tsx`
+- **Purpose:** Floating table of contents for blog posts and project pages in the professional space.
+- **Features:**
+  - **Desktop:** Fixed sidebar on the left side with scroll-spy highlighting
+  - **Mobile:** Floating button (bottom-left) that opens a slide-up drawer
+  - Extracts h2 and h3 headings from markdown content
+  - Smooth scroll navigation with URL hash updates
+  - Active section highlighting via Intersection Observer
+  - Terminal-style styling ("> " indicators, cyan/green colors)
+  - Drawer closes on link click, escape key, or overlay click
+- **Usage:** Used in `src/pages/blog/[slug].astro` and `src/pages/projects/[slug].astro` with `client:load` directive
+- **Props:** `headings: { depth: number, slug: string, text: string }[]` - from Astro's `render()` function
