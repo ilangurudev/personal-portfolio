@@ -60,7 +60,7 @@ Structured data helps Google show rich results (enhanced listings with images, r
   "@type": "Person",
   "name": "Guru Ilangovan",
   "jobTitle": "AI/LLM Engineer",
-  "url": "https://guru.dev",
+  "url": "https://ilanguru.dev",
   "sameAs": [
     "https://github.com/ilangurudev",
     "https://linkedin.com/in/yourprofile"
@@ -79,7 +79,7 @@ Structured data helps Google show rich results (enhanced listings with images, r
     "@type": "Person",
     "name": "Guru Ilangovan"
   },
-  "image": "https://guru.dev/og-image.jpg",
+  "image": "https://ilanguru.dev/og-image.jpg",
   "articleBody": "..."
 }
 ```

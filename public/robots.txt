@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://guru.dev/sitemap-index.xml
+Sitemap: https://ilanguru.dev/sitemap-index.xml
