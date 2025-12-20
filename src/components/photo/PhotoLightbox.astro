@@ -30,10 +30,10 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
 <div id="photo-lightbox" class="lightbox" style="display: none;">
   <div class="lightbox-backdrop"></div>
   <div class="shutter-overlay"></div>
-  <button class="lightbox-close" aria-label="Close lightbox">×</button>
+  <button class="lightbox-close" aria-label="Close lightbox">&times;</button>
   
   <div class="lightbox-content">
-    <button class="lightbox-nav lightbox-prev" aria-label="Previous photo">‹</button>
+    <button class="lightbox-nav lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
     <div class="lightbox-image-container">
       <img class="lightbox-image" src="" alt="" />
       <div class="lightbox-info">
@@ -76,12 +76,12 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
         </div>
       </div>
     </div>
-    <button class="lightbox-nav lightbox-next" aria-label="Next photo">›</button>
+    <button class="lightbox-nav lightbox-next" aria-label="Next photo">&rsaquo;</button>
   </div>
 
   <!-- Story drawer -->
   <div class="lightbox-story-drawer" style="display: none;">
-    <button class="lightbox-story-close" aria-label="Close story">×</button>
+    <button class="lightbox-story-close" aria-label="Close story">&times;</button>
     <div class="lightbox-story-content"></div>
   </div>
 </div>
@@ -917,7 +917,6 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     if (!photosDataElement) return;
 
     const photosData: Photo[] = JSON.parse(photosDataElement.textContent || '[]');
-    if (photosData.length === 0) return;
 
     const envElement = document.getElementById('env-data');
     const env = envElement?.textContent?.trim() || 'PROD';
@@ -926,6 +925,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
 
     // Make lightbox accessible globally for photo cards and filter updates
     (window as any).photoLightbox = lightbox;
+    window.dispatchEvent(new CustomEvent('photoLightboxReady'));
     
     // Store initial photos data for reference
     (window as any).allPhotosData = photosData;

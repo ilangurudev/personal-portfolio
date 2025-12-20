@@ -7,4 +7,4 @@ featured: true
 order_score: 1
 ---
 
-A collection of photography from Rainier 2025.
+Photographs from hikes in Mt. Rainier.

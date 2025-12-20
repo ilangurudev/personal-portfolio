@@ -7,4 +7,4 @@ featured: true
 order_score: 1
 ---
 
-A collection of photography from New York 2025.
+Street and Architecture Photography from "the" city.

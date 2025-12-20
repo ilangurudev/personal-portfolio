@@ -7,4 +7,4 @@ featured: true
 order_score: 1
 ---
 
-A collection of photography from Dc Spring 2025.
+A spring day in and around the national arboretum.

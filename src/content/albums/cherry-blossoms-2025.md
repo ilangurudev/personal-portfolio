@@ -7,4 +7,4 @@ featured: true
 order_score: 1
 ---
 
-A collection of photography from Cherry Blossoms 2025.
+Cherry Blossoms, Kite Festival, Petal Palooza!!
