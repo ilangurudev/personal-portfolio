@@ -12,10 +12,8 @@ const isProduction = process.env.NODE_ENV === 'production' || process.argv.inclu
 // https://astro.build/config
 export default defineConfig({
   adapter: isProduction ? netlify() : undefined,
-  integrations: [react()],
-  site: 'https://ilanguru.dev',
-  adapter: netlify(),
   integrations: [react(), sitemap()],
+  site: 'https://ilanguru.dev',
   vite: {
     plugins: [tailwindcss()]
   }
