@@ -6,11 +6,14 @@ import sitemap from '@astrojs/sitemap';
 
 import tailwindcss from '@tailwindcss/vite';
 
+// Only use Netlify adapter in production/preview (not dev)
+const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('build') || process.argv.includes('preview');
+
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://ilanguru.dev',
-  adapter: netlify(),
+  adapter: isProduction ? netlify() : undefined,
   integrations: [react(), sitemap()],
+  site: 'https://ilanguru.dev',
   vite: {
     plugins: [tailwindcss()]
   }
