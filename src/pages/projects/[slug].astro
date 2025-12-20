@@ -1,7 +1,8 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import TagPills from '../../components/TagPills.astro';
+import TableOfContents from '../../components/react/TableOfContents';
 
 export async function getStaticPaths() {
   const projects = await getCollection('projects');
@@ -12,10 +13,11 @@ export async function getStaticPaths() {
 }
 
 const { project } = Astro.props;
-const { Content } = await project.render();
+const { Content, headings } = await render(project);
 ---
 
 <BlogLayout title={project.data.title} description={project.data.description}>
+  <TableOfContents headings={headings} client:load />
   <article class="project-post">
     <div class="terminal-header">
       <span class="command-prompt">$ cat projects/{project.slug}/README.md</span>

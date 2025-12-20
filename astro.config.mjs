@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import netlify from '@astrojs/netlify';
+import sitemap from '@astrojs/sitemap';
 
 import tailwindcss from '@tailwindcss/vite';
 
@@ -12,6 +13,9 @@ const isProduction = process.env.NODE_ENV === 'production' || process.argv.inclu
 export default defineConfig({
   adapter: isProduction ? netlify() : undefined,
   integrations: [react()],
+  site: 'https://ilanguru.dev',
+  adapter: netlify(),
+  integrations: [react(), sitemap()],
   vite: {
     plugins: [tailwindcss()]
   }

@@ -79,6 +79,7 @@ npm run test:viewfinder   # Viewfinder overlay CSS functionality
 | `lightbox-scroll-lock.spec.cjs` | Lightbox scroll lock | Body scroll disabled while open and restored after closing |
 | `css-rendering-leaks.spec.cjs` | CSS leak detection | Regression test for CSS code appearing as plain text before header on photography pages |
 | `viewfinder-css.spec.cjs` | Viewfinder CSS | Viewfinder overlay visibility, hover effects, focus lock animation, CSS styles loading |
+| `toc-navigation.spec.cjs` | TOC Navigation | Desktop sidebar visibility, mobile drawer, link clicking, scroll highlighting |
 
 **Note:** Tests are run via Playwright. Ensure the dev server is running (`npm run dev`) before running tests. The Playwright runner now watches for any `✗` output or `console.error` in specs and exits non-zero so failures are visible.
 
