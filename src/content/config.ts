@@ -9,6 +9,8 @@ const albums = defineCollection({
     date: z.date(),
     featured: z.boolean().default(false),
     order_score: z.number().default(0),
+    /** Sort direction for photo dates within this album: 'asc' (oldest first) or 'desc' (newest first) */
+    dateSortOrder: z.enum(['asc', 'desc']).default('asc'),
   }),
 });
 

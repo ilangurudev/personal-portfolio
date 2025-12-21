@@ -182,6 +182,13 @@ export function formatSettings(settings?: string): string {
   return settings;
 }
 
+export type DateSortOrder = 'asc' | 'desc';
+
+export interface SortPhotosOptions {
+  /** Sort direction for dates: 'asc' (oldest first) or 'desc' (newest first). Default: 'desc' */
+  dateSortOrder?: DateSortOrder;
+}
+
 /**
  * Sort photos by order_score (descending) and then by date (descending)
  * @param photos - Array of photos to sort
@@ -190,13 +197,29 @@ export function formatSettings(settings?: string): string {
 export function sortPhotos<T extends { data: { order_score?: number; date: Date } }>(
   photos: T[]
 ): T[] {
+  return sortPhotosWithOptions(photos, { dateSortOrder: 'desc' });
+}
+
+/**
+ * Sort photos by order_score (descending) and then by date with configurable direction
+ * @param photos - Array of photos to sort
+ * @param options - Sorting options including date sort direction
+ * @returns Sorted array of photos (creates a new array, doesn't mutate)
+ */
+export function sortPhotosWithOptions<T extends { data: { order_score?: number; date: Date } }>(
+  photos: T[],
+  options: SortPhotosOptions = {}
+): T[] {
+  const { dateSortOrder = 'desc' } = options;
+  const dateMultiplier = dateSortOrder === 'asc' ? 1 : -1;
+
   return [...photos].sort((a, b) => {
     const scoreA = a.data.order_score ?? 0;
     const scoreB = b.data.order_score ?? 0;
     if (scoreB !== scoreA) {
       return scoreB - scoreA;
     }
-    return b.data.date.getTime() - a.data.date.getTime();
+    return dateMultiplier * (a.data.date.getTime() - b.data.date.getTime());
   });
 }
 
