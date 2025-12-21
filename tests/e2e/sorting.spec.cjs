@@ -2,12 +2,13 @@ const { chromium } = require('playwright');
 
 const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
-function sortByRules(cards) {
+function sortByRules(cards, dateSortOrder = 'desc') {
+    const dateMultiplier = dateSortOrder === 'asc' ? 1 : -1;
     return [...cards].sort((a, b) => {
         if (b.orderScore !== a.orderScore) {
             return b.orderScore - a.orderScore;
         }
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
+        return dateMultiplier * (new Date(a.date).getTime() - new Date(b.date).getTime());
     });
 }
 
@@ -88,18 +89,25 @@ async function getCardData(page) {
 
         const albumCards = await getCardData(page);
 
+        // Get the album's configured date sort order (default: 'asc')
+        const dateSortOrder = await page.$eval(
+            '.gallery-container[data-date-sort-order]',
+            el => el.getAttribute('data-date-sort-order') || 'asc'
+        ).catch(() => 'asc');
+
         console.log(`   Visible photos in ${albumSlug}:`, albumCards.length);
+        console.log(`   Date sort order: ${dateSortOrder}`);
         console.log('   First 3 IDs:', albumCards.slice(0, 3).map(c => c.id));
 
         if (albumCards.length === 0) {
             console.error(`   ✗ No photos found in album view (${albumSlug})`);
             process.exitCode = 1;
         } else {
-            const expectedAlbumOrder = sortByRules(albumCards).map(card => card.id);
+            const expectedAlbumOrder = sortByRules(albumCards, dateSortOrder).map(card => card.id);
             const actualAlbumOrder = albumCards.map(card => card.id);
 
             if (actualAlbumOrder.join('|') === expectedAlbumOrder.join('|')) {
-                console.log('   ✓ Album photos sorted by order_score, then date desc');
+                console.log(`   ✓ Album photos sorted by order_score, then date ${dateSortOrder}`);
             } else {
                 console.error(`   ✗ Album photos not sorted correctly for ${albumSlug}`);
                 console.error('     Actual first 5:', actualAlbumOrder.slice(0, 5));
