@@ -15,9 +15,10 @@
   z-index: 10;
 }
 
-/* Replace aspect-ratio with height-based sizing for virtualized rows */
+/* Override padding-based aspect ratio for virtualized rows where cards have explicit dimensions */
 .gallery-container :global(.photo-image) {
   height: 100%;
+  padding-bottom: 0;
 }
 
 @media (max-width: 768px) {
