@@ -202,6 +202,8 @@ const { title, description } = Astro.props;
       background: var(--cream-dark);
       cursor: crosshair;
       position: relative;
+      /* Ensure card fills grid cell for proper aspect-ratio calculation */
+      width: 100%;
     }
 
     :global(.photo-card:hover) {
@@ -211,13 +213,19 @@ const { title, description } = Astro.props;
 
     :global(.photo-image) {
       width: 100%;
-      aspect-ratio: 3 / 2;
+      /* Padding-bottom creates intrinsic height: 66.67% = 2/3 for 3:2 aspect ratio */
+      /* This is more reliable than aspect-ratio in flex/grid contexts on some WebKit versions */
+      padding-bottom: 66.67%;
+      height: 0;
       overflow: hidden;
       background: var(--cream);
       position: relative;
     }
 
     :global(.photo-image img) {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
