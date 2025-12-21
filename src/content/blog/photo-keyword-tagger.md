@@ -1,7 +1,7 @@
 ---
 title: "I Built a Photo Keywording Tool in a Weekend"
 description: "Using AI to build a real tool with tests, linting, and all the things that used to feel like overhead."
-date: 2024-12-20
+date: 2025-12-20
 tags: ["ai", "python", "photography", "llm", "software-development"]
 isNotebook: false
 ---
