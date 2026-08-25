@@ -560,11 +560,16 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
     :global(.search-card .media) {
       position: relative;
       display: block;
-      aspect-ratio: 3 / 2;
+      /* Padding-bottom for reliable aspect ratio in flex contexts on WebKit */
+      padding-bottom: 66.67%;
+      height: 0;
       overflow: hidden;
     }
 
     :global(.search-card .media img) {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;

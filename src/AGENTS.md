@@ -93,9 +93,11 @@
   date: Date;              // Album date (for sorting)
   featured: boolean;       // Show first in listings (default: false)
   order_score: number;     // Manual ordering (higher = first, default: 0)
+  dateSortOrder: 'asc' | 'desc'; // Photo date sorting within album (default: 'asc')
 }
 ```
 **Sorting:** Featured → Order Score (desc) → Date (desc)
+**Photo Sorting Within Album:** Order Score (desc) → Date (configurable via `dateSortOrder`, default: 'asc' for chronological)
 
 #### `photos` Collection
 ```typescript

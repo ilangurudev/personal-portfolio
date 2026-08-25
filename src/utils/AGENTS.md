@@ -60,9 +60,15 @@ Location: `src/utils/lightbox-transform.ts` (re-exported from `photo-helpers.ts`
 // Sort photos by order_score (descending), then by date (descending)
 const sortedPhotos = sortPhotos(photos);
 
+// Sort photos with configurable date direction (for album pages)
+const albumPhotos = sortPhotosWithOptions(photos, { dateSortOrder: 'asc' });
+// → Sorts by order_score (desc), then date (asc = oldest first, desc = newest first)
+
 // Sort albums by featured status, then order_score, then date
 const sortedAlbums = sortAlbums(albums);
 ```
+
+**Album Photo Sorting:** Use `sortPhotosWithOptions` with the album's `dateSortOrder` field to sort photos within an album. Default is 'asc' (chronological, oldest first).
 
 ### EXIF Parsing
 

@@ -4,7 +4,7 @@ import { getCollection, getEntry } from 'astro:content';
 import {
   getAlbumPhotosWithExif,
   getAlbumTitleMap,
-  sortPhotos,
+  sortPhotosWithOptions,
   extractTagNames,
   serializePhotoForGallery,
   mapToLightboxPhotos
@@ -24,7 +24,7 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 const album = await getEntry('albums', slug!);
 const photos = await getAlbumPhotosWithExif(slug!);
-const sortedPhotos = sortPhotos(photos);
+const sortedPhotos = sortPhotosWithOptions(photos, { dateSortOrder: album.data.dateSortOrder });
 
 // Get all unique tags from this album's photos only (sorted alphabetically)
 const albumTags = extractTagNames(photos, 'alpha');
@@ -59,7 +59,7 @@ const galleryPhotos = sortedPhotos.map(p => serializePhotoForGallery(
         {albumTags.length > 0 && (
           <TagFilterBar tags={albumTags} photos={galleryPhotos} />
         )}
-        <div class="gallery-container">
+        <div class="gallery-container" data-date-sort-order={album.data.dateSortOrder}>
           <FilteredPhotoGallery 
             client:load
             allPhotos={galleryPhotos}
