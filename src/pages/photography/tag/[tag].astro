@@ -3,12 +3,12 @@ import PhotoLayout from "../../../layouts/PhotoLayout.astro";
 import {
   getAlbumTitleMap,
   getPhotosWithExif,
-  sortPhotos,
   extractTags,
   extractTagNames,
   serializePhotoForGallery,
   mapToLightboxPhotos
 } from "../../../utils/photo-helpers";
+import { sortStoryPhotosByDate } from "../../../utils/story-layout-plan";
 import PhotoLightbox from "../../../components/photo/PhotoLightbox.astro";
 import { FilteredPhotoGallery } from "../../../components/react/FilteredPhotoGallery";
 import TagFilterBar from "../../../components/photo/TagFilterBar.astro";
@@ -30,7 +30,7 @@ const decodedTag = decodeURIComponent(tag || "");
 
 const albumTitleMap = await getAlbumTitleMap();
 
-const allPhotos = sortPhotos(await getPhotosWithExif());
+const allPhotos = sortStoryPhotosByDate(await getPhotosWithExif(), 'desc');
 const galleryPhotos = allPhotos.map(photo => serializePhotoForGallery(photo, albumTitleMap));
 
 // Get all unique tags for the filter pills (sorted alphabetically)
@@ -39,7 +39,7 @@ const allTags = extractTagNames(allPhotos, 'alpha');
 const filteredPhotos = allPhotos.filter((photo) =>
   photo.data.tags.some((t) => t.toLowerCase() === decodedTag.toLowerCase()),
 );
-const sortedPhotos = sortPhotos(filteredPhotos);
+const sortedPhotos = sortStoryPhotosByDate(filteredPhotos, 'desc');
 ---
 
 <PhotoLayout
@@ -66,15 +66,16 @@ const sortedPhotos = sortPhotos(filteredPhotos);
         <p class="no-photos">No photos found with this tag.</p>
       ) : (
         <>
-          <div class="gallery-container">
+          <div class="gallery-container" data-date-sort-order="desc">
             <FilteredPhotoGallery
               client:load
-            allPhotos={galleryPhotos}
+              allPhotos={galleryPhotos}
               initialActiveTags={[decodedTag.toLowerCase()]}
+              layoutMode="editorial"
             />
           </div>
           <PhotoLightbox
-          photos={mapToLightboxPhotos(sortedPhotos, albumTitleMap)}
+            photos={mapToLightboxPhotos(sortedPhotos, albumTitleMap)}
           />
         </>
       )

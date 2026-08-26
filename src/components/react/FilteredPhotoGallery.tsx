@@ -7,6 +7,7 @@ import {
   toIsoDateString
 } from '../../utils/lightbox-transform';
 import { pushFilteredPhotosToLightbox } from '../../utils/client/lightbox-sync';
+import { createStoryPlan } from '../../utils/story-layout-plan';
 
 interface Photo {
   id: string;
@@ -15,6 +16,7 @@ interface Photo {
     title: string;
     filename: string;
     order_score?: number;
+    featured?: boolean;
     album?: string;
     albumTitle?: string;
     tags?: string[];
@@ -46,6 +48,13 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
     new Set((initialActiveTags || []).map(normalizeTag))
   );
   const [tagLogic, setTagLogic] = useState<'and' | 'or'>(initialTagLogic);
+  const [layoutSeed, setLayoutSeed] = useState(0);
+
+  useEffect(() => {
+    if (layoutMode === 'editorial') {
+      setLayoutSeed(Math.floor(Math.random() * 2_147_483_647) || 1);
+    }
+  }, [layoutMode]);
 
   // Listen for tag filter changes from vanilla JS
   useEffect(() => {
@@ -86,26 +95,6 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
     });
   }, [allPhotos, activeTags, tagLogic]);
 
-  // Notify parent of filter changes and update lightbox
-  useEffect(() => {
-    if (onFilterChange) {
-      onFilterChange(filteredPhotos);
-    }
-
-    const lightboxPhotos: LightboxPhoto[] = filteredPhotos.map(p =>
-      transformForLightbox({
-        ...p,
-        body: p.body,
-        data: {
-          ...p.data,
-          album: p.data.album || '',
-          tags: p.data.tags || [],
-        },
-      })
-    );
-    pushFilteredPhotosToLightbox(lightboxPhotos);
-  }, [filteredPhotos, onFilterChange]);
-
   // Prepare photos for PhotoGallery (convert dates to strings)
   const galleryPhotos = useMemo(() => {
     return filteredPhotos.map(p => ({
@@ -118,5 +107,45 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
     }));
   }, [filteredPhotos]);
 
-  return <InfinitePhotoGallery photos={galleryPhotos} layoutMode={layoutMode} />;
+  const storyPlan = useMemo(() => {
+    if (layoutMode !== 'editorial') return null;
+
+    let state = layoutSeed || 1;
+    const random = () => {
+      state = (state * 16807) % 2_147_483_647;
+      return (state - 1) / 2_147_483_646;
+    };
+
+    return createStoryPlan(galleryPhotos, { random });
+  }, [galleryPhotos, layoutMode, layoutSeed]);
+
+  const plannedPhotos = storyPlan?.orderedPhotos ?? galleryPhotos;
+
+  // Notify parent of filter changes and keep lightbox navigation aligned with the visible edit.
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange(filteredPhotos);
+    }
+
+    const lightboxPhotos: LightboxPhoto[] = plannedPhotos.map(p =>
+      transformForLightbox({
+        ...p,
+        body: p.body,
+        data: {
+          ...p.data,
+          album: p.data.album || '',
+          tags: p.data.tags || [],
+        },
+      })
+    );
+    pushFilteredPhotosToLightbox(lightboxPhotos);
+  }, [filteredPhotos, onFilterChange, plannedPhotos]);
+
+  return (
+    <InfinitePhotoGallery
+      photos={plannedPhotos}
+      layoutMode={layoutMode}
+      storyRows={storyPlan?.rows}
+    />
+  );
 };

@@ -16,6 +16,7 @@ interface Props {
       settings?: string;
       focalLength?: number;
       location?: string;
+      date?: string;
     };
   }>;
   initialIndex?: number;
@@ -103,6 +104,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       settings?: string;
       focalLength?: number;
       location?: string;
+      date?: string;
     };
   }
 
@@ -139,6 +141,11 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     private env: string;
     private originalBodyOverflow: string | null = null;
     private originalHtmlOverflow: string | null = null;
+    private originalBodyPosition: string | null = null;
+    private originalBodyTop: string | null = null;
+    private originalBodyWidth: string | null = null;
+    private lockedScrollX: number = 0;
+    private lockedScrollY: number = 0;
 
     constructor(photos: Photo[], env: string = 'PROD') {
       this.photos = photos;
@@ -329,18 +336,32 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     private lockScroll() {
       if (this.originalBodyOverflow === null) {
         this.originalBodyOverflow = document.body.style.overflow;
+        this.originalBodyPosition = document.body.style.position;
+        this.originalBodyTop = document.body.style.top;
+        this.originalBodyWidth = document.body.style.width;
+        this.lockedScrollX = window.scrollX;
+        this.lockedScrollY = window.scrollY;
       }
       if (this.originalHtmlOverflow === null) {
         this.originalHtmlOverflow = document.documentElement.style.overflow;
       }
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${this.lockedScrollY}px`;
+      document.body.style.width = '100%';
       document.documentElement.style.overflow = 'hidden';
     }
 
     private unlockScroll() {
       if (this.originalBodyOverflow !== null) {
         document.body.style.overflow = this.originalBodyOverflow;
+        document.body.style.position = this.originalBodyPosition || '';
+        document.body.style.top = this.originalBodyTop || '';
+        document.body.style.width = this.originalBodyWidth || '';
         this.originalBodyOverflow = null;
+        this.originalBodyPosition = null;
+        this.originalBodyTop = null;
+        this.originalBodyWidth = null;
       } else {
         document.body.style.overflow = '';
       }
@@ -351,6 +372,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       } else {
         document.documentElement.style.overflow = '';
       }
+
+      window.scrollTo(this.lockedScrollX, this.lockedScrollY);
     }
 
     public open(index: number) {
@@ -973,7 +996,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     camera: p.data.camera,
     settings: p.data.settings,
     focalLength: p.data.focalLength,
-    location: p.data.location
+    location: p.data.location,
+    date: p.data.date
   }
 })))}></script>
 <script id="env-data" type="text/plain" set:html={env}></script>

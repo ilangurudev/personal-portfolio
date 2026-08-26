@@ -52,7 +52,7 @@ async function scrollThroughStory(page) {
 
     const audit = await page.locator('.gallery-container').evaluate((gallery, expectedTotal) => {
       const cards = [...gallery.querySelectorAll('.photo-card[data-photo-id]')];
-      const groups = [...gallery.querySelectorAll('[data-story-layout-group]')];
+      const rows = [...gallery.querySelectorAll('[data-story-row]')];
       const measurements = cards.map((card, index) => {
         const image = card.querySelector('img');
         const cardRect = card.getBoundingClientRect();
@@ -82,28 +82,24 @@ async function scrollThroughStory(page) {
       const lastCardBottom = Math.max(...measurements.map(item => item.cardRect.bottom));
       const footerTop = document.querySelector('footer')?.getBoundingClientRect().top ?? gallery.getBoundingClientRect().bottom;
       const pageBackground = getComputedStyle(document.body).backgroundColor;
-      const raggedRows = groups.flatMap(group => {
-        return [...group.querySelectorAll('[data-story-row]')].flatMap((row, rowIndex) => {
+      const raggedRows = rows.flatMap((row, rowIndex) => {
           const rowCards = [...row.children].filter(child => child.matches('.photo-card'));
           if (rowCards.length < 2) return [];
           const heights = rowCards.map(card => card.getBoundingClientRect().height);
           return Math.max(...heights) - Math.min(...heights) > 2
-            ? [{ layout: group.getAttribute('data-layout'), rowIndex, heights: heights.map(Math.round) }]
+            ? [{ layout: row.getAttribute('data-planned-layout'), rowIndex, heights: heights.map(Math.round) }]
             : [];
-        });
       });
-      const avoidableSoloRows = groups.flatMap(group => {
-        const groupSize = group.querySelectorAll('.photo-card[data-photo-id]').length;
-        if (groupSize === 1) return [];
-        return [...group.querySelectorAll('[data-story-row]')]
-          .filter(row => row.querySelectorAll('.photo-card').length === 1)
-          .map((_, rowIndex) => ({ layout: group.getAttribute('data-layout'), groupSize, rowIndex }));
-      });
+      const avoidableSoloRows = rows
+        .filter(row => row.getAttribute('data-story-row') === 'support'
+          && row.querySelectorAll('.photo-card').length === 1
+          && !row.hasAttribute('data-quiet-solo'))
+        .map((row, rowIndex) => ({ layout: row.getAttribute('data-planned-layout'), rowIndex }));
 
       return {
         total: cards.length,
         expectedTotal,
-        groupSizes: groups.map(group => group.querySelectorAll('.photo-card[data-photo-id]').length),
+        rowSizes: rows.map(row => row.querySelectorAll('.photo-card[data-photo-id]').length),
         photoOrder: measurements.map(item => item.id),
         visualOrder,
         overlaps,
@@ -121,13 +117,13 @@ async function scrollThroughStory(page) {
     }, total);
 
     assert(audit.total === audit.expectedTotal, `Expected ${audit.expectedTotal} photos at the bottom, found ${audit.total}.`);
-    assert(audit.groupSizes.every((size, index) => size === 8 || index === audit.groupSizes.length - 1), 'Only the final story group may contain fewer than eight photos.');
+    assert(audit.rowSizes.every(size => size >= 1 && size <= 4), 'Story rows should contain between one and four photographs.');
     assert(audit.cropped.length === 0, `${audit.cropped.length} story thumbnails hide part of their source composition.`);
     assert(audit.matted.length === 0, `${audit.matted.length} story thumbnails use a visible matte instead of natural reflow.`);
     assert(audit.raggedRows.length === 0, `Mixed image ratios leave ragged holes in story rows: ${JSON.stringify(audit.raggedRows.slice(0, 3))}`);
     assert(audit.avoidableSoloRows.length === 0, `A partial story group created an oversized solo row: ${JSON.stringify(audit.avoidableSoloRows)}`);
     assert(audit.overlaps.length === 0, `Story cards overlap: ${JSON.stringify(audit.overlaps.slice(0, 3))}`);
-    assert(audit.visualOrder.join('|') === audit.photoOrder.join('|'), 'The visual story order differs from its chronological DOM order.');
+    assert(audit.visualOrder.join('|') === audit.photoOrder.join('|'), 'The visual story order differs from its editorial DOM order.');
     assert(audit.incompleteGroupGap < 200, `The final incomplete group leaves ${Math.round(audit.incompleteGroupGap)}px of dead space before the footer.`);
   }
 

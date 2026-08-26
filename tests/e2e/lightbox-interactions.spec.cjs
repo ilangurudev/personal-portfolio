@@ -289,6 +289,9 @@ const runKeyboardOnPhotosPage = async (page, { label, applyTag = false }) => {
     `   ✓ Image source changed (button next): ${srcBeforeNext !== srcAfterNext ? '✓' : '✗'}`
   );
 
+  // Navigation deliberately ignores input while the fade transition is active.
+  await page.waitForTimeout(700);
+
   // Test 10: Navigate to previous photo via button
   console.log('\n📍 Test 10: Navigate to Previous Photo (Button)');
   const prevBtn = await page.locator('.lightbox-prev');

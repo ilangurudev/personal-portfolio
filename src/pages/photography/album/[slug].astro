@@ -4,7 +4,6 @@ import { getCollection, getEntry } from 'astro:content';
 import {
   getAlbumPhotosWithExif,
   getAlbumTitleMap,
-  sortPhotosWithOptions,
   extractTagNames,
   serializePhotoForGallery,
   mapToLightboxPhotos
@@ -15,6 +14,7 @@ import { FilteredPhotoGallery } from '../../../components/react/FilteredPhotoGal
 import TagFilterBar from '../../../components/photo/TagFilterBar.astro';
 import { getResizedPhotoUrl } from '../../../utils/url-helper';
 import { FEATURED_STORIES } from '../../../data/photo-curation';
+import { sortStoryPhotosByDate } from '../../../utils/story-layout-plan';
 
 export async function getStaticPaths() {
   const albums = await getCollection('albums');
@@ -26,7 +26,7 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 const album = await getEntry('albums', slug!);
 const photos = await getAlbumPhotosWithExif(slug!);
-const sortedPhotos = sortPhotosWithOptions(photos, { dateSortOrder: album.data.dateSortOrder });
+const sortedPhotos = sortStoryPhotosByDate(photos, album.data.dateSortOrder);
 
 // Get all unique tags from this album's photos only (sorted alphabetically)
 const albumTags = extractTagNames(photos, 'alpha');
@@ -59,7 +59,7 @@ const storyDirection = FEATURED_STORIES.find(story => story.slug === slug);
       <h2>{storyDirection?.statement || album.data.description}</h2>
       <div>
         <time class="album-date" datetime={album.data.date.toISOString()}>{album.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</time>
-        <span>Sequenced chronologically</span>
+        <span>Editorially sequenced</span>
       </div>
     </section>
 

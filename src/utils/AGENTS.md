@@ -49,7 +49,7 @@ const lightboxPhotos = mapToLightboxPhotos(sortedPhotos, albumTitleMap);
 const galleryPhotos = photos.map(photo =>
   serializePhotoForGallery(photo, albumTitleMap, { includeResized: true })
 );
-// → Returns { id, url, (resizedUrl?), body, data: { title, filename, album(+title), tags[], camera, settings, focalLength, location, date ISO, position, order_score } }
+// → Returns { id, url, (resizedUrl?), body, data: { title, filename, album(+title), featured, tags[], camera, settings, focalLength, location, date ISO, position, order_score } }
 // → Safe on both server + client (normalizes tags + dates)
 ```
 Location: `src/utils/lightbox-transform.ts` (re-exported from `photo-helpers.ts`) so it can be safely used from both Astro server code and React islands.
@@ -61,14 +61,14 @@ Location: `src/utils/lightbox-transform.ts` (re-exported from `photo-helpers.ts`
 const sortedPhotos = sortPhotos(photos);
 
 // Sort photos with configurable date direction (for album pages)
-const albumPhotos = sortPhotosWithOptions(photos, { dateSortOrder: 'asc' });
-// → Sorts by order_score (desc), then date (asc = oldest first, desc = newest first)
+const albumPhotos = sortStoryPhotosByDate(photos, 'asc');
+// → Album story source order ignores order_score; featured emphasis is applied by createStoryPlan()
 
 // Sort albums by featured status, then order_score, then date
 const sortedAlbums = sortAlbums(albums);
 ```
 
-**Album Photo Sorting:** Use `sortPhotosWithOptions` with the album's `dateSortOrder` field to sort photos within an album. Default is 'asc' (chronological, oldest first).
+**Album Story Planning:** Use `sortStoryPhotosByDate` with the album's `dateSortOrder`, then pass the serialized photos to `createStoryPlan()` in `src/utils/story-layout-plan.ts`. The pure planner returns `orderedPhotos` and planned `rows`, keeps featured/support relative order, reserves support photos across original anchor boundaries so feasible tail features are never demoted, falls back to the maximum spaced anchor set only for mathematically impossible metadata, and accepts an injected random source for testable support-row variation.
 
 ### EXIF Parsing
 

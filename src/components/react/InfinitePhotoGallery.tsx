@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, type CSSProperties } from 'react';
-import { getResizedPhotoUrl } from '../../utils/url-helper';
+import { getPhotoUrl, getResizedPhotoUrl } from '../../utils/url-helper';
+import type { StoryRow } from '../../utils/story-layout-plan';
 import { ViewfinderSVG } from './ViewfinderSVG';
 
 interface Photo {
@@ -8,6 +9,7 @@ interface Photo {
     title: string;
     filename: string;
     order_score?: number;
+    featured?: boolean;
     album?: string;
     albumTitle?: string;
     tags?: string[];
@@ -25,6 +27,7 @@ interface InfinitePhotoGalleryProps {
   initialLoadCount?: number;
   loadMoreCount?: number;
   layoutMode?: 'grid' | 'editorial';
+  storyRows?: StoryRow<Photo>[];
 }
 
 const GAP = 32; // 2rem
@@ -32,126 +35,35 @@ const MIN_COLUMN_WIDTH = 300;
 const INITIAL_LOAD = 20;
 const LOAD_MORE = 20;
 const EDITORIAL_GROUP_SIZE = 8;
+const EMPTY_STORY_ROWS: StoryRow<Photo>[] = [];
 
-const STORY_LAYOUTS = [
-  'duo-duo-duo-duo',
-  'trio-trio-duo',
-  'trio-duo-trio',
-  'duo-trio-trio',
-  'quad-duo-duo',
-  'duo-duo-quad'
-] as const;
-
-type StoryLayout = typeof STORY_LAYOUTS[number];
-
-interface StoryRow {
-  indices: number[];
+function getPlannedPhotoCount(rows: StoryRow<Photo>[], targetCount: number): number {
+  let count = 0;
+  for (const row of rows) {
+    if (count >= targetCount) break;
+    count += row.photos.length;
+  }
+  return count;
 }
-
-const STORY_ROW_CONFIGS: Record<StoryLayout, StoryRow[]> = {
-  'duo-duo-duo-duo': [
-    { indices: [0, 1] },
-    { indices: [2, 3] },
-    { indices: [4, 5] },
-    { indices: [6, 7] }
-  ],
-  'trio-trio-duo': [
-    { indices: [0, 1, 2] },
-    { indices: [3, 4, 5] },
-    { indices: [6, 7] }
-  ],
-  'trio-duo-trio': [
-    { indices: [0, 1, 2] },
-    { indices: [3, 4] },
-    { indices: [5, 6, 7] }
-  ],
-  'duo-trio-trio': [
-    { indices: [0, 1] },
-    { indices: [2, 3, 4] },
-    { indices: [5, 6, 7] }
-  ],
-  'quad-duo-duo': [
-    { indices: [0, 1, 2, 3] },
-    { indices: [4, 5] },
-    { indices: [6, 7] }
-  ],
-  'duo-duo-quad': [
-    { indices: [0, 1] },
-    { indices: [2, 3] },
-    { indices: [4, 5, 6, 7] }
-  ]
-};
 
 function getEstimatedRatio(photo: Photo): number {
   const isPortrait = photo.data.tags?.some(tag => tag.trim().toLowerCase() === 'portrait orientation');
   return isPortrait ? 2 / 3 : 3 / 2;
 }
 
-function getRowsForGroup(layout: StoryLayout, groupLength: number): StoryRow[] {
-  if (groupLength === EDITORIAL_GROUP_SIZE) return STORY_ROW_CONFIGS[layout];
-
-  const layoutIndex = STORY_LAYOUTS.indexOf(layout);
-  const partialRowSizes: Record<number, number[][]> = {
-    1: [[1]],
-    2: [[2]],
-    3: [[3]],
-    4: [[2, 2], [4]],
-    5: [[2, 3], [3, 2]],
-    6: [[2, 2, 2], [3, 3]],
-    7: [[2, 2, 3], [2, 3, 2], [3, 2, 2]]
-  };
-  const candidates = partialRowSizes[groupLength] || [[groupLength]];
-  const sizes = candidates[layoutIndex % candidates.length];
-  let nextIndex = 0;
-
-  return sizes.map(size => {
-    const indices = Array.from({ length: size }, () => nextIndex++);
-    return { indices };
-  });
-}
-
-function shuffleLayouts(layouts: StoryLayout[]): StoryLayout[] {
-  const shuffled = [...layouts];
-  for (let index = shuffled.length - 1; index > 0; index--) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
-  }
-  return shuffled;
-}
-
-function createEditorialPlan(groupCount: number, previousPlan: StoryLayout[] = []): StoryLayout[] {
-  const plan: StoryLayout[] = [];
-
-  while (plan.length < groupCount) {
-    const bag = shuffleLayouts([...STORY_LAYOUTS]);
-    if (plan.length > 0 && bag[0] === plan[plan.length - 1]) {
-      [bag[0], bag[1]] = [bag[1], bag[0]];
-    }
-    plan.push(...bag);
-  }
-
-  const nextPlan = plan.slice(0, groupCount);
-  const nextOpening = nextPlan.slice(0, 4);
-  const previousOpening = previousPlan.slice(0, 4);
-  const repeatsPreviousOpening = nextOpening.length > 1
-    && nextOpening.join('|') === previousOpening.join('|');
-
-  if (repeatsPreviousOpening) {
-    [nextPlan[0], nextPlan[1]] = [nextPlan[1], nextPlan[0]];
-  }
-
-  return nextPlan;
-}
-
 const PhotoCard: React.FC<{
   photo: Photo;
   editorial?: boolean;
+  imageSource?: 'original' | 'resized';
+  aspectRatio?: number;
   style?: CSSProperties;
   onRatio?: (photoId: string, ratio: number) => void;
-}> = ({ photo, editorial = false, style, onRatio }) => (
+}> = ({ photo, editorial = false, imageSource = 'resized', aspectRatio, style, onRatio }) => (
   <div
     className="photo-card"
+    data-image-source={imageSource}
     data-photo-id={photo.id}
+    data-featured={photo.data.featured ? 'true' : undefined}
     data-order-score={photo.data.order_score ?? 0}
     data-photo-date={
       typeof photo.data.date === 'string'
@@ -165,9 +77,17 @@ const PhotoCard: React.FC<{
       ...style
     }}
   >
-    <div className="photo-image" style={editorial ? { background: 'transparent' } : undefined}>
+    <div
+      className="photo-image"
+      style={editorial ? {
+        background: 'transparent',
+        aspectRatio: aspectRatio ? String(aspectRatio) : undefined
+      } : undefined}
+    >
       <img
-        src={getResizedPhotoUrl(photo.data.filename, editorial ? 900 : 400)}
+        src={imageSource === 'original'
+          ? getPhotoUrl(photo.data.filename)
+          : getResizedPhotoUrl(photo.data.filename, editorial ? 900 : 400)}
         alt={photo.data.title}
         loading="lazy"
         decoding="async"
@@ -196,7 +116,8 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
   photos,
   initialLoadCount = INITIAL_LOAD,
   loadMoreCount = LOAD_MORE,
-  layoutMode = 'grid'
+  layoutMode = 'grid',
+  storyRows = EMPTY_STORY_ROWS
 }) => {
   const editorialInitialCount = Math.min(
     Math.ceil(initialLoadCount / EDITORIAL_GROUP_SIZE) * EDITORIAL_GROUP_SIZE,
@@ -214,17 +135,12 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
   const ratioCacheRef = useRef<Map<string, number>>(new Map());
   const sourceRatioIdsRef = useRef<Set<string>>(new Set());
   const isLoadingBatchRef = useRef(false);
-  const groupCount = Math.ceil(photos.length / EDITORIAL_GROUP_SIZE);
-  const defaultEditorialPlan = useMemo(
-    () => Array.from({ length: groupCount }, (_, index) => STORY_LAYOUTS[index % STORY_LAYOUTS.length]),
-    [groupCount]
-  );
-  const [editorialPlan, setEditorialPlan] = useState<StoryLayout[]>(defaultEditorialPlan);
   const photoSignature = useMemo(() => photos.map(photo => photo.id).join('|'), [photos]);
 
   const recordPhotoRatio = useCallback((photoId: string, ratio: number) => {
     if (!Number.isFinite(ratio) || ratio <= 0) return;
     sourceRatioIdsRef.current.add(photoId);
+    if (ratioCacheRef.current.has(photoId)) return;
     ratioCacheRef.current.set(photoId, ratio);
     setPhotoRatios(current => Math.abs((current[photoId] || 0) - ratio) < 0.001
       ? current
@@ -265,28 +181,11 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
   }, [layoutMode]);
 
   useEffect(() => {
-    if (layoutMode !== 'editorial') return;
-
-    const storageKey = `story-layout-plan:${photos[0]?.data.album || photoSignature}`;
-    let previousPlan: StoryLayout[] = [];
-    try {
-      previousPlan = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
-    } catch {
-      previousPlan = [];
-    }
-
-    const nextPlan = createEditorialPlan(groupCount, previousPlan);
-    setEditorialPlan(nextPlan);
-    try {
-      sessionStorage.setItem(storageKey, JSON.stringify(nextPlan));
-    } catch {
-      // Storage may be unavailable; the in-memory plan still stays fixed for this page load.
-    }
-  }, [groupCount, layoutMode, photoSignature, photos]);
-
-  useEffect(() => {
-    void preloadRatios(photos.slice(0, Math.min(visibleCount, photos.length)));
-  }, [photoSignature, photos, preloadRatios]);
+    const plannedVisibleCount = layoutMode === 'editorial'
+      ? getPlannedPhotoCount(storyRows, visibleCount)
+      : visibleCount;
+    void preloadRatios(photos.slice(0, Math.min(plannedVisibleCount, photos.length)));
+  }, [layoutMode, photoSignature, photos, preloadRatios, storyRows, visibleCount]);
 
   // Calculate column count based on container width (max 3 columns)
   useEffect(() => {
@@ -311,8 +210,14 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
         if (entries[0].isIntersecting && visibleCount < photos.length && !isLoadingBatchRef.current) {
           const increment = layoutMode === 'editorial' ? editorialLoadMoreCount : loadMoreCount;
           const nextVisibleCount = Math.min(visibleCount + increment, photos.length);
+          const preloadStart = layoutMode === 'editorial'
+            ? getPlannedPhotoCount(storyRows, visibleCount)
+            : visibleCount;
+          const preloadEnd = layoutMode === 'editorial'
+            ? getPlannedPhotoCount(storyRows, nextVisibleCount)
+            : nextVisibleCount;
           isLoadingBatchRef.current = true;
-          void preloadRatios(photos.slice(visibleCount, nextVisibleCount)).finally(() => {
+          void preloadRatios(photos.slice(preloadStart, preloadEnd)).finally(() => {
             setVisibleCount(nextVisibleCount);
             isLoadingBatchRef.current = false;
           });
@@ -328,22 +233,31 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
         observerRef.current.disconnect();
       }
     };
-  }, [visibleCount, photos, loadMoreCount, layoutMode, editorialLoadMoreCount, preloadRatios]);
+  }, [visibleCount, photos, loadMoreCount, layoutMode, editorialLoadMoreCount, preloadRatios, storyRows]);
 
   const visiblePhotos = photos.slice(0, visibleCount);
   const useEditorialLayout = layoutMode === 'editorial' && columnCount === 3;
-  const visibleGroups = useEditorialLayout
-    ? Array.from({ length: Math.ceil(visiblePhotos.length / EDITORIAL_GROUP_SIZE) }, (_, groupIndex) =>
-        visiblePhotos.slice(
-          groupIndex * EDITORIAL_GROUP_SIZE,
-          (groupIndex + 1) * EDITORIAL_GROUP_SIZE
-        )
-      )
-    : [];
+  const visibleStoryRows = useMemo(() => {
+    if (!useEditorialLayout) return [];
+
+    const rows: StoryRow<Photo>[] = [];
+    let photoCount = 0;
+    for (const row of storyRows) {
+      if (photoCount >= visibleCount) break;
+      rows.push(row);
+      photoCount += row.photos.length;
+    }
+    return rows;
+  }, [storyRows, useEditorialLayout, visibleCount]);
+  const visibleStoryRatiosReady = visibleStoryRows.every(row =>
+    row.photos.every(photo => Number.isFinite(photoRatios[photo.id]) && photoRatios[photo.id] > 0)
+  );
 
   return (
     <div
       ref={containerRef}
+      data-story-gallery={useEditorialLayout ? '' : undefined}
+      data-story-ratios-ready={useEditorialLayout ? String(visibleStoryRatiosReady) : undefined}
       style={{
         width: '100%',
         display: useEditorialLayout ? 'block' : 'grid',
@@ -356,51 +270,49 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
       }}
     >
       {useEditorialLayout
-        ? visibleGroups.map((group, groupIndex) => {
-            const layout = editorialPlan[groupIndex] || defaultEditorialPlan[groupIndex];
-            const rows = getRowsForGroup(layout, group.length);
+        ? visibleStoryRows.map((row, rowIndex) => {
+            const isAnchor = row.kind === 'anchor';
+            const isQuietSolo = row.kind === 'support' && row.photos.length === 1;
+            const rowRatios = row.photos.map(photo =>
+              photoRatios[photo.id] || getEstimatedRatio(photo)
+            );
+
             return (
               <div
-                key={group[0]?.id || `story-group-${groupIndex}`}
-                data-story-layout-group
-                data-layout={layout}
-                data-planned-layout={editorialPlan[groupIndex] || defaultEditorialPlan[groupIndex]}
+                key={`${row.kind}-${row.photos.map(photo => photo.id).join('|')}`}
+                data-story-row={row.kind}
+                data-story-anchor={isAnchor ? '' : undefined}
+                data-quiet-solo={isQuietSolo ? '' : undefined}
+                data-planned-layout={`${row.kind}-${row.photos.length}`}
                 style={{
                   width: '100%',
+                  display: isQuietSolo ? 'flex' : 'grid',
+                  gridTemplateColumns: isQuietSolo
+                    ? undefined
+                    : isAnchor
+                      ? '1fr'
+                      : rowRatios.map(ratio => `${ratio}fr`).join(' '),
+                  justifyContent: isQuietSolo ? (rowIndex % 2 === 0 ? 'flex-start' : 'flex-end') : undefined,
+                  alignItems: 'start',
+                  gap: `${GAP}px`,
                   marginBottom: `${GAP}px`
                 }}
               >
-                {rows.map((row, rowIndex) => {
-                  const rowRatios = row.indices.map(photoIndex =>
-                    photoRatios[group[photoIndex].id] || getEstimatedRatio(group[photoIndex])
-                  );
-                  return (
-                  <div
-                    key={`${group[0]?.id}-row-${rowIndex}`}
-                    data-story-row
+                {row.photos.map(photo => (
+                  <PhotoCard
+                    key={photo.id}
+                    photo={photo}
+                    editorial
+                    imageSource={isAnchor ? 'original' : 'resized'}
+                    aspectRatio={photoRatios[photo.id] || getEstimatedRatio(photo)}
+                    onRatio={recordPhotoRatio}
                     style={{
-                      display: 'grid',
-                      gridTemplateColumns: rowRatios.map(ratio => `${ratio}fr`).join(' '),
-                      alignItems: 'start',
-                      gap: `${GAP}px`,
-                      marginBottom: rowIndex === rows.length - 1 ? 0 : `${GAP}px`
+                      width: isQuietSolo ? 'min(64%, 860px)' : '100%',
+                      minWidth: 0,
+                      alignSelf: 'start'
                     }}
-                  >
-                    {row.indices.map(photoIndex => (
-                      <PhotoCard
-                        key={group[photoIndex].id}
-                        photo={group[photoIndex]}
-                        editorial
-                        onRatio={recordPhotoRatio}
-                        style={{
-                          minWidth: 0,
-                          alignSelf: 'start'
-                        }}
-                      />
-                    ))}
-                  </div>
-                  );
-                })}
+                  />
+                ))}
               </div>
             );
           })

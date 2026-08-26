@@ -28,10 +28,25 @@ function assert(condition, message) {
   assert(await mainChildren.first().getAttribute('data-home-hero') !== null,
     'The photography homepage must lead with the work, not the biography.');
 
-  const navText = await page.locator('.desktop-nav').textContent();
-  for (const label of ['Work', 'Stories', 'Archive', 'About']) {
-    assert(navText.includes(label), `Primary photography navigation is missing “${label}”.`);
-  }
+  const expectedPhotographyNavigation = [
+    ['Work', '/photography#work'],
+    ['Stories', '/photography/albums'],
+    ['Archive', '/photography/photos'],
+    ['Themes', '/photography/tags'],
+    ['Search', '/photography/search'],
+    ['About', '/photography#about'],
+  ];
+  const readNavigation = (locator, selector = 'a') => locator.locator(selector).evaluateAll(links =>
+    links.map(link => [link.textContent.trim(), link.getAttribute('href')])
+  );
+  const desktopNavigation = await readNavigation(page.locator('.desktop-nav'), 'a:not(.professional-link)');
+  const drawerDestinations = await page.locator('.mobile-menu-links a').evaluateAll(links =>
+    links.map(link => link.getAttribute('href'))
+  );
+  assert(JSON.stringify(desktopNavigation) === JSON.stringify(expectedPhotographyNavigation),
+    `Desktop photography navigation must expose the complete visitor index. Found ${JSON.stringify(desktopNavigation)}.`);
+  assert(JSON.stringify(drawerDestinations) === JSON.stringify(expectedPhotographyNavigation.map(([, href]) => href)),
+    `The photography drawer must match the desktop visitor index. Found ${JSON.stringify(drawerDestinations)}.`);
 
   const curatedCards = page.locator('[data-curated-photo]');
   assert(await curatedCards.count() === 20,
@@ -82,6 +97,18 @@ function assert(condition, message) {
         `Pair group ${index + 1} must use equal-width columns.`);
       assert(Math.abs(left.y - right.y) <= 2,
         `Pair group ${index + 1} must align both photographs to the same row.`);
+
+      const leftNumber = await cards.nth(0).locator('.photo-number').boundingBox();
+      const rightNumber = await cards.nth(1).locator('.photo-number').boundingBox();
+      const leftEdge = left.x + left.width;
+      const rightEdge = right.x;
+      assert(rightNumber.x >= leftEdge + 2 && rightNumber.x + rightNumber.width <= rightEdge - 2,
+        `Photograph ${index + 1}'s right-hand number must sit inside the pair gutter without touching either image.`);
+
+      const leftNumberGap = left.x - (leftNumber.x + leftNumber.width);
+      const rightNumberGap = right.x - (rightNumber.x + rightNumber.width);
+      assert(Math.abs(leftNumberGap - rightNumberGap) <= 2,
+        `Pair group ${index + 1} must use consistent spacing between each number and its photograph.`);
     }
   }
 

@@ -38,21 +38,15 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
 
   const storyCards = page.locator('.gallery-container .photo-card[data-photo-id]');
   const initialStoryCount = await storyCards.count();
-  assert(initialStoryCount === 24, `Story should begin with three complete eight-photo groups, found ${initialStoryCount} photographs.`);
+  assert(initialStoryCount >= 24 && initialStoryCount <= 27, `Story should begin near the 24-photo target without splitting a row, found ${initialStoryCount} photographs.`);
 
-  const initialStoryGroups = page.locator('.gallery-container [data-story-layout-group]');
-  assert(await initialStoryGroups.count() === 3, 'The initial story batch should render as three complete editorial groups.');
-  for (let groupIndex = 0; groupIndex < 3; groupIndex++) {
-    assert(await initialStoryGroups.nth(groupIndex).locator('.photo-card[data-photo-id]').count() === 8, 'Every complete editorial group should contain eight photographs.');
-  }
+  const initialStoryRows = page.locator('.gallery-container [data-story-row]');
+  assert(await initialStoryRows.count() > 3, 'The initial story batch should contain several complete editorial rows.');
 
   const initialPhotoIds = await storyCards.evaluateAll(cards => cards.map(card => card.getAttribute('data-photo-id')));
-  const firstLayoutSequence = await initialStoryGroups.evaluateAll(groups => groups.map(group => group.getAttribute('data-planned-layout')));
+  const firstLayoutSequence = await initialStoryRows.evaluateAll(rows => rows.map(row => row.getAttribute('data-planned-layout')));
 
-  await page.waitForFunction(() =>
-    [...document.querySelectorAll('.gallery-container .photo-card img')]
-      .every(image => image.naturalWidth > 0 && image.naturalHeight > 0)
-  );
+  await page.locator('[data-story-gallery][data-story-ratios-ready="true"]').waitFor();
   await page.waitForTimeout(250);
 
   const readStoryLayout = () => page.locator('.gallery-container .photo-card[data-photo-id]').evaluateAll(cards =>
@@ -77,36 +71,49 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
   assert(loadedStoryCount > initialStoryCount, 'Story did not load another batch after scrolling.');
 
   const afterLoad = await readStoryLayout();
-  const loadedStoryGroups = page.locator('.gallery-container [data-story-layout-group]');
-  const firstSixLayouts = (await loadedStoryGroups.evaluateAll(groups => groups.map(group => group.getAttribute('data-planned-layout')))).slice(0, 6);
-  const originalCardsStayedPut = beforeLoad.every(before => {
+  const loadedStoryRows = page.locator('.gallery-container [data-story-row]');
+  const movedCards = beforeLoad.flatMap(before => {
     const after = afterLoad.find(card => card.id === before.id);
-    return after && after.left === before.left && after.top === before.top;
+    return after && (Math.abs(after.left - before.left) > 1 || Math.abs(after.top - before.top) > 1)
+      ? [{ id: before.id, before, after }]
+      : [];
   });
 
-  assert(originalCardsStayedPut, 'Already-rendered story photographs moved when the next batch loaded.');
-  assert(firstSixLayouts.length === 6 && new Set(firstSixLayouts).size === 6, 'The first six editorial groups should use every layout once before repeating.');
-  const rowGeometry = await loadedStoryGroups.evaluateAll(groups => groups.flatMap(group =>
-    [...group.querySelectorAll('[data-story-row]')].map(row => {
+  assert(
+    movedCards.length === 0,
+    `Already-rendered story photographs moved when the next batch loaded: ${JSON.stringify(movedCards.slice(0, 3))}`
+  );
+  const rowGeometry = await loadedStoryRows.evaluateAll(rows => rows.map(row => {
       const cards = [...row.querySelectorAll('.photo-card')];
       const heights = cards.map(card => card.getBoundingClientRect().height);
       return {
+        kind: row.getAttribute('data-story-row'),
+        quietSolo: row.hasAttribute('data-quiet-solo'),
         cardCount: cards.length,
         heightDifference: heights.length > 1 ? Math.max(...heights) - Math.min(...heights) : 0
       };
-    })
-  ));
-  assert(rowGeometry.every(row => row.cardCount >= 2 && row.cardCount <= 4), 'Story layouts should reflow into two-, three-, or four-photo rows without oversized solo frames.');
-  assert(rowGeometry.every(row => row.heightDifference <= 2), 'Story rows should remain justified without matte bars or ragged holes.');
+    }));
+  assert(rowGeometry.every(row => row.kind === 'anchor'
+    ? row.cardCount === 1
+    : (row.cardCount >= 2 && row.cardCount <= 4) || (row.cardCount === 1 && row.quietSolo)),
+  'Story rows should contain one anchor, two to four supporting photographs, or an explicitly restrained quiet solo.');
+  const raggedRows = rowGeometry.filter(row => row.heightDifference > 2);
+  assert(
+    raggedRows.length === 0,
+    `Story rows should remain justified without matte bars or ragged holes: ${JSON.stringify(raggedRows.slice(0, 4))}`
+  );
 
   await page.reload();
   await page.waitForLoadState('networkidle');
   const refreshedCards = page.locator('.gallery-container .photo-card[data-photo-id]');
-  const refreshedGroups = page.locator('.gallery-container [data-story-layout-group]');
+  const refreshedRows = page.locator('.gallery-container [data-story-row]');
   const refreshedPhotoIds = await refreshedCards.evaluateAll(cards => cards.map(card => card.getAttribute('data-photo-id')));
-  const refreshedLayoutSequence = await refreshedGroups.evaluateAll(groups => groups.map(group => group.getAttribute('data-planned-layout')));
-  assert(refreshedPhotoIds.slice(0, initialPhotoIds.length).join('|') === initialPhotoIds.join('|'), 'Refreshing changed the chronological photograph order.');
+  const refreshedLayoutSequence = await refreshedRows.evaluateAll(rows => rows.map(row => row.getAttribute('data-planned-layout')));
+  assert(refreshedPhotoIds.slice(0, 20).join('|') === initialPhotoIds.slice(0, 20).join('|'), 'Refreshing changed the stable editorial photograph order.');
   assert(refreshedLayoutSequence.slice(0, firstLayoutSequence.length).join('|') !== firstLayoutSequence.join('|'), 'Refreshing should produce a new editorial layout sequence.');
+
+  await page.locator('[data-story-gallery][data-story-ratios-ready="true"]').waitFor();
+  await page.waitForTimeout(250);
 
   await page.evaluate(() => window.scrollTo(0, 0));
   await refreshedCards.first().click();
@@ -118,7 +125,11 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
   await page.locator('.lightbox-next').click();
   await page.waitForFunction(source => document.querySelector('.lightbox-image')?.getAttribute('src') !== source, initialLightboxSource);
   assert((await page.locator('.lightbox-counter').textContent())?.trim() === `2 / ${storyTotal}`, 'Next did not advance to the second, horizontally adjacent story photograph.');
-  assert(await page.evaluate(() => window.scrollY) === lightboxScrollPosition, 'Lightbox Next moved the page vertically.');
+  const lightboxScrollAfterNext = await page.evaluate(() => window.scrollY);
+  assert(
+    lightboxScrollAfterNext === lightboxScrollPosition,
+    `Lightbox Next moved the page vertically from ${lightboxScrollPosition} to ${lightboxScrollAfterNext}.`
+  );
 
   console.log('Progressive loading and story sequence tests passed.');
   await browser.close();

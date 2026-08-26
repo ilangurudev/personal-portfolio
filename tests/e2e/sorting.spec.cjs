@@ -2,14 +2,11 @@ const { chromium } = require('playwright');
 
 const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
-function sortByRules(cards, dateSortOrder = 'desc') {
+function sortByDate(cards, dateSortOrder = 'asc') {
     const dateMultiplier = dateSortOrder === 'asc' ? 1 : -1;
-    return [...cards].sort((a, b) => {
-        if (b.orderScore !== a.orderScore) {
-            return b.orderScore - a.orderScore;
-        }
-        return dateMultiplier * (new Date(a.date).getTime() - new Date(b.date).getTime());
-    });
+    return [...cards].sort((a, b) =>
+        dateMultiplier * (new Date(a.date).getTime() - new Date(b.date).getTime())
+    );
 }
 
 function pickRandomIndices(total, count = 3) {
@@ -80,6 +77,12 @@ async function getCardData(page) {
         ]);
 
         const albumCards = await getCardData(page);
+        const storySource = await page.locator('#photos-data').evaluate(element =>
+            JSON.parse(element.textContent || '[]').map(photo => ({
+                id: photo.id,
+                date: photo.data?.date || ''
+            }))
+        );
 
         // Get the album's configured date sort order (default: 'asc')
         const dateSortOrder = await page.$eval(
@@ -95,11 +98,11 @@ async function getCardData(page) {
             console.error(`   ✗ No photos found in album view (${albumSlug})`);
             process.exitCode = 1;
         } else {
-            const expectedAlbumOrder = sortByRules(albumCards, dateSortOrder).map(card => card.id);
-            const actualAlbumOrder = albumCards.map(card => card.id);
+            const expectedAlbumOrder = sortByDate(storySource, dateSortOrder).map(card => card.id);
+            const actualAlbumOrder = storySource.map(card => card.id);
 
             if (actualAlbumOrder.join('|') === expectedAlbumOrder.join('|')) {
-                console.log(`   ✓ Album photos sorted by order_score, then date ${dateSortOrder}`);
+                console.log(`   ✓ Album story source sorted by date ${dateSortOrder}; editorial emphasis is applied separately`);
             } else {
                 console.error(`   ✗ Album photos not sorted correctly for ${albumSlug}`);
                 console.error('     Actual first 5:', actualAlbumOrder.slice(0, 5));
@@ -131,6 +134,12 @@ async function getCardData(page) {
         ]);
 
         const tagCards = await getCardData(page);
+        const tagSource = await page.locator('#photos-data').evaluate(element =>
+            JSON.parse(element.textContent || '[]').map(photo => ({
+                id: photo.id,
+                date: photo.data?.date || ''
+            }))
+        );
 
         console.log(`   Visible photos in #${tagValue}:`, tagCards.length);
         console.log('   First 3 IDs:', tagCards.slice(0, 3).map(c => c.id));
@@ -139,11 +148,11 @@ async function getCardData(page) {
             console.error(`   ✗ No photos found in tag view (#${tagValue})`);
             process.exitCode = 1;
         } else {
-            const expectedTagOrder = sortByRules(tagCards).map(card => card.id);
-            const actualTagOrder = tagCards.map(card => card.id);
+            const expectedTagOrder = sortByDate(tagSource, 'desc').map(card => card.id);
+            const actualTagOrder = tagSource.map(card => card.id);
 
             if (actualTagOrder.join('|') === expectedTagOrder.join('|')) {
-                console.log('   ✓ Tag photos sorted by order_score, then date desc');
+                console.log('   ✓ Tag story source sorted by date desc; editorial emphasis is applied separately');
             } else {
                 console.error(`   ✗ Tag photos not sorted correctly for #${tagValue}`);
                 console.error('     Actual first 5:', actualTagOrder.slice(0, 5));

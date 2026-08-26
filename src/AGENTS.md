@@ -54,8 +54,8 @@
 5. **Shared helpers:** Client tag normalization/filtering/availability (and `setupTagLogicToggle` for the OR/AND buttons) live in `src/utils/client/tag-utils.ts`; inline scripts should omit `type="module"` so Astro/Vite rewrites the imports, and use relative paths (e.g., `../../utils/client/tag-utils`) instead of `/src/...` which 404s after build.
 
 ### Performance Patterns
-- **Infinite Scroll:** Archive grids load in 20-photo batches; desktop stories align batches to complete eight-photo layout groups via Intersection Observer.
-- **Stable Story Reflow:** Desktop album stories keep chronological order while a shuffled bag of six justified-row layouts is frozen for each page load and regenerated on refresh. Source aspect ratios determine every row's column widths, so full photographs remain visible directly on the page with no cover crop, matte, or fixed-height frame. Ratios for each upcoming batch are resolved before it is appended, preventing earlier rows from shifting; smaller viewports and non-story galleries keep the natural row-major grid.
+- **Infinite Scroll:** Archive grids load in 20-photo batches; desktop stories extend the target count to the end of the next planned row so already-rendered rows never split or reflow.
+- **Stable Story Reflow:** Desktop album and photography tag-detail stories begin from a date-only source sequence (album-configured direction; tag pages newest first), then apply a deterministic editorial spacing pass: `featured: true` photos become full-width anchors, support photos are reserved and moved across an anchor boundary when needed, and every pair of anchors is separated by a complete support row. Featured and support photos each retain their own relative order. Supporting row sizes (two to four) vary on refresh without changing the planned photo sequence. Source aspect ratios determine support-row column widths, so full photographs remain visible directly on the page with no cover crop, matte, or fixed-height frame. Full-width anchors use the original photo URL; support rows use 900px derivatives. Smaller viewports and non-story galleries keep the natural row-major grid.
 - **CDN + Resizing:** Thumbnails use Cloudflare `/cdn-cgi/image/width=400,quality=85,format=jpg/`
 - **Image Preloading:** Lightbox preloads adjacent photos for smooth navigation
 - **LocalStorage:** Filter panel collapse state persists across sessions
@@ -97,7 +97,7 @@
 }
 ```
 **Sorting:** Featured → Order Score (desc) → Date (desc)
-**Photo Sorting Within Album:** Order Score (desc) → Date (configurable via `dateSortOrder`, default: 'asc' for chronological)
+**Photo Sorting Within Album:** Date only (configurable via `dateSortOrder`, default: `asc`) establishes the story source. `featured` controls visual emphasis rather than source order; the story planner may make bounded local sequencing exceptions to keep anchors separated.
 
 #### `photos` Collection
 ```typescript
@@ -172,7 +172,8 @@
 - **`/photography`:** A fixed, manually sequenced 20-frame edit from `src/data/photo-curation.ts`; the work appears before biography or utility UI. A separate hero image opens the page and must never repeat in the edit.
 - **`/photography/albums`:** Editorially presented as **Stories**, with six featured bodies of work followed by the complete notebook archive.
 - **`/photography/tags`:** A small public-facing set of eight themes. It intentionally does not expose the full internal keyword taxonomy.
+- **`/photography/tag/[tag]`:** A newest-first editorial story for the selected theme. It uses the same featured-anchor/support-row planner and lightbox order as album stories while retaining progressive loading and tag refinement.
 - **`/photography/photos`:** The complete searchable/filterable **Archive**, where technical discovery tools belong.
 - **Album detail:** Opens with a full-bleed story cover and short editorial statement, then reveals the filterable notebook.
-- **Curation rule:** Do not derive the homepage from `featured`, timestamps, or score. Choose `HERO_PHOTO` separately, keep it out of the edit, and author desktop rhythm through `CURATED_EDIT_GROUPS`. Feature groups are full-width anchors; pair groups are aligned equal-width rows. `CURATED_EDIT_IDS` is derived from those groups.
+- **Curation rule:** Do not derive the homepage from `featured`, timestamps, or score. Choose `HERO_PHOTO` separately, keep it out of the edit, and author desktop rhythm through `CURATED_EDIT_GROUPS`. Feature groups are full-width anchors; pair groups are aligned equal-width rows, with both frame numbers using the same photo-edge spacing and the right-hand number contained by the center gutter. `CURATED_EDIT_IDS` is derived from those groups.
 - **Taxonomy rule:** Frontmatter tags are lowercase and correctly spelled; omit unknown locations rather than storing invalid coordinate placeholders.

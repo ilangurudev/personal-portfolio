@@ -69,7 +69,7 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
   - Keyboard: Arrow keys (prev/next), Escape (close)
   - Touch: Swipe gestures for mobile
   - Mouse: Click arrows or outside to close
-- **Scroll Lock:** Disables page scrolling while the lightbox is open and restores it on close
+- **Scroll Lock:** Pins the body at its captured scroll position while the lightbox is open, prevents background reflow from shifting the page during navigation, and restores the exact position on close
 - **Shutter Animation:** Film-style opening animation
 - **Preloading:** Adjacent photos pre-fetched for instant navigation
 - **Slideshow Mode:** Configurable intervals (1s, 3s, 5s, 10s, 60s, off)
@@ -120,14 +120,14 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 **Component:** `InfinitePhotoGallery.tsx` (React)
 
 **Architecture:**
-- **Story Editorial Mode:** Desktop album stories render chronological groups of eight using six justified-row motifs (`2/2/2/2`, three permutations of `2/3/3`, and two `4/2/2` variants). The motif order is a shuffled bag, fixed for the page lifetime and reshuffled on refresh; it never changes photo order.
-- **Incomplete Groups:** The final group is rebalanced by its actual count into two-, three-, or four-photo rows whenever possible, preventing an avoidable oversized solo portrait or dead template cell.
-- **Responsive Row-Major Grid:** Archive/tag galleries and album stories below three columns preserve natural image heights while cards read left-to-right, then top-to-bottom.
-- **Batch Loading:** Story mode rounds the initial and incremental batches up to complete eight-photo groups (24 with the default inputs); natural grids retain the 20-photo default.
+- **Story Editorial Mode:** On album and photography tag-detail pages, `FilteredPhotoGallery` creates one shared story plan for rendering and lightbox navigation. Featured photos become full-width anchors; a deterministic spacing pass reserves support photos on either side of the original anchor boundary when needed so every feasible feature remains an anchor with at least one complete support row between anchors. Featured and supporting photos each retain their relative order while the support rows' two-, three-, or four-photo rhythm varies on refresh. Tag-detail source order is always newest first.
+- **Incomplete Runs:** A one-photo support remainder receives a restrained, offset `quiet solo` treatment rather than an accidental full-width anchor. Only impossible metadata combinations with fewer than two non-featured photos per anchor gap demote excess features; normal stories preserve every `featured: true` anchor.
+- **Responsive Row-Major Grid:** Archive galleries and album/tag-detail stories below three columns preserve natural image heights while cards read left-to-right, then top-to-bottom.
+- **Batch Loading:** Story mode starts near the 24-photo target and extends to a complete planned row; natural grids retain the 20-photo default.
 - **Intersection Observer:** A full-width sentinel row resolves the upcoming batch's image ratios before appending it (200px root margin), so existing rows do not reflow.
 - **Aspect Ratio:** Editorial columns are proportional `fr` tracks derived from each source image's aspect ratio. Images render at natural height with transparent wrappers, preserving the complete composition without crops or matte bars.
-- **Sequence Stability:** Appending a batch must not change the coordinates of cards already rendered; the same row-major order drives lightbox next/previous navigation
-- **Memory Optimization:** Uses resized thumbnails (900px editorial, 400px natural grid) via `getResizedPhotoUrl()`
+- **Sequence Stability:** Appending a batch must not change the coordinates of cards already rendered; the shared planned order drives both row-major display and lightbox next/previous navigation.
+- **Image Selection:** Full-width anchors use `getPhotoUrl()` for original-resolution clarity. Supporting editorial cards use 900px derivatives and natural-grid cards use 400px derivatives via `getResizedPhotoUrl()`.
 
 **Performance:**
 - Only renders visible photos + buffer

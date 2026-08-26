@@ -25,6 +25,7 @@ export interface GalleryPhoto {
     filename: string;
     album: string;
     albumTitle?: string;
+    featured: boolean;
     tags: string[];
     camera?: string;
     settings?: string;
@@ -44,6 +45,7 @@ type GallerySource = {
     filename: string;
     album: string;
     albumTitle?: string;
+    featured?: boolean;
     tags?: string[];
     camera?: string;
     settings?: string;
@@ -86,6 +88,7 @@ export function serializePhotoForGallery(
       filename: photo.data.filename,
       album: photo.data.album,
       albumTitle: photo.data.albumTitle ?? albumTitleMap?.get(photo.data.album),
+      featured: photo.data.featured ?? false,
       tags,
       camera: photo.data.camera,
       settings: photo.data.settings,
