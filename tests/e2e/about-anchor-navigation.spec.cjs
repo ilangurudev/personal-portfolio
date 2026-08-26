@@ -69,7 +69,36 @@ function assert(condition, message) {
     `About moved out of view after photographs loaded: ${JSON.stringify(destination)}`,
   );
 
-  console.log('About navigation remains anchored to the biography.');
+  console.log('Testing the mobile About destination after a clean reload...');
+  const mobilePage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await mobilePage.goto(`${TARGET_URL}/photography`, { waitUntil: 'load' });
+  await mobilePage.reload({ waitUntil: 'domcontentloaded' });
+  await mobilePage.locator('#hamburger-btn').click();
+  await mobilePage.locator('.mobile-menu-links a', { hasText: 'About' }).click();
+  await mobilePage.waitForTimeout(1200);
+
+  const mobileDestination = await mobilePage.locator('[data-home-about]').evaluate(section => {
+    const header = document.querySelector('.photo-header');
+    const copy = section.querySelector('.about-copy');
+    const heading = copy?.querySelector('h2');
+    return {
+      hash: window.location.hash,
+      headerBottom: header?.getBoundingClientRect().bottom ?? 0,
+      copyTop: copy?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY,
+      headingTop: heading?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY,
+      viewportHeight: window.innerHeight,
+    };
+  });
+
+  assert(mobileDestination.hash === '#about', 'Mobile About navigation must target #about.');
+  assert(
+    mobileDestination.copyTop >= mobileDestination.headerBottom - 1
+      && mobileDestination.copyTop < mobileDestination.viewportHeight * 0.5
+      && mobileDestination.headingTop < mobileDestination.viewportHeight * 0.5,
+    `Mobile About navigation showed the portrait instead of the biography: ${JSON.stringify(mobileDestination)}`,
+  );
+
+  console.log('About navigation remains anchored to the biography on desktop and mobile.');
   await browser.close();
 })().catch(error => {
   console.error(error);

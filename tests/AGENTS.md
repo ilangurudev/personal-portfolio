@@ -66,7 +66,7 @@ npm run test:about-anchor # About hash remains stable while homepage photographs
 | `photo-filter-toggle.spec.cjs` | Photography structure | Fixed curated edit, public themes, Archive filter availability |
 | `photography-editorial-redesign.spec.cjs` | Editorial acceptance | Non-cemetery hero, hero/edit uniqueness, balanced desktop groups and frame-number gutters, 20-frame sequence, Stories, public themes, Archive, mobile hero, progressive lightbox details |
 | `photography-scroll-story.spec.cjs` | Homepage scroll story | Desktop hero settling, three-scene opening movement, one-shot later reveals, natural scrolling, reduced-motion completeness, and quieter mobile behavior |
-| `about-anchor-navigation.spec.cjs` | Homepage About anchor | Staggered lazy-image loading cannot push the biography out of view after desktop About navigation |
+| `about-anchor-navigation.spec.cjs` | Homepage About anchor | Staggered lazy-image loading cannot push the desktop biography out of view; a clean mobile reload lands on the biography copy rather than the portrait |
 | `responsive-design.spec.js` | Responsive layouts | Mobile/tablet/desktop, hamburger + space toggle in mobile menu |
 | `visual-aesthetics.spec.js` | Design consistency | Colors, typography, themes |
 | `search-focus-shortcut.spec.js` | Search shortcut | Cmd/Ctrl + K navigates/focuses inputs in both spaces |

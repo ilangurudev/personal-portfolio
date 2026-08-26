@@ -110,9 +110,9 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
     </div>
   </section>
 
-  <section class="home-about" id="about" data-home-about data-scroll-reveal="quiet-section">
+  <section class="home-about" data-home-about data-scroll-reveal="quiet-section">
     <div class="about-portrait"><img src="/profile.png" alt="Gurudev Ilangovan holding a camera" loading="lazy" /></div>
-    <div class="about-copy">
+    <div class="about-copy" id="about">
       <p class="section-label">03 / ABOUT</p>
       <h2>Guru Ilangovan is a photographer and AI engineer based in Washington, D.C.</h2>
       <p>Photography is the counterweight: a slower practice built around attention, patience, and the pleasure of noticing. The work moves between crowded streets and open landscapes, looking for the instant a place reveals its internal rhythm.</p>
@@ -242,6 +242,7 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
     .home-about { padding: 124px 28px; display: grid; grid-template-columns: minmax(260px, 410px) 1fr; gap: clamp(50px, 8vw, 130px); align-items: start; }
     .about-portrait { aspect-ratio: 4 / 5; overflow: hidden; filter: grayscale(1); }
     .about-portrait img { width: 100%; height: 100%; object-fit: cover; }
+    .about-copy { scroll-margin-top: 100px; }
     .about-copy h2 { max-width: 840px; margin: 20px 0 34px; font-family: 'Instrument Serif', serif; font-size: clamp(46px, 5.8vw, 80px); font-weight: 400; line-height: .98; letter-spacing: -.035em; }
     .about-copy > p:not(.section-label) { max-width: 650px; color: var(--muted); font-size: 16px; line-height: 1.8; }
     .about-links { display: flex; flex-wrap: wrap; gap: 14px 30px; margin-top: 50px; }
@@ -351,6 +352,7 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
       .story-preview-card { display: block; margin-bottom: 58px; }
       .home-about { padding: 80px 16px; display: block; }
       .about-portrait { width: 76%; margin-bottom: 58px; }
+      .about-copy { scroll-margin-top: 80px; }
       .about-copy h2 { font-size: 48px; }
       :global(html[data-photography-motion='ready']) .hero-image-wrap img,
       :global(html[data-photography-motion='ready']) .hero-copy { transform: none; opacity: 1; will-change: auto; }
