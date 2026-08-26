@@ -170,6 +170,7 @@
 
 ### Photography Information Architecture
 - **`/photography`:** A fixed, manually sequenced 20-frame edit from `src/data/photo-curation.ts`; the work appears before biography or utility UI. A separate hero image opens the page and must never repeat in the edit.
+- **Homepage motion:** `/photography` progressively enhances that fixed edit with a subtle desktop hero settle, a three-group signature reveal for the opening **Motion** chapter, and quieter one-shot reveals thereafter. It never pins, locks, or hijacks vertical scrolling. Mobile omits hero parallax and simplifies reveal distance; reduced-motion and no-`IntersectionObserver` environments receive the complete static edit immediately.
 - **`/photography/albums`:** Editorially presented as **Stories**, with six featured bodies of work followed by the complete notebook archive.
 - **`/photography/tags`:** A small public-facing set of eight themes. It intentionally does not expose the full internal keyword taxonomy.
 - **`/photography/tag/[tag]`:** A newest-first editorial story for the selected theme. It uses the same featured-anchor/support-row planner and lightbox order as album stories while retaining progressive loading and tag refinement.
