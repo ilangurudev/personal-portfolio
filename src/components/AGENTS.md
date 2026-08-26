@@ -120,12 +120,14 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 **Component:** `InfinitePhotoGallery.tsx` (React)
 
 **Architecture:**
-- **Responsive Row-Major Grid:** Natural image heights are preserved while cards read left-to-right, then top-to-bottom
-- **Batch Loading:** Initial 20 photos, loads +20 per scroll
-- **Intersection Observer:** A full-width sentinel row triggers loading (200px root margin) without reflowing existing cards
-- **Aspect Ratio:** Preserved from source dimensions; never force every frame into a 3:2 crop
+- **Story Editorial Mode:** Desktop album stories render chronological groups of eight using six justified-row motifs (`2/2/2/2`, three permutations of `2/3/3`, and two `4/2/2` variants). The motif order is a shuffled bag, fixed for the page lifetime and reshuffled on refresh; it never changes photo order.
+- **Incomplete Groups:** The final group is rebalanced by its actual count into two-, three-, or four-photo rows whenever possible, preventing an avoidable oversized solo portrait or dead template cell.
+- **Responsive Row-Major Grid:** Archive/tag galleries and album stories below three columns preserve natural image heights while cards read left-to-right, then top-to-bottom.
+- **Batch Loading:** Story mode rounds the initial and incremental batches up to complete eight-photo groups (24 with the default inputs); natural grids retain the 20-photo default.
+- **Intersection Observer:** A full-width sentinel row resolves the upcoming batch's image ratios before appending it (200px root margin), so existing rows do not reflow.
+- **Aspect Ratio:** Editorial columns are proportional `fr` tracks derived from each source image's aspect ratio. Images render at natural height with transparent wrappers, preserving the complete composition without crops or matte bars.
 - **Sequence Stability:** Appending a batch must not change the coordinates of cards already rendered; the same row-major order drives lightbox next/previous navigation
-- **Memory Optimization:** Uses resized thumbnails (400px width) via `getResizedPhotoUrl()`
+- **Memory Optimization:** Uses resized thumbnails (900px editorial, 400px natural grid) via `getResizedPhotoUrl()`
 
 **Performance:**
 - Only renders visible photos + buffer

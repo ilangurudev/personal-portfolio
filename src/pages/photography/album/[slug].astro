@@ -73,6 +73,7 @@ const storyDirection = FEATURED_STORIES.find(story => story.slug === slug);
             client:load
             allPhotos={galleryPhotos}
             initialActiveTags={[]}
+            layoutMode="editorial"
           />
         </div>
         <PhotoLightbox photos={mapToLightboxPhotos(sortedPhotos, albumTitleMap)} />

@@ -70,7 +70,8 @@ npm run test:photo-editorial # Curated photography IA and editorial acceptance c
 | `story-drawer.spec.cjs` | Story drawer | Open/close, content display, auto-close |
 | `story-drawer-album-tag.spec.cjs` | Story drawer (album/tag pages) | Finds photos with story metadata dynamically; verifies drawer on album + tag pages |
 | `lightbox-navigation-links.spec.cjs` | Link navigation | Tag click → tag page, album click → album page |
-| `infinite-scroll.spec.cjs` | Loading and sequence stability | Finite homepage edit, progressive Archive loading, stable story batches, and row-major lightbox order |
+| `infinite-scroll.spec.cjs` | Loading and sequence stability | Finite homepage edit, progressive Archive loading, complete eight-photo story batches, six-layout shuffle bags, justified row stability, refresh variation without photo reordering, and chronological lightbox navigation |
+| `story-layout-full-scroll.spec.cjs` | Randomized story reflow | Three complete Puerto Rico refresh/scroll passes; full composition visibility, transparent wrappers, justified rows, no overlaps, stable chronological order, safe incomplete groups, and footer spacing |
 | `advanced-filters.spec.cjs` | Filter panel | All 8 dimensions, persistence, clear all |
 | `exif-filters.spec.cjs` | EXIF sliders | Aperture/shutter/ISO sliders reduce results (regression guard) |
 | `slideshow-mode.spec.cjs` | Slideshow | Intervals, auto-advance, stop on close |
@@ -80,7 +81,7 @@ npm run test:photo-editorial # Curated photography IA and editorial acceptance c
 | `lightbox-interactions.spec.cjs` | Lightbox core | Open/close, navigation, metadata, keyboard (home + all-photos + all-photos after tag filter + first album + first tag pages from listings) |
 | `lightbox-scroll-lock.spec.cjs` | Lightbox scroll lock | Body scroll disabled while open and restored after closing |
 | `css-rendering-leaks.spec.cjs` | CSS leak detection | Regression test for CSS code appearing as plain text before header on photography pages |
-| `viewfinder-css.spec.cjs` | Composition preservation | Natural image ratios and lazy loading on story pages |
+| `viewfinder-css.spec.cjs` | Composition preservation | Responsive photo-card rendering, lazy loading, and viewfinder overlay behavior |
 | `toc-navigation.spec.cjs` | TOC Navigation | Desktop sidebar visibility, mobile drawer, link clicking, scroll highlighting |
 
 **Note:** Tests are run via Playwright. Ensure the dev server is running (`npm run dev`) before running tests. The Playwright runner now watches for any `✗` output or `console.error` in specs and exits non-zero so failures are visible.

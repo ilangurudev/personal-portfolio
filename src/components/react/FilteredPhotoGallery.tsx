@@ -32,13 +32,15 @@ interface FilteredPhotoGalleryProps {
   initialActiveTags: string[];
   initialTagLogic?: 'and' | 'or';
   onFilterChange?: (filteredPhotos: Photo[]) => void;
+  layoutMode?: 'grid' | 'editorial';
 }
 
 export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
   allPhotos,
   initialActiveTags,
   initialTagLogic = 'or',
-  onFilterChange
+  onFilterChange,
+  layoutMode = 'grid'
 }) => {
   const [activeTags, setActiveTags] = useState<Set<string>>(
     new Set((initialActiveTags || []).map(normalizeTag))
@@ -116,5 +118,5 @@ export const FilteredPhotoGallery: React.FC<FilteredPhotoGalleryProps> = ({
     }));
   }, [filteredPhotos]);
 
-  return <InfinitePhotoGallery photos={galleryPhotos} />;
+  return <InfinitePhotoGallery photos={galleryPhotos} layoutMode={layoutMode} />;
 };

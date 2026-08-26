@@ -54,8 +54,8 @@
 5. **Shared helpers:** Client tag normalization/filtering/availability (and `setupTagLogicToggle` for the OR/AND buttons) live in `src/utils/client/tag-utils.ts`; inline scripts should omit `type="module"` so Astro/Vite rewrites the imports, and use relative paths (e.g., `../../utils/client/tag-utils`) instead of `/src/...` which 404s after build.
 
 ### Performance Patterns
-- **Infinite Scroll:** Batch loading (20 photos/batch) via Intersection Observer
-- **Stable Story Grid:** Natural-aspect cards flow left-to-right in responsive rows; progressive batches append below without rebalancing or moving photographs already on screen
+- **Infinite Scroll:** Archive grids load in 20-photo batches; desktop stories align batches to complete eight-photo layout groups via Intersection Observer.
+- **Stable Story Reflow:** Desktop album stories keep chronological order while a shuffled bag of six justified-row layouts is frozen for each page load and regenerated on refresh. Source aspect ratios determine every row's column widths, so full photographs remain visible directly on the page with no cover crop, matte, or fixed-height frame. Ratios for each upcoming batch are resolved before it is appended, preventing earlier rows from shifting; smaller viewports and non-story galleries keep the natural row-major grid.
 - **CDN + Resizing:** Thumbnails use Cloudflare `/cdn-cgi/image/width=400,quality=85,format=jpg/`
 - **Image Preloading:** Lightbox preloads adjacent photos for smooth navigation
 - **LocalStorage:** Filter panel collapse state persists across sessions
