@@ -353,6 +353,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     }
 
     private unlockScroll() {
+      const html = document.documentElement;
+
       if (this.originalBodyOverflow !== null) {
         document.body.style.overflow = this.originalBodyOverflow;
         document.body.style.position = this.originalBodyPosition || '';
@@ -367,13 +369,18 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       }
 
       if (this.originalHtmlOverflow !== null) {
-        document.documentElement.style.overflow = this.originalHtmlOverflow;
+        html.style.overflow = this.originalHtmlOverflow;
         this.originalHtmlOverflow = null;
       } else {
-        document.documentElement.style.overflow = '';
+        html.style.overflow = '';
       }
 
+      // PhotoLayout uses smooth document scrolling for navigation, but lightbox
+      // restoration must be immediate or the page visibly travels from the top.
+      const originalScrollBehavior = html.style.scrollBehavior;
+      html.style.scrollBehavior = 'auto';
       window.scrollTo(this.lockedScrollX, this.lockedScrollY);
+      html.style.scrollBehavior = originalScrollBehavior;
     }
 
     public open(index: number) {

@@ -69,7 +69,7 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
   - Keyboard: Arrow keys (prev/next), Escape (close)
   - Touch: Swipe gestures for mobile
   - Mouse: Click arrows or outside to close
-- **Scroll Lock:** Pins the body at its captured scroll position while the lightbox is open, prevents background reflow from shifting the page during navigation, and restores the exact position on close
+- **Scroll Lock:** Pins the body at its captured scroll position while the lightbox is open, prevents background reflow from shifting the page during navigation, and restores the exact position immediately on close (temporarily bypassing the photography layout's smooth document scrolling)
 - **Shutter Animation:** Film-style opening animation
 - **Preloading:** Adjacent photos pre-fetched for instant navigation
 - **Slideshow Mode:** Configurable intervals (1s, 3s, 5s, 10s, 60s, off)
