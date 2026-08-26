@@ -58,9 +58,13 @@ const PhotoCard: React.FC<{
   aspectRatio?: number;
   style?: CSSProperties;
   onRatio?: (photoId: string, ratio: number) => void;
-}> = ({ photo, editorial = false, imageSource = 'resized', aspectRatio, style, onRatio }) => (
+  motionReveal?: 'story-card' | 'utility-card';
+  motionKey?: string;
+}> = ({ photo, editorial = false, imageSource = 'resized', aspectRatio, style, onRatio, motionReveal, motionKey }) => (
   <div
     className="photo-card"
+    data-photo-reveal={motionReveal}
+    data-photo-reveal-key={motionKey}
     data-image-source={imageSource}
     data-photo-id={photo.id}
     data-featured={photo.data.featured ? 'true' : undefined}
@@ -284,6 +288,8 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
                 data-story-anchor={isAnchor ? '' : undefined}
                 data-quiet-solo={isQuietSolo ? '' : undefined}
                 data-planned-layout={`${row.kind}-${row.photos.length}`}
+                data-photo-reveal={isAnchor ? 'story-anchor' : 'story-row'}
+                data-photo-reveal-key={`story-row:${row.photos.map(photo => photo.id).join('|')}`}
                 style={{
                   width: '100%',
                   display: isQuietSolo ? 'flex' : 'grid',
@@ -317,7 +323,12 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
             );
           })
         : visiblePhotos.map(photo => (
-            <PhotoCard key={photo.id} photo={photo} />
+            <PhotoCard
+              key={photo.id}
+              photo={photo}
+              motionReveal={layoutMode === 'editorial' ? 'story-card' : 'utility-card'}
+              motionKey={`gallery-card:${photo.id}`}
+            />
           ))}
       
       {/* Sentinel element for infinite scroll */}

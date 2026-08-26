@@ -13,7 +13,7 @@ const themes = PUBLIC_THEMES.map(theme => ({
 
 <PhotoLayout title="Themes" description="Eight recurring themes in Gurudev Ilangovan's photography.">
   <section class="themes-page">
-    <header class="themes-header">
+    <header class="themes-header" data-photo-reveal="index-header" data-photo-reveal-key="themes:masthead">
       <p>THEMES / A SHORT INDEX</p>
       <h1>What keeps<br /><em>returning.</em></h1>
       <span>Eight paths through the work. The complete working taxonomy remains in the Archive.</span>
@@ -21,7 +21,7 @@ const themes = PUBLIC_THEMES.map(theme => ({
 
     <div class="theme-list">
       {themes.map((theme, index) => (
-        <a href={`/photography/tag/${encodeURIComponent(theme.tag)}`} class="theme-row" data-public-theme data-tag-link data-tag={theme.tag}>
+        <a href={`/photography/tag/${encodeURIComponent(theme.tag)}`} class="theme-row" data-public-theme data-tag-link data-tag={theme.tag} data-photo-reveal="index-row" data-photo-reveal-key={`theme:${theme.tag}`}>
           <span class="theme-number">{String(index + 1).padStart(2, '0')}</span>
           <h2>{theme.label}</h2>
           <p>{theme.note}</p>

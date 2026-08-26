@@ -134,6 +134,12 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 - Prevents full-resolution image loading until lightbox
 - Smooth scroll with progressive rendering
 
+**Motion contract:**
+- `InfinitePhotoGallery` marks desktop editorial rows as `story-anchor` or `story-row`; narrow editorial layouts mark individual cards as `story-card`.
+- Motion is registered by the shared `PhotoLayout` controller, including React rows appended after hydration.
+- Editorial row and card boxes never transform. Only opacity and image content animate so anchor width, justified-row coordinates, lightbox order, and infinite-scroll stability remain measurable and unchanged throughout a reveal.
+- Reveal keys are based on the planned photo IDs so already-seen rows do not replay after React/filter updates.
+
 ## 5. Dual-Space Toggle
 
 **Seamless Navigation** between Professional ↔ Photography spaces.

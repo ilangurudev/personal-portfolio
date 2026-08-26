@@ -12,7 +12,7 @@ const archiveAlbums = albums.filter(album => !featuredSlugs.has(album.slug));
 ---
 
 <PhotoLayout title="Stories" description="Photographic stories by Gurudev Ilangovan.">
-  <section class="stories-masthead">
+  <section class="stories-masthead" data-photo-reveal="index-header" data-photo-reveal-key="stories:masthead">
     <p class="stories-label">STORIES / 2024—2025</p>
     <h1>Places,<br /><em>given time.</em></h1>
     <p>Photographic notebooks shaped by atmosphere, gesture, and the rhythm of being there.</p>
@@ -23,7 +23,7 @@ const archiveAlbums = albums.filter(album => !featuredSlugs.has(album.slug));
       const album = albumMap.get(story.slug);
       if (!album) return null;
       return (
-        <a href={`/photography/album/${story.slug}`} class="album-card featured-story" data-featured-story data-album-card data-album={story.slug} data-album-slug={story.slug}>
+        <a href={`/photography/album/${story.slug}`} class="album-card featured-story" data-featured-story data-album-card data-album={story.slug} data-album-slug={story.slug} data-photo-reveal="index-feature" data-photo-reveal-key={`story-feature:${story.slug}`}>
           <div class="featured-story-image"><img src={getResizedPhotoUrl(album.data.coverPhoto, 1400)} alt={album.data.title} loading={index < 2 ? 'eager' : 'lazy'} /></div>
           <div class="featured-story-copy">
             <p>{story.number} / {story.kicker}</p>
@@ -37,13 +37,13 @@ const archiveAlbums = albums.filter(album => !featuredSlugs.has(album.slug));
   </section>
 
   <section class="story-archive" data-story-archive>
-    <header>
+    <header data-photo-reveal="index-header" data-photo-reveal-key="stories:notebooks-header">
       <p>THE NOTEBOOKS</p>
       <h2>More places,<br />more weather.</h2>
     </header>
     <div class="story-archive-grid">
       {archiveAlbums.map((album, index) => (
-        <a href={`/photography/album/${album.slug}`} class="album-card archive-story" data-album-card data-album={album.slug} data-album-slug={album.slug}>
+        <a href={`/photography/album/${album.slug}`} class="album-card archive-story" data-album-card data-album={album.slug} data-album-slug={album.slug} data-photo-reveal="index-card" data-photo-reveal-key={`story-card:${album.slug}`}>
           <div class="archive-story-image"><img src={getResizedPhotoUrl(album.data.coverPhoto, 700)} alt={album.data.title} loading="lazy" /></div>
           <p>{String(index + 7).padStart(2, '0')} / {album.data.date.getFullYear()}</p>
           <h3>{album.data.title}</h3>

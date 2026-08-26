@@ -45,6 +45,7 @@ npm run test:css-leaks    # CSS rendering leak detection
 npm run test:viewfinder   # Viewfinder overlay CSS functionality
 npm run test:photo-editorial # Curated photography IA and editorial acceptance contract
 npm run test:photo-scroll-story # Homepage motion hierarchy, reduced motion, and natural scrolling
+npm run test:photo-motion # Shared motion profiles across stories, indexes, Archive, and search
 npm run test:about-anchor # About hash remains stable while homepage photographs lazy-load
 ```
 
@@ -66,6 +67,7 @@ npm run test:about-anchor # About hash remains stable while homepage photographs
 | `photo-filter-toggle.spec.cjs` | Photography structure | Fixed curated edit, public themes, Archive filter availability |
 | `photography-editorial-redesign.spec.cjs` | Editorial acceptance | Non-cemetery hero, hero/edit uniqueness, balanced desktop groups and frame-number gutters, 20-frame sequence, Stories, public themes, Archive, mobile hero, progressive lightbox details |
 | `photography-scroll-story.spec.cjs` | Homepage scroll story | Desktop hero settling, three-scene opening movement, one-shot later reveals, natural scrolling, reduced-motion completeness, and quieter mobile behavior |
+| `photography-motion-system.spec.cjs` | Photography motion system | Row-level album/tag reveals, Stories/Themes indexes, dynamically inserted Archive/search cards, compact mobile stories, and reduced-motion completeness |
 | `about-anchor-navigation.spec.cjs` | Homepage About anchor | Staggered lazy-image loading cannot push the desktop biography out of view; a clean mobile reload lands on the biography copy rather than the portrait |
 | `responsive-design.spec.js` | Responsive layouts | Mobile/tablet/desktop, hamburger + space toggle in mobile menu |
 | `visual-aesthetics.spec.js` | Design consistency | Colors, typography, themes |

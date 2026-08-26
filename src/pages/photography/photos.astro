@@ -761,6 +761,9 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
         const card = document.createElement('div');
         card.className = 'photo-card';
         card.setAttribute('data-photo-id', photo.id);
+        card.setAttribute('data-photo-reveal', 'utility-card');
+        card.setAttribute('data-photo-reveal-key', `archive:${photo.id}`);
+        card.style.setProperty('--photo-reveal-delay', `${(displayedPhotos.length % 4) * 45}ms`);
 
         card.innerHTML = `
           <div class="photo-image">

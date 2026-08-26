@@ -64,3 +64,4 @@ Layouts are responsible for initializing the global environment that "Islands" (
   - They share NO code for this, ensuring complete visual isolation.
   - Hamburger replaces desktop nav at ≤1200px to prevent header/nav overlap on wider tablets (iPad landscape included).
 - **Search Shortcut:** Both layouts listen for Cmd/Ctrl + K to focus the nearest `[data-search-input]` or navigate to the space-specific search page (`/search` or `/photography/search`). Search is also present in both desktop and mobile navs.
+- **Photography Motion:** `PhotoLayout.astro` owns the global `data-photo-reveal` profile styles and boots `setupPhotoMotion()` from `src/utils/client/photo-motion.ts`. The controller observes both initial and dynamically inserted elements, reveals each stable key once, and falls back to immediately visible content for reduced motion or missing observer support. Homepage-specific hero choreography remains local to `/photography`.

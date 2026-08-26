@@ -225,7 +225,12 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
           : '';
 
       return `
-        <article class="search-card ${isAlbum ? 'album-card' : 'photo-card'}" ${!isAlbum ? `data-photo-id="${result.id || ''}"` : ''}>
+        <article
+          class="search-card ${isAlbum ? 'album-card' : 'photo-card'}"
+          data-photo-reveal="utility-result"
+          data-photo-reveal-key="search:${isAlbum ? 'album' : 'photo'}:${result.id || result.url}"
+          ${!isAlbum ? `data-photo-id="${result.id || ''}"` : ''}
+        >
           <a class="media" href="${result.url}" target="${target}">
             ${mediaUrl ? `<img src="${mediaUrl}" alt="${result.title}" loading="lazy" decoding="async" />` : ''}
             ${isAlbum ? '<span class="kind-pill">Album</span>' : ''}
@@ -247,7 +252,11 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
 
       for (let i = visibleCount; i < newCount; i++) {
         tempDiv.innerHTML = renderCard(allResults[i]);
-        fragment.appendChild(tempDiv.firstElementChild);
+        const card = tempDiv.firstElementChild;
+        if (card instanceof HTMLElement) {
+          card.style.setProperty('--photo-reveal-delay', `${(i % 4) * 40}ms`);
+          fragment.appendChild(card);
+        }
       }
 
       resultsContainer.appendChild(fragment);
@@ -736,4 +745,3 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
     }
   </style>
 </PhotoLayout>
-
