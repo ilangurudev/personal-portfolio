@@ -25,7 +25,7 @@ The codebase strictly separates two distinct "spaces" via Layouts. This is a fun
 - **Fonts:** `Instrument Serif` (display/headings), `Manrope` (body/UI).
 - **Key Features:**
   - **Compact Header:** A 76px sticky desktop bar (64px mobile) keeps navigation subordinate to the work.
-  - **Navigation Language:** Desktop and mobile expose the same photography index—Work, Stories, Archive, Themes, Search, and About—while AI/Engineering remains a separate space switch.
+  - **Navigation Language:** Desktop and mobile expose the same photography index—Work, Stories, Archive, Themes, Search, and About—while AI/Engineering remains a separate space switch. Homepage media above hash targets must reserve intrinsic space so Work/About links stay anchored while lazy images load.
   - **Mobile Menu:** Full-screen editorial index using the same navigation vocabulary.
   - **Scoped Variables:**
     ```css

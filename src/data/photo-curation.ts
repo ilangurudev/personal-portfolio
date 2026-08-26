@@ -87,6 +87,34 @@ export const CURATED_EDIT_GROUPS = [
 
 export const CURATED_EDIT_IDS = CURATED_EDIT_GROUPS.flatMap(group => group.ids);
 
+/**
+ * Intrinsic dimensions of the curated CDN derivatives. These reserve each
+ * photograph's authored aspect ratio before lazy loading, keeping homepage
+ * sections and hash-link destinations stable as images arrive.
+ */
+export const CURATED_PHOTO_DIMENSIONS = {
+  'new-york-2025/AR53824.md': { width: 1600, height: 1066 },
+  'georgetown-metro-2025/20250914-_AR50392.md': { width: 1000, height: 666 },
+  'dc-hot-summer/20250623-_AR55740.md': { width: 1000, height: 666 },
+  'new-york-2025/AR54015.md': { width: 1000, height: 666 },
+  'new-york-2025/AR54108.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251213-_AR53645.md': { width: 1000, height: 666 },
+  'glenstone-2024/DSC02462.md': { width: 1000, height: 666 },
+  'seattle-2025/20250705-_AR56655.md': { width: 1000, height: 666 },
+  'dc-hot-summer/20250623-_AR55928.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251213-_AR53410.md': { width: 1000, height: 666 },
+  'tysons-foggy-2024/DSC03152.md': { width: 1000, height: 772 },
+  'olympic-2025/20250708-_AR57915.md': { width: 1600, height: 1066 },
+  'rainier-2025/20250711-_AR58685.md': { width: 1000, height: 666 },
+  'cherry-blossoms-2025/DSC01700.md': { width: 1000, height: 666 },
+  'miami-2024/DSC08657.md': { width: 1000, height: 666 },
+  'tampa-2025/20251109-_AR51599.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251213-_AR53972.md': { width: 1000, height: 666 },
+  'blackwater-2024/DSC01645.md': { width: 1000, height: 562 },
+  'assateague-2024-06/DSC05873.md': { width: 1000, height: 562 },
+  'miami-2024/DSC08293.md': { width: 1000, height: 666 },
+} as const satisfies Record<(typeof CURATED_EDIT_IDS)[number], { width: number; height: number }>;
+
 export const FEATURED_STORIES = [
   { slug: 'puerto-rico-2025', number: '01', kicker: 'Coast / Old San Juan', statement: 'Hard light, sea air, and the geometry of an old city at the edge of the Atlantic.' },
   { slug: 'new-york-2025', number: '02', kicker: 'Street / New York', statement: 'Crowds, interruptions, reflections, and brief alignments inside the restless city.' },

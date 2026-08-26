@@ -3,7 +3,7 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
 import { getAlbumTitleMap, getPhotosWithExif, transformForLightbox } from '../../utils/photo-helpers';
 import { getResizedPhotoUrl } from '../../utils/url-helper';
-import { CURATED_EDIT_GROUPS, CURATED_EDIT_IDS, FEATURED_STORIES, HERO_PHOTO } from '../../data/photo-curation';
+import { CURATED_EDIT_GROUPS, CURATED_EDIT_IDS, CURATED_PHOTO_DIMENSIONS, FEATURED_STORIES, HERO_PHOTO } from '../../data/photo-curation';
 import { getCollection } from 'astro:content';
 
 const allPhotos = await getPhotosWithExif();
@@ -73,9 +73,10 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
           <div class="edit-group-photos">
             {group.photos.map((photo) => {
               const index = curatedIndex.get(photo.id) || 0;
+              const dimensions = CURATED_PHOTO_DIMENSIONS[photo.id as keyof typeof CURATED_PHOTO_DIMENSIONS];
               return (
                 <button type="button" class="photo-card editorial-photo" data-curated-photo data-photo-id={photo.id} aria-label={`Open photograph ${index + 1} of ${curatedPhotos.length}`}>
-                  <img src={getResizedPhotoUrl(photo.data.filename, group.kind === 'feature' ? 1600 : 1000)} alt={photo.data.location ? `${photo.data.location}, ${photo.data.date.getFullYear()}` : `Photograph ${index + 1} from ${albumTitleMap.get(photo.data.album) || photo.data.album}`} loading={index < 3 ? 'eager' : 'lazy'} />
+                  <img src={getResizedPhotoUrl(photo.data.filename, group.kind === 'feature' ? 1600 : 1000)} width={dimensions.width} height={dimensions.height} alt={photo.data.location ? `${photo.data.location}, ${photo.data.date.getFullYear()}` : `Photograph ${index + 1} from ${albumTitleMap.get(photo.data.album) || photo.data.album}`} loading={index < 3 ? 'eager' : 'lazy'} />
                   <span class="photo-number">{String(index + 1).padStart(2, '0')}</span>
                 </button>
               );
