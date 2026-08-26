@@ -42,8 +42,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
           <div class="lightbox-tags"></div>
         </div>
         <div class="lightbox-metadata-row">
-          <div class="lightbox-metadata"></div>
-          <button class="lightbox-see-more" aria-label="Show more camera info" style="display: none;">See more</button>
+          <div class="lightbox-metadata" data-lightbox-technical style="display: none;"></div>
+          <button class="lightbox-see-more" aria-label="Show technical details" style="display: none;">Details</button>
           <div class="lightbox-counter-controls">
             <div class="lightbox-counter"></div>
             <button class="lightbox-story-btn" aria-label="View photo story" title="Story" style="display: none;">
@@ -626,10 +626,10 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       if (metadata && this.seeMoreBtn) {
         if (this.metadataExpanded) {
           metadata.style.display = 'flex';
-          this.seeMoreBtn.textContent = 'See less';
+          this.seeMoreBtn.textContent = 'Close details';
         } else {
           metadata.style.display = 'none';
-          this.seeMoreBtn.textContent = 'See more';
+          this.seeMoreBtn.textContent = 'Details';
         }
       }
     }
@@ -797,19 +797,10 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
         
         if (metadataItems.length > 0) {
           this.metadata.innerHTML = metadataItems.join('');
-          const isMobile = window.innerWidth <= 768;
-          if (isMobile) {
-            // On mobile, hide metadata by default, show "see more" button
-            this.metadata.style.display = this.metadataExpanded ? 'flex' : 'none';
-            if (this.seeMoreBtn) {
-              this.seeMoreBtn.style.display = 'inline-flex';
-              this.seeMoreBtn.textContent = this.metadataExpanded ? 'See less' : 'See more';
-            }
-          } else {
-            this.metadata.style.display = 'flex';
-            if (this.seeMoreBtn) {
-              this.seeMoreBtn.style.display = 'none';
-            }
+          this.metadata.style.display = this.metadataExpanded ? 'flex' : 'none';
+          if (this.seeMoreBtn) {
+            this.seeMoreBtn.style.display = 'inline-flex';
+            this.seeMoreBtn.textContent = this.metadataExpanded ? 'Close details' : 'Details';
           }
         } else {
           this.metadata.style.display = 'none';
@@ -1712,5 +1703,34 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       max-height: 60vh;
     }
   }
-</style>
 
+  /* Editorial viewer: image first, context second, technical data on request. */
+  .lightbox { background: #11100f; }
+  .lightbox-backdrop { background: rgba(17, 16, 15, .98); backdrop-filter: none; }
+  .lightbox-content { padding: 24px 76px; }
+  .lightbox-image { max-height: calc(100vh - 126px); border-radius: 0; box-shadow: none; }
+  .lightbox-info { position: absolute; left: 0; right: 0; bottom: 14px; margin: 0; padding: 0 0 0 84px; gap: 7px; align-items: flex-start; pointer-events: none; }
+  .lightbox-tags-and-album, .lightbox-metadata-row { width: auto; justify-content: flex-start; pointer-events: auto; }
+  .lightbox-tags .lightbox-tag:nth-child(n + 4) { display: none !important; }
+  .lightbox-tag, .lightbox-album-link, .lightbox-metadata-item, .lightbox-counter, .lightbox-see-more, .lightbox-slideshow-btn, .lightbox-story-btn {
+    border-radius: 0 !important;
+    background: rgba(17, 16, 15, .76) !important;
+    border-color: rgba(238, 234, 226, .28) !important;
+    font-family: 'Manrope', sans-serif !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase;
+  }
+  .lightbox-close { top: 20px; right: 20px; border-radius: 0; background: var(--signal); color: #fff; }
+  .lightbox-nav { border: 0; border-radius: 0; background: transparent; font-family: 'Instrument Serif', serif; font-size: 44px; }
+  .lightbox-see-more { display: inline-flex; }
+  [data-lightbox-technical] { display: none; }
+  @media (max-width: 768px) {
+    .lightbox-content { padding: 58px 4px 92px; }
+    .lightbox-image { max-width: calc(100vw - 8px); max-height: calc(100vh - 170px); }
+    .lightbox-info { bottom: 12px; padding-left: 52px; align-items: flex-start; }
+    .lightbox-nav { bottom: 42px; }
+    .lightbox-tags .lightbox-tag:nth-child(n + 2) { display: none !important; }
+  }
+</style>

@@ -49,9 +49,9 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
   // Check for photography aesthetic elements
   const hasPhotoSpace = await page.locator('body.photo-space').count() > 0;
-  const hasHeroTitle = await page.locator('.hero-title').count() > 0;
-  const hasSerifFont = await page.locator('.hero-title').first().evaluate(
-    el => getComputedStyle(el).fontFamily.includes('Crimson')
+  const hasHeroTitle = await page.locator('[data-home-hero] h1').count() > 0;
+  const hasSerifFont = await page.locator('[data-home-hero] h1').first().evaluate(
+    el => getComputedStyle(el).fontFamily.includes('Instrument Serif')
   );
 
   console.log(`   ✓ Photo space theme: ${hasPhotoSpace ? '✓' : '✗'}`);
@@ -60,7 +60,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
 
   // Test 4: Toggle back to Professional
   console.log('\n📍 Test 4: Toggle Back to Professional');
-  const photoToggleButton = await page.locator('.space-toggle a').first();
+  const photoToggleButton = await page.getByRole('link', { name: 'AI / Engineering', exact: true });
   await photoToggleButton.click();
   await page.waitForLoadState('networkidle');
 

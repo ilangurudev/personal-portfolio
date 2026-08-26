@@ -141,7 +141,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
   await page.waitForLoadState('networkidle');
 
   const photosPageTitle = await page.locator('.page-title').textContent();
-  console.log(`   ✓ All Photos page loaded: ${photosPageTitle === 'All Photos' ? '✓' : '✗'}`);
+  console.log(`   ✓ Archive page loaded: ${photosPageTitle?.includes('Every frame') ? '✓' : '✗'}`);
 
   // Open filter panel
   const toggleFiltersBtn = await page.locator('#toggle-filters');

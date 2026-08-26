@@ -1,372 +1,220 @@
 ---
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
-import { getFeaturedPhotosWithExif, getAlbumTitleMap, sortPhotos, transformForLightbox } from '../../utils/photo-helpers';
-import { getPhotoUrl, getResizedPhotoUrl } from '../../utils/url-helper';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
-import PhotoAbout from '../../components/photo/PhotoAbout.astro';
-import PhotoIcons from '../../components/photo/PhotoIcons.astro';
-import ViewfinderSVG from '../../components/photo/ViewfinderSVG.astro';
+import { getAlbumTitleMap, getPhotosWithExif, transformForLightbox } from '../../utils/photo-helpers';
+import { getResizedPhotoUrl } from '../../utils/url-helper';
+import { CURATED_EDIT_GROUPS, CURATED_EDIT_IDS, FEATURED_STORIES, HERO_PHOTO } from '../../data/photo-curation';
+import { getCollection } from 'astro:content';
 
-const albumTitleMap = await getAlbumTitleMap();
-
-const featuredPhotos = await getFeaturedPhotosWithExif();
-const sortedPhotos = sortPhotos(featuredPhotos);
+const allPhotos = await getPhotosWithExif();
+const photoMap = new Map(allPhotos.map(photo => [photo.id, photo]));
+const curatedPhotos = CURATED_EDIT_IDS.map(id => photoMap.get(id)).filter(Boolean);
+const curatedGroups = CURATED_EDIT_GROUPS.map(group => ({
+  ...group,
+  photos: group.ids.map(id => photoMap.get(id)).filter(Boolean),
+}));
+const albums = await getCollection('albums');
+const albumMap = new Map(albums.map(album => [album.slug, album]));
+const albumTitleMap = await getAlbumTitleMap(albums);
+const heroPhoto = photoMap.get(HERO_PHOTO.id);
+const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, index]));
 ---
 
-<PhotoLayout title="Best Photos" description="Featured photography by Guru">
-  <PhotoIcons />
-  <PhotoAbout />
-
-  <div class="photo-hero">
-    <h1 class="hero-title">The Edit</h1>
-    <p class="hero-subtitle">
-      Photos I consider <del>perfect</del> not too bad.
-    </p>
-  </div>
-
-  <!-- Filter Toggle Group -->
-  <div class="filter-toggle-group">
-    <button
-      type="button"
-      class="filter-toggle-option active"
-      data-filter="all"
-    >
-      All
-    </button>
-    <button
-      type="button"
-      class="filter-toggle-option"
-      data-filter="street"
-    >
-      Street
-    </button>
-    <button
-      type="button"
-      class="filter-toggle-option"
-      data-filter="landscape"
-    >
-      Landscape
-    </button>
-  </div>
-
-  {sortedPhotos.length === 0 ? (
-    <div class="no-photos">
-      <p class="no-photos-text">
-        No featured photos yet. Mark photos as featured to see them here.
-      </p>
+<PhotoLayout title="Selected Work" description="Photographs by Gurudev Ilangovan: people, place, weather, and the spaces between.">
+  <section class="home-hero" data-home-hero data-hero-photo-id={HERO_PHOTO.id}>
+    <div class="hero-image-wrap">
+      <img src={getResizedPhotoUrl(heroPhoto.data.filename, 1800)} alt={HERO_PHOTO.alt} fetchpriority="high" />
     </div>
-  ) : (
-    <>
-      <div class="photos-grid">
-        {sortedPhotos.map((photo) => (
-          <div 
-            class="photo-card"
-            data-photo-id={photo.id}
-            data-order-score={photo.data.order_score ?? 0}
-            data-photo-date={photo.data.date?.toISOString?.() || photo.data.date}
-          >
-            <div class="photo-image">
-              <img
-                src={getResizedPhotoUrl(photo.data.filename, 600)}
-                alt={photo.data.title}
-                loading="lazy"
-                style={`object-position: center ${photo.data.position || 'top'};`}
-              />
-              <div class="viewfinder-overlay">
-                <ViewfinderSVG />
-              </div>
-            </div>
-          </div>
-        ))}
+    <div class="hero-scrim"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">WASHINGTON, D.C. / AVAILABLE LIGHT</p>
+      <h1>Life, briefly<br /><em>held still.</em></h1>
+      <div class="hero-deck">
+        <p>Photographs of people, place, weather, and the spaces between.</p>
+        <a href="#work">Enter the edit <span aria-hidden="true">↓</span></a>
       </div>
-      <PhotoLightbox photos={sortedPhotos.map(p => transformForLightbox(p, albumTitleMap))} />
-    </>
-  )}
+    </div>
+    <p class="hero-index">SELECTED WORK / 2024—2025</p>
+  </section>
+
+  <section class="manifesto" aria-labelledby="manifesto-title">
+    <p class="section-label">00 / POINT OF VIEW</p>
+    <h2 id="manifesto-title">I photograph places at the moment they become <em>stages</em>—figures crossing pools of light, architecture framing weather, and crowds resolving into small gestures.</h2>
+    <div class="manifesto-meta">
+      <p>Based in Washington, D.C.</p>
+      <p>Street / Landscape / Observational</p>
+    </div>
+  </section>
+
+  <section class="curated-edit" id="work" data-curated-edit aria-labelledby="edit-title">
+    <header class="edit-header">
+      <div>
+        <p class="section-label">01 / THE EDIT</p>
+        <h2 id="edit-title">Twenty photographs.<br />One way of seeing.</h2>
+      </div>
+      <p>Three movements—motion, structure, and distance—sequenced by gesture, geometry, and light.</p>
+    </header>
+
+    <div class="editorial-grid">
+      {curatedGroups.map((group) => (
+        <div class={`edit-group edit-group--${group.kind}`} data-edit-group={group.kind}>
+          {'chapter' in group && group.chapter && (
+            <div class="edit-chapter" data-edit-chapter>
+              <p>{group.chapter.number} / {group.chapter.title}</p>
+              <span>{group.chapter.note}</span>
+            </div>
+          )}
+          <div class="edit-group-photos">
+            {group.photos.map((photo) => {
+              const index = curatedIndex.get(photo.id) || 0;
+              return (
+                <button type="button" class="photo-card editorial-photo" data-curated-photo data-photo-id={photo.id} aria-label={`Open photograph ${index + 1} of ${curatedPhotos.length}`}>
+                  <img src={getResizedPhotoUrl(photo.data.filename, group.kind === 'feature' ? 1600 : 1000)} alt={photo.data.location ? `${photo.data.location}, ${photo.data.date.getFullYear()}` : `Photograph ${index + 1} from ${albumTitleMap.get(photo.data.album) || photo.data.album}`} loading={index < 3 ? 'eager' : 'lazy'} />
+                  <span class="photo-number">{String(index + 1).padStart(2, '0')}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+    <PhotoLightbox photos={curatedPhotos.map(photo => transformForLightbox(photo, albumTitleMap))} />
+  </section>
+
+  <section class="story-preview" aria-labelledby="stories-title">
+    <header class="stories-header">
+      <p class="section-label light">02 / STORIES</p>
+      <h2 id="stories-title">Places, given time.</h2>
+      <a href="/photography/albums">View all stories ↗</a>
+    </header>
+    <div class="story-preview-grid">
+      {FEATURED_STORIES.slice(0, 3).map((story) => {
+        const album = albumMap.get(story.slug);
+        if (!album) return null;
+        return (
+          <a href={`/photography/album/${story.slug}`} class="story-preview-card">
+            <div class="story-preview-image"><img src={getResizedPhotoUrl(album.data.coverPhoto, 1000)} alt={album.data.title} loading="lazy" /></div>
+            <p>{story.number} / {story.kicker}</p>
+            <h3>{album.data.title}</h3>
+            <span>{story.statement}</span>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+
+  <section class="home-about" id="about" data-home-about>
+    <div class="about-portrait"><img src="/profile.png" alt="Gurudev Ilangovan holding a camera" loading="lazy" /></div>
+    <div class="about-copy">
+      <p class="section-label">03 / ABOUT</p>
+      <h2>Guru Ilangovan is a photographer and AI engineer based in Washington, D.C.</h2>
+      <p>Photography is the counterweight: a slower practice built around attention, patience, and the pleasure of noticing. The work moves between crowded streets and open landscapes, looking for the instant a place reveals its internal rhythm.</p>
+      <div class="about-links">
+        <a href="https://www.instagram.com/ilangurudev/" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
+        <a href="/photography/photos">Open the complete archive ↗</a>
+      </div>
+    </div>
+  </section>
 
   <script>
-    import { normalizeTag } from '../../utils/client/tag-utils';
-    (window as any).photoTagUtils = { normalizeTag };
-  </script>
-
-  <script define:vars={{
-    allPhotosData: sortedPhotos.map(p => ({
-      id: p.id,
-      url: getPhotoUrl(p.data.filename),
-      body: p.body || '',
-      data: {
-        title: p.data.title,
-        filename: p.data.filename,
-        album: p.data.album,
-        albumTitle: albumTitleMap.get(p.data.album),
-        tags: p.data.tags,
-        camera: p.data.camera,
-        settings: p.data.settings,
-        focalLength: p.data.focalLength,
-        location: p.data.location
-      }
-    })),
-    sortedPhotos
-  }}>
-    // Store for lightbox updates
-    window.allPhotosData = allPhotosData;
-
-    // Filter toggle functionality
-    document.addEventListener('DOMContentLoaded', () => {
-      const toggleButtons = document.querySelectorAll('.filter-toggle-option');
-      const photoCards = document.querySelectorAll('.photo-card');
-
-      const normalizeTag =
-        (window.photoTagUtils && window.photoTagUtils.normalizeTag) ||
-        ((tag) => String(tag ?? '').toLowerCase().trim());
-
-      // Apply filter based on selection
-      function applyFilter(filter) {
-        let visibleCount = 0;
-
-        photoCards.forEach((card, index) => {
-          const photo = sortedPhotos[index];
-          const photoTags = (photo.data.tags || []).map(t => normalizeTag(t));
-
-          let shouldShow = false;
-
-          if (filter === 'all') {
-            shouldShow = true;
-          } else if (filter === 'street') {
-            shouldShow = photoTags.includes('street photography');
-          } else if (filter === 'landscape') {
-            shouldShow = photoTags.includes('landscape photography');
-          }
-
-          if (shouldShow) {
-            card.style.display = '';
-            visibleCount++;
-          } else {
-            card.style.display = 'none';
-          }
-        });
-
-        // Update lightbox with filtered photos
-        if (window.photoLightbox) {
-          const filteredPhotos = sortedPhotos.filter((photo, index) => {
-            const photoTags = (photo.data.tags || []).map(t => normalizeTag(t));
-            if (filter === 'all') return true;
-            if (filter === 'street') return photoTags.includes('street photography');
-            if (filter === 'landscape') return photoTags.includes('landscape photography');
-            return false;
-          }).map(photo => {
-            // Map to full photo object with URL from the initial lightbox data
-            const fullPhoto = window.allPhotosData?.find(p => p.id === photo.id);
-            return fullPhoto || photo; // Fallback to original if not found
-          });
-          window.photoLightbox.updatePhotos(filteredPhotos);
-        }
-      }
-
-      // Add click handlers to toggle buttons
-      toggleButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          // Remove active class from all buttons
-          toggleButtons.forEach(btn => btn.classList.remove('active'));
-
-          // Add active class to clicked button
-          button.classList.add('active');
-
-          // Apply the filter
-          const filter = button.getAttribute('data-filter');
-          applyFilter(filter);
-        });
+    document.querySelectorAll('[data-curated-photo]').forEach((card) => {
+      card.addEventListener('click', () => {
+        const id = card.getAttribute('data-photo-id');
+        if (!id || !window.photoLightbox) return;
+        const index = window.photoLightbox.photos.findIndex((photo) => photo.id === id);
+        if (index >= 0) window.photoLightbox.open(index);
       });
-
-      // Initialize with 'all' filter
-      applyFilter('all');
     });
   </script>
 
-  <!-- Navigation links after photos -->
-  <div class="photo-nav-section">
-    <h2 class="nav-section-title">Explore More</h2>
-    <div class="photo-nav-links">
-      <a href="/photography/photos" class="photo-nav-link">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
-        </svg>
-        <span>Browse All Photos</span>
-      </a>
-      <a href="/photography/albums" class="photo-nav-link">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
-        <span>View Albums</span>
-      </a>
-      <a href="/photography/tags" class="photo-nav-link">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-          <line x1="7" y1="7" x2="7.01" y2="7"/>
-        </svg>
-        <span>Browse by Tag</span>
-      </a>
-    </div>
-  </div>
-
   <style>
-    .photo-hero {
-      text-align: center;
-      max-width: 800px;
-      margin: 0 auto 2rem;
-      padding: 2rem 0 1rem;
-    }
-
-    .filter-toggle-group {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 0;
-      margin: 0 auto 2rem;
-      background: rgba(28, 25, 23, 0.05);
-      border-radius: 24px;
-      padding: 4px;
-      width: auto;
-    }
-
-    .filter-toggle-option {
-      flex: 1;
-      padding: 0.5rem 1.5rem;
-      border: none;
-      background: transparent;
-      color: var(--gray);
-      font-size: 0.9375rem;
-      font-weight: 500;
-      cursor: pointer;
-      border-radius: 20px;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-      text-align: center;
-      min-width: 110px;
-    }
-
-    .filter-toggle-option:hover {
-      color: var(--charcoal);
-      background: rgba(28, 25, 23, 0.05);
-    }
-
-    .filter-toggle-option.active {
-      background: var(--amber);
-      color: white;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-    }
-
-    .hero-title {
-      font-family: 'Crimson Text', serif;
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: var(--charcoal);
-      margin: 0 0 1.5rem;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-    }
-
-    .hero-subtitle {
-      font-size: 1.25rem;
-      color: var(--gray);
-      font-weight: 300;
-      line-height: 1.6;
-      font-style: italic;
-      margin: 0;
-    }
-
-    .photo-nav-section {
-      max-width: 900px;
-      margin: 4rem auto;
-      padding: 3rem 0;
-      text-align: center;
-      border-top: 1px solid rgba(28, 25, 23, 0.1);
-    }
-
-    .nav-section-title {
-      font-family: 'Crimson Text', serif;
-      font-size: 2rem;
-      font-weight: 600;
-      color: var(--charcoal);
-      margin: 0 0 2rem;
-      letter-spacing: -0.02em;
-    }
-
-    .photo-nav-links {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-    }
-
-    .photo-nav-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      background: white;
-      color: var(--charcoal);
-      text-decoration: none;
-      border: 1px solid rgba(28, 25, 23, 0.2);
-      border-radius: 4px;
-      font-size: 0.9375rem;
-      font-weight: 500;
-      transition: all 0.2s ease;
-    }
-
-    .photo-nav-link:hover {
-      background: var(--amber);
-      color: white;
-      border-color: var(--amber);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-    }
-
-    .photo-nav-link svg {
-      flex-shrink: 0;
-    }
-
-    .no-photos {
-      text-align: center;
-      padding: 4rem 2rem;
-      background: var(--cream-dark);
-      border-radius: 4px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .no-photos-text {
-      font-size: 1.125rem;
-      color: var(--charcoal);
-      margin: 0;
-      font-weight: 400;
-    }
-
-    .photos-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-      margin-top: 2rem;
-    }
-
-    /* Photo card styles imported via PhotoLayout from photo-card.css */
-
-    @media (max-width: 768px) {
-      .hero-title {
-        font-size: 2.5rem;
-      }
-
-      .hero-subtitle {
-        font-size: 1.125rem;
-      }
-
-      .photos-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
-
-      .no-photos {
-        padding: 3rem 1.5rem;
-      }
+    .home-hero { position: relative; min-height: calc(100svh - 76px); background: #111; color: #f7f4ed; overflow: hidden; }
+    .hero-image-wrap, .hero-scrim { position: absolute; inset: 0; }
+    .hero-image-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center 48%; filter: saturate(.92) contrast(1.03); }
+    .hero-scrim { background: linear-gradient(90deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,.08) 54%, rgba(0,0,0,.18) 100%), linear-gradient(0deg, rgba(0,0,0,.38), transparent 48%); }
+    .hero-copy { position: absolute; inset: auto 28px 58px; display: grid; grid-template-columns: 1fr 300px; align-items: end; gap: 40px; }
+    .eyebrow, .section-label, .hero-index { font-size: 10px; font-weight: 700; letter-spacing: .18em; }
+    .eyebrow { position: absolute; top: -46px; margin: 0; color: #ff6848; }
+    .hero-copy h1 { margin: 0; font-family: 'Instrument Serif', serif; font-size: clamp(82px, 11.5vw, 178px); font-weight: 400; line-height: .76; letter-spacing: -.055em; }
+    .hero-copy h1 em { color: #ff6848; font-weight: 400; }
+    .hero-deck { max-width: 280px; padding-bottom: 8px; }
+    .hero-deck p { margin: 0 0 32px; font-size: 16px; line-height: 1.55; }
+    .hero-deck a { display: flex; justify-content: space-between; padding: 13px 0; border-top: 1px solid rgba(255,255,255,.5); border-bottom: 1px solid rgba(255,255,255,.5); text-decoration: none; text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: .14em; }
+    .hero-index { position: absolute; top: 28px; right: 28px; margin: 0; writing-mode: vertical-rl; }
+    .manifesto { padding: 120px 28px 138px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 180px minmax(0, 1fr) 190px; gap: 36px; }
+    .section-label { margin: 8px 0 0; color: var(--signal); }
+    .manifesto h2 { max-width: 1020px; margin: 0; font-family: 'Instrument Serif', serif; font-size: clamp(42px, 5.7vw, 84px); font-weight: 400; line-height: .98; letter-spacing: -.035em; }
+    .manifesto h2 em { color: var(--signal); font-weight: 400; }
+    .manifesto-meta { padding-top: 10px; }
+    .manifesto-meta p { margin: 0 0 12px; color: var(--muted); font-size: 11px; line-height: 1.5; text-transform: uppercase; letter-spacing: .08em; }
+    .curated-edit { padding: 108px 28px 140px; }
+    .edit-header { margin-bottom: 88px; display: grid; grid-template-columns: 1fr 300px; gap: 40px; align-items: end; }
+    .edit-header h2 { margin: 10px 0 0; font-family: 'Instrument Serif', serif; font-size: clamp(54px, 7.2vw, 104px); font-weight: 400; line-height: .88; letter-spacing: -.04em; }
+    .edit-header > p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .editorial-grid { display: flex; flex-direction: column; gap: clamp(72px, 8vw, 118px); }
+    .edit-group { min-width: 0; }
+    .edit-group-photos { display: grid; gap: 22px; align-items: start; }
+    .edit-group--feature .edit-group-photos { grid-template-columns: minmax(0, 1fr); }
+    .edit-group--pair .edit-group-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .edit-chapter { display: grid; grid-template-columns: 180px 1fr; gap: 36px; align-items: end; margin-bottom: 28px; padding-top: 16px; border-top: 1px solid var(--ink); }
+    .edit-chapter p, .edit-chapter span { margin: 0; text-transform: uppercase; }
+    .edit-chapter p { color: var(--signal); font-size: 10px; font-weight: 700; letter-spacing: .16em; }
+    .edit-chapter span { color: var(--muted); font-size: 10px; letter-spacing: .09em; }
+    .editorial-photo { position: relative; margin: 0; padding: 0; border: 0; background: none; cursor: zoom-in; text-align: left; }
+    .editorial-photo img { display: block; width: 100%; height: auto; object-fit: contain; transition: filter .35s ease, transform .55s cubic-bezier(.22,1,.36,1); }
+    .editorial-photo:hover img { transform: scale(.992); filter: saturate(.7); }
+    .photo-number { position: absolute; top: 0; left: -24px; color: var(--signal); font-size: 9px; font-weight: 700; letter-spacing: .1em; }
+    .story-preview { padding: 112px 28px 132px; background: var(--night); color: var(--paper); }
+    .stories-header { display: grid; grid-template-columns: 160px 1fr auto; align-items: end; gap: 28px; margin-bottom: 72px; }
+    .section-label.light { color: #ff6848; }
+    .stories-header h2 { margin: 0; font-family: 'Instrument Serif', serif; font-size: clamp(58px, 7vw, 100px); font-weight: 400; line-height: .9; }
+    .stories-header > a { padding-bottom: 10px; color: var(--paper); font-size: 11px; font-weight: 700; text-decoration: none; text-transform: uppercase; letter-spacing: .1em; }
+    .story-preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .story-preview-card { text-decoration: none; }
+    .story-preview-image { aspect-ratio: 4 / 5; overflow: hidden; background: #24211f; }
+    .story-preview-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .7s cubic-bezier(.22,1,.36,1); }
+    .story-preview-card:hover img { transform: scale(1.025); }
+    .story-preview-card > p { margin: 18px 0 8px; color: #ff6848; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; }
+    .story-preview-card h3 { margin: 0 0 10px; font-family: 'Instrument Serif', serif; font-size: 34px; font-weight: 400; line-height: 1; }
+    .story-preview-card > span { display: block; max-width: 360px; color: rgba(238,234,226,.62); font-size: 12px; line-height: 1.55; }
+    .home-about { padding: 124px 28px; display: grid; grid-template-columns: minmax(260px, 410px) 1fr; gap: clamp(50px, 8vw, 130px); align-items: start; }
+    .about-portrait { aspect-ratio: 4 / 5; overflow: hidden; filter: grayscale(1); }
+    .about-portrait img { width: 100%; height: 100%; object-fit: cover; }
+    .about-copy h2 { max-width: 840px; margin: 20px 0 34px; font-family: 'Instrument Serif', serif; font-size: clamp(46px, 5.8vw, 80px); font-weight: 400; line-height: .98; letter-spacing: -.035em; }
+    .about-copy > p:not(.section-label) { max-width: 650px; color: var(--muted); font-size: 16px; line-height: 1.8; }
+    .about-links { display: flex; flex-wrap: wrap; gap: 14px 30px; margin-top: 50px; }
+    .about-links a { padding-bottom: 6px; border-bottom: 1px solid var(--ink); font-size: 10px; font-weight: 700; text-decoration: none; text-transform: uppercase; letter-spacing: .1em; }
+    @media (max-width: 980px) {
+      .home-hero { min-height: calc(100svh - 64px); }
+      .hero-image-wrap img { object-position: 40% 48%; }
+      .hero-copy { inset: auto 16px 30px; display: block; }
+      .hero-copy h1 { font-size: clamp(64px, 22vw, 94px); line-height: .8; }
+      .eyebrow { top: -36px; }
+      .hero-deck { max-width: 290px; margin-top: 34px; }
+      .hero-deck p { margin-bottom: 20px; font-size: 13px; }
+      .hero-index { display: none; }
+      .manifesto { padding: 74px 16px 84px; display: block; }
+      .manifesto h2 { margin-top: 30px; font-size: 45px; }
+      .manifesto-meta { margin-top: 40px; }
+      .curated-edit { padding: 72px 16px 90px; }
+      .edit-header { display: block; margin-bottom: 52px; }
+      .edit-header h2 { font-size: 56px; }
+      .edit-header > p { margin-top: 28px; max-width: 300px; }
+      .editorial-grid { display: block; }
+      .edit-group { margin-bottom: 68px; }
+      .edit-group-photos, .edit-group--pair .edit-group-photos { display: block; }
+      .edit-chapter { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 34px; }
+      .editorial-photo { display: block; width: 100%; margin: 0 0 58px; }
+      .editorial-photo:last-child { margin-bottom: 0; }
+      .photo-number { left: 0; top: -20px; }
+      .story-preview { padding: 76px 16px 86px; }
+      .stories-header { display: block; margin-bottom: 48px; }
+      .stories-header h2 { margin: 18px 0 28px; font-size: 60px; }
+      .story-preview-grid { display: block; }
+      .story-preview-card { display: block; margin-bottom: 58px; }
+      .home-about { padding: 80px 16px; display: block; }
+      .about-portrait { width: 76%; margin-bottom: 58px; }
+      .about-copy h2 { font-size: 48px; }
     }
   </style>
 </PhotoLayout>

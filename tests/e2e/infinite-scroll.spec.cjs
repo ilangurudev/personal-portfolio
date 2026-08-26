@@ -1,191 +1,92 @@
-/**
- * Infinite Scroll / Lazy Loading Tests
- *
- * Tests the progressive loading of photos:
- * - Initial batch load (first 20 photos)
- * - Load more photos on scroll
- * - Photo count updates correctly
- * - Loading indicator appears during load
- * - Intersection observer triggers correctly
- * - Images use lazy loading attribute
- */
-
+/** Progressive loading, finite homepage curation, and stable story sequencing. */
 const { chromium } = require('playwright');
-
-const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
-const INITIAL_BATCH_SIZE = 20;
-const LOAD_MORE_SIZE = 20;
-// Note: Due to IntersectionObserver with 200px rootMargin, the initial load
-// may trigger 2 batches (40 photos) on smaller viewports when the 20th photo
-// is within the margin threshold. This is expected behavior for optimal UX.
+const TARGET_URL = process.env.TEST_URL || 'http://127.0.0.1:4321';
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: process.env.HEADLESS === 'true',
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
-    slowMo: 50
-  });
-  const page = await browser.newPage();
+  const browser = await chromium.launch({ headless: process.env.HEADLESS !== 'false' });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  console.log('Testing progressive archive loading...');
 
-  console.log('🧪 Testing Infinite Scroll / Lazy Loading...\n');
-
-  // Test 1: Navigate to All Photos Page
-  console.log('📍 Test 1: Navigate to All Photos Page');
   await page.goto(`${TARGET_URL}/photography/photos`);
   await page.waitForLoadState('networkidle');
+  const total = Number(await page.locator('#total-count').textContent());
+  const initial = await page.locator('#photos-grid .photo-card').count();
+  assert(total > initial && initial > 0 && initial <= 40, 'Archive did not begin with a bounded batch.');
+  const firstFive = page.locator('#photos-grid .photo-card img').first();
+  assert(await firstFive.getAttribute('loading') === 'lazy', 'Archive images should lazy-load.');
 
-  const pageTitle = await page.locator('.page-title').textContent();
-  console.log(`   ✓ Page loaded: ${pageTitle}`);
-
-  // Test 2: Check initial photo count
-  console.log('\n📍 Test 2: Check Initial Photo Count');
-  const totalCountEl = await page.locator('#total-count');
-  const visibleCountEl = await page.locator('#visible-count');
-
-  const totalCount = parseInt(await totalCountEl.textContent() || '0');
-  const visibleCount = parseInt(await visibleCountEl.textContent() || '0');
-
-  console.log(`   Total photos: ${totalCount}`);
-  console.log(`   Initially visible: ${visibleCount}`);
-  // Accept up to 2x batch size due to IntersectionObserver prefetching
-  const maxInitialLoad = INITIAL_BATCH_SIZE * 2;
-  console.log(`   ✓ Initial batch size ≤ ${maxInitialLoad}: ${visibleCount <= maxInitialLoad ? '✓' : '✗'}`);
-
-  // Test 3: Verify initial photos loaded
-  console.log('\n📍 Test 3: Verify Initial Photos Loaded');
-  const photoCards = await page.locator('#photos-grid .photo-card');
-  const initialPhotoCount = await photoCards.count();
-  console.log(`   Photo cards in DOM: ${initialPhotoCount}`);
-  console.log(`   ✓ Photos rendered: ${initialPhotoCount > 0 ? '✓' : '✗'}`);
-
-  // Test 4: Verify images have lazy loading attribute
-  console.log('\n📍 Test 4: Verify Lazy Loading Attributes');
-  const images = await page.locator('#photos-grid .photo-card img');
-  const imageCount = await images.count();
-
-  let lazyLoadCount = 0;
-  for (let i = 0; i < Math.min(imageCount, 5); i++) {
-    const loadingAttr = await images.nth(i).getAttribute('loading');
-    if (loadingAttr === 'lazy') lazyLoadCount++;
+  let loaded = initial;
+  for (let attempt = 0; attempt < 4 && loaded === initial; attempt++) {
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(900);
+    loaded = await page.locator('#photos-grid .photo-card').count();
   }
+  assert(loaded > initial, 'Archive did not load another batch after scrolling.');
+  assert(Number(await page.locator('#visible-count').textContent()) === loaded, 'Visible archive count drifted from rendered cards.');
 
-  console.log(`   Images with loading="lazy": ${lazyLoadCount}/${Math.min(imageCount, 5)}`);
-  console.log(`   ✓ Lazy loading enabled: ${lazyLoadCount > 0 ? '✓' : '✗'}`);
-
-  // Test 5: Check if more photos available to load
-  console.log('\n📍 Test 5: Check for More Photos');
-  const morePhotosAvailable = totalCount > visibleCount;
-  console.log(`   More photos to load: ${morePhotosAvailable ? 'Yes' : 'No'}`);
-
-  if (morePhotosAvailable) {
-    // Test 6: Scroll to trigger infinite scroll
-    console.log('\n📍 Test 6: Trigger Infinite Scroll');
-
-    const initialCardCount = await photoCards.count();
-    console.log(`   Cards before scroll: ${initialCardCount}`);
-
-    // Scroll to bottom of the page
-    await page.evaluate(() => {
-      window.scrollTo(0, document.body.scrollHeight);
-    });
-
-    // Wait for loading indicator and new photos
-    await page.waitForTimeout(800);
-
-    const cardCountAfterScroll = await page.locator('#photos-grid .photo-card').count();
-    console.log(`   Cards after scroll: ${cardCountAfterScroll}`);
-
-    const newPhotosLoaded = cardCountAfterScroll > initialCardCount;
-    console.log(`   ✓ New photos loaded on scroll: ${newPhotosLoaded ? '✓' : '✗'}`);
-
-    // Test 7: Verify visible count updated
-    console.log('\n📍 Test 7: Verify Visible Count Updated');
-    const newVisibleCount = parseInt(await visibleCountEl.textContent() || '0');
-    console.log(`   New visible count: ${newVisibleCount}`);
-    console.log(`   ✓ Count increased: ${newVisibleCount > visibleCount ? '✓' : '✗'}`);
-
-    // Test 8: Scroll a few more times to verify continuous loading
-    console.log('\n📍 Test 8: Verify Continuous Loading (3 scrolls)');
-    let prevCount = cardCountAfterScroll;
-    let scrollAttempts = 0;
-    const maxScrollAttempts = 3;
-
-    while (scrollAttempts < maxScrollAttempts) {
-      await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-      });
-      await page.waitForTimeout(1000); // Increased wait time slightly for stability
-
-      const currentCount = await page.locator('#photos-grid .photo-card').count();
-
-      if (currentCount === prevCount) {
-        // No new photos loaded, maybe we reached the end early?
-        console.log('   No new photos loaded this scroll.');
-      } else {
-        console.log(`   Scroll ${scrollAttempts + 1}: ${currentCount} photos loaded`);
-      }
-
-      prevCount = currentCount;
-      scrollAttempts++;
-    }
-
-    const finalCardCount = await page.locator('#photos-grid .photo-card').count();
-    const finalVisibleCount = parseInt(await visibleCountEl.textContent() || '0');
-
-    console.log(`   Final card count: ${finalCardCount}`);
-    console.log(`   Final visible count: ${finalVisibleCount}`);
-    console.log(`   ✓ Photos loaded increased: ${finalCardCount > cardCountAfterScroll ? '✓' : '✗'}`);
-  } else {
-    console.log('   ⚠ All photos fit in initial batch, skipping infinite scroll test');
-  }
-
-  // Test 9: Test on Photography Landing Page (uses React InfinitePhotoGallery)
-  console.log('\n📍 Test 9: Test Infinite Scroll on Landing Page');
   await page.goto(`${TARGET_URL}/photography`);
   await page.waitForLoadState('networkidle');
+  const curated = page.locator('[data-curated-photo]');
+  assert(await curated.count() === 20, 'Homepage should stay finite at twenty curated photographs.');
+  assert(await curated.first().locator('img').count() === 1, 'Curated photo markup is incomplete.');
+  assert((await curated.first().locator('img').getAttribute('src'))?.length > 0, 'Curated photo URL is missing.');
 
-  const landingPhotoCards = await page.locator('.photo-card[data-photo-id]');
-  const landingInitialCount = await landingPhotoCards.count();
-  console.log(`   Initial photos on landing: ${landingInitialCount}`);
+  console.log('Testing stable, horizontal story sequencing...');
+  await page.goto(`${TARGET_URL}/photography/album/puerto-rico-2025`);
+  await page.waitForLoadState('networkidle');
 
-  // Check if there's a sentinel element (for React's InfinitePhotoGallery)
-  const sentinel = await page.locator('[style*="Loading more photos"]');
-  const hasSentinel = await sentinel.count() > 0;
-  console.log(`   Has loading sentinel: ${hasSentinel ? '✓' : 'not visible (may be no more photos)'}`);
+  const storyCards = page.locator('.gallery-container .photo-card[data-photo-id]');
+  const initialStoryCount = await storyCards.count();
+  assert(initialStoryCount === 20, `Story should begin with 20 photographs, found ${initialStoryCount}.`);
 
-  // Scroll and check for more photos
-  await page.evaluate(() => {
-    window.scrollTo(0, document.body.scrollHeight);
+  const readStoryLayout = () => page.locator('.gallery-container .photo-card[data-photo-id]').evaluateAll(cards =>
+    cards.map((card, index) => {
+      const rect = card.getBoundingClientRect();
+      return {
+        index,
+        id: card.getAttribute('data-photo-id'),
+        left: Math.round(rect.left),
+        top: Math.round(rect.top + window.scrollY)
+      };
+    })
+  );
+
+  const beforeLoad = await readStoryLayout();
+  const firstRow = beforeLoad.slice(0, 3);
+  const horizontalSequence = firstRow.every(card => Math.abs(card.top - firstRow[0].top) <= 2)
+    && firstRow[0].left < firstRow[1].left
+    && firstRow[1].left < firstRow[2].left;
+
+  let loadedStoryCount = initialStoryCount;
+  for (let attempt = 0; attempt < 4 && loadedStoryCount === initialStoryCount; attempt++) {
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(900);
+    loadedStoryCount = await storyCards.count();
+  }
+  assert(loadedStoryCount > initialStoryCount, 'Story did not load another batch after scrolling.');
+
+  const afterLoad = await readStoryLayout();
+  const originalCardsStayedPut = beforeLoad.every(before => {
+    const after = afterLoad.find(card => card.id === before.id);
+    return after && after.left === before.left && after.top === before.top;
   });
-  await page.waitForTimeout(800);
 
-  const landingAfterScrollCount = await page.locator('.photo-card[data-photo-id]').count();
-  console.log(`   Photos after scroll: ${landingAfterScrollCount}`);
+  assert(originalCardsStayedPut, 'Already-rendered story photographs moved when the next batch loaded.');
+  assert(horizontalSequence, 'Story sequence should read left-to-right before continuing on the next row.');
 
-  // Test 10: Verify photo card structure
-  console.log('\n📍 Test 10: Verify Photo Card Structure');
-  const sampleCard = await landingPhotoCards.first();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await storyCards.first().click();
+  await page.locator('#photo-lightbox.active').waitFor();
+  const storyTotal = await page.locator('#photos-data').evaluate(element => JSON.parse(element.textContent || '[]').length);
+  const initialLightboxSource = await page.locator('.lightbox-image').getAttribute('src');
+  const lightboxScrollPosition = await page.evaluate(() => window.scrollY);
+  assert((await page.locator('.lightbox-counter').textContent())?.trim() === `1 / ${storyTotal}`, 'Lightbox did not open at the first story photograph.');
+  await page.locator('.lightbox-next').click();
+  await page.waitForFunction(source => document.querySelector('.lightbox-image')?.getAttribute('src') !== source, initialLightboxSource);
+  assert((await page.locator('.lightbox-counter').textContent())?.trim() === `2 / ${storyTotal}`, 'Next did not advance to the second, horizontally adjacent story photograph.');
+  assert(await page.evaluate(() => window.scrollY) === lightboxScrollPosition, 'Lightbox Next moved the page vertically.');
 
-  const hasDataPhotoId = await sampleCard.getAttribute('data-photo-id');
-  console.log(`   ✓ Has data-photo-id: ${hasDataPhotoId ? '✓' : '✗'}`);
-
-  const hasImage = await sampleCard.locator('.photo-image img').count() > 0;
-  console.log(`   ✓ Has image element: ${hasImage ? '✓' : '✗'}`);
-
-  const hasViewfinder = await sampleCard.locator('.viewfinder-overlay').count() > 0;
-  console.log(`   ✓ Has viewfinder overlay: ${hasViewfinder ? '✓' : '✗'}`);
-
-  // Test 11: Verify image URLs use resized versions
-  console.log('\n📍 Test 11: Verify Resized Image URLs');
-  const firstImage = await sampleCard.locator('.photo-image img');
-  const imgSrc = await firstImage.getAttribute('src');
-  console.log(`   Image src: ${imgSrc?.substring(0, 80)}...`);
-
-  // Check if it uses CDN resizing (in production) or local path (in dev)
-  const usesResizing = imgSrc?.includes('cdn-cgi/image') || imgSrc?.includes('/photos/');
-  console.log(`   ✓ Uses valid image path: ${usesResizing ? '✓' : '✗'}`);
-
-  console.log('\n✅ Infinite scroll / lazy loading tests completed!\n');
-
+  console.log('Progressive loading and story sequence tests passed.');
   await browser.close();
-})();
+})().catch(error => { console.error(error); process.exit(1); });

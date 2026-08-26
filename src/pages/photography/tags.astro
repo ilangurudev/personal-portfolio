@@ -1,143 +1,61 @@
 ---
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
-import { getPhotosWithExif, extractTags } from '../../utils/photo-helpers';
+import { getPhotosWithExif } from '../../utils/photo-helpers';
+import { PUBLIC_THEMES } from '../../data/photo-curation';
+import { normalizeTag } from '../../utils/client/tag-utils';
 
-const allPhotos = await getPhotosWithExif();
-
-// Extract tags with counts, sorted by count (descending), preserving original casing
-const tagsArray = extractTags(allPhotos, { sortBy: 'count', preserveDisplayCasing: true });
+const photos = await getPhotosWithExif();
+const themes = PUBLIC_THEMES.map(theme => ({
+  ...theme,
+  count: photos.filter(photo => (photo.data.tags || []).map(normalizeTag).includes(normalizeTag(theme.tag))).length,
+}));
 ---
 
-<PhotoLayout title="Tags" description="Browse photos by tag">
-  <div class="tags-page">
-    <div class="tags-header">
-      <h1 class="tags-title">Tags</h1>
-      <p class="tags-subtitle">Browse photos by category</p>
+<PhotoLayout title="Themes" description="Eight recurring themes in Gurudev Ilangovan's photography.">
+  <section class="themes-page">
+    <header class="themes-header">
+      <p>THEMES / A SHORT INDEX</p>
+      <h1>What keeps<br /><em>returning.</em></h1>
+      <span>Eight paths through the work. The complete working taxonomy remains in the Archive.</span>
+    </header>
+
+    <div class="theme-list">
+      {themes.map((theme, index) => (
+        <a href={`/photography/tag/${encodeURIComponent(theme.tag)}`} class="theme-row" data-public-theme data-tag-link data-tag={theme.tag}>
+          <span class="theme-number">{String(index + 1).padStart(2, '0')}</span>
+          <h2>{theme.label}</h2>
+          <p>{theme.note}</p>
+          <span class="theme-count">{theme.count} photographs</span>
+          <span class="theme-arrow" aria-hidden="true">↗</span>
+        </a>
+      ))}
     </div>
-
-    {tagsArray.length === 0 ? (
-      <p class="no-tags">No tags found.</p>
-    ) : (
-      <div class="tag-cloud">
-        {tagsArray.map(({ tag, count, displayTag }) => {
-          // Calculate size based on count (min: 0.875rem, max: 2.5rem)
-          const maxCount = Math.max(...tagsArray.map(t => t.count));
-          const minCount = Math.min(...tagsArray.map(t => t.count));
-          const sizeRange = 1.625; // 2.5 - 0.875
-          const normalizedSize = minCount === maxCount
-            ? 1.5
-            : 0.875 + (sizeRange * (count - minCount) / (maxCount - minCount));
-
-          return (
-            <a
-              href={`/photography/tag/${encodeURIComponent(displayTag)}`}
-              class="tag-cloud-item"
-              style={`font-size: ${normalizedSize}rem;`}
-              data-count={count}
-              data-tag-link
-              data-tag={displayTag.toLowerCase()}
-            >
-              #{displayTag.toLowerCase()}
-            </a>
-          );
-        })}
-      </div>
-    )}
-  </div>
+  </section>
 
   <style>
-    .tags-page {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
-    }
-
-    .tags-header {
-      text-align: center;
-      margin-bottom: 4rem;
-      padding-bottom: 2rem;
-      border-bottom: 1px solid rgba(28, 25, 23, 0.1);
-    }
-
-    .tags-title {
-      font-family: 'Crimson Text', serif;
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: var(--charcoal);
-      margin: 0 0 0.5rem;
-      letter-spacing: -0.02em;
-    }
-
-    .tags-subtitle {
-      color: var(--gray);
-      font-size: 1.125rem;
-      font-weight: 400;
-      margin: 0;
-    }
-
-    .no-tags {
-      text-align: center;
-      color: var(--gray);
-      font-size: 1.125rem;
-      padding: 4rem 2rem;
-    }
-
-    .tag-cloud {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 1.5rem 2rem;
-      padding: 2rem;
-      line-height: 1.8;
-    }
-
-    .tag-cloud-item {
-      text-decoration: none;
-      color: var(--charcoal);
-      font-weight: 500;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      display: inline-block;
-      opacity: 0.75;
-    }
-
-    .tag-cloud-item:hover {
-      color: var(--amber);
-      opacity: 1;
-      transform: scale(1.1);
-    }
-
-    .tag-cloud-item::after {
-      content: attr(data-count);
-      position: absolute;
-      top: -0.5rem;
-      right: -0.75rem;
-      font-size: 0.625rem;
-      color: var(--amber);
-      font-weight: 600;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-
-    .tag-cloud-item:hover::after {
-      opacity: 1;
-    }
-
-    @media (max-width: 768px) {
-      .tags-title {
-        font-size: 2.5rem;
-      }
-
-      .tags-subtitle {
-        font-size: 1rem;
-      }
-
-      .tag-cloud {
-        gap: 1rem 1.5rem;
-        padding: 1.5rem;
-      }
+    .themes-page { padding: 0 28px 130px; }
+    .themes-header { min-height: 68vh; display: grid; grid-template-columns: 160px 1fr 260px; align-items: end; gap: 40px; padding: 80px 0 68px; }
+    .themes-header > p { margin: 0; color: var(--signal); font-size: 9px; font-weight: 700; letter-spacing: .16em; }
+    .themes-header h1 { margin: 0; font-family: 'Instrument Serif', serif; font-size: clamp(92px, 13vw, 186px); font-weight: 400; line-height: .72; letter-spacing: -.055em; }
+    .themes-header h1 em { color: var(--signal); font-weight: 400; }
+    .themes-header > span { color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .theme-list { border-top: 1px solid var(--ink); }
+    .theme-row { display: grid; grid-template-columns: 50px 1.2fr 1fr 130px 22px; align-items: center; gap: 24px; min-height: 126px; border-bottom: 1px solid var(--line); text-decoration: none; transition: background .25s, padding .25s; }
+    .theme-row:hover { padding-left: 16px; background: var(--paper-bright); }
+    .theme-number, .theme-count { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .theme-number { color: var(--signal); }
+    .theme-row h2 { margin: 0; font-family: 'Instrument Serif', serif; font-size: clamp(42px, 4.6vw, 68px); font-weight: 400; line-height: 1; }
+    .theme-row p { margin: 0; color: var(--muted); font-size: 12px; }
+    .theme-count { color: var(--muted); }
+    .theme-arrow { color: var(--signal); font-size: 20px; }
+    @media (max-width: 800px) {
+      .themes-page { padding: 0 16px 80px; }
+      .themes-header { min-height: 66vh; display: block; padding: 70px 0 48px; }
+      .themes-header h1 { margin: 70px 0 44px; font-size: 91px; }
+      .themes-header > span { display: block; max-width: 290px; }
+      .theme-row { grid-template-columns: 32px 1fr 20px; gap: 12px; min-height: 110px; }
+      .theme-row h2 { font-size: 44px; }
+      .theme-row p, .theme-count { display: none; }
     }
   </style>
 </PhotoLayout>
-

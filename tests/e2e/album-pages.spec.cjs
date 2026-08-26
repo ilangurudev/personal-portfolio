@@ -80,6 +80,7 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
   console.log(`   Album title: ${albumTitle?.trim()}`);
 
   // Check for photos in album
+  await page.waitForSelector('.photo-card[data-photo-id]', { timeout: 10000 });
   const albumPhotos = await page.locator('.photo-card[data-photo-id]');
   const albumPhotoCount = await albumPhotos.count();
   console.log(`   Photos in album: ${albumPhotoCount}`);

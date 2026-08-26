@@ -62,7 +62,7 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
 
 ## 3. Photo Lightbox
 
-**Full-Featured Image Viewer** with rich metadata and navigation.
+**Editorial Image Viewer** with progressive technical detail and navigation.
 
 **Features:**
 - **Navigation:**
@@ -83,6 +83,7 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
   - Content formatted as paragraphs (splits on `\n\n`)
   - Positioned to left of slideshow button
 - **Metadata Display:**
+  - Hidden by default behind a `Details` disclosure so the photograph remains primary
   - Album name (clickable link)
   - Tags (clickable links to tag pages)
   - Camera model
@@ -90,16 +91,12 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
   - Focal length (with icon)
   - Location (with icon)
   - Film counter: "5 / 42"
-- **Mobile Optimizations:**
-  - Portrait orientation detection
-  - Expandable metadata ("See more" button)
-  - Touch-optimized controls
+- **Mobile Optimizations:** Portrait orientation detection, the same explicit `Details` disclosure, and touch-optimized controls
 
 **Architecture:**
 - Singleton class: `PhotoLightbox` (Astro component with inline `<script>`)
 - Global instance: `window.photoLightbox`
 - Photo updates: `updatePhotos(newPhotos)` method for filter sync
-- Viewfinder effect: SVG corners with "focus lock" animation on open
 - Story content: Reads `body` field from photo markdown files
 
 ## 3. Album-Specific Tag Filtering
@@ -123,12 +120,11 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 **Component:** `InfinitePhotoGallery.tsx` (React)
 
 **Architecture:**
-- **Responsive Grid:** 1-3 columns (max 3), calculated from container width
+- **Responsive Row-Major Grid:** Natural image heights are preserved while cards read left-to-right, then top-to-bottom
 - **Batch Loading:** Initial 20 photos, loads +20 per scroll
-- **Intersection Observer:** Sentinel element triggers loading (200px root margin)
-- **Aspect Ratio:** 3:2 for all thumbnails
-- **Crop Position:** Customizable per photo (`top`, `middle`, `bottom`)
-- **Viewfinder Overlay:** SVG corners appear on hover
+- **Intersection Observer:** A full-width sentinel row triggers loading (200px root margin) without reflowing existing cards
+- **Aspect Ratio:** Preserved from source dimensions; never force every frame into a 3:2 crop
+- **Sequence Stability:** Appending a batch must not change the coordinates of cards already rendered; the same row-major order drives lightbox next/previous navigation
 - **Memory Optimization:** Uses resized thumbnails (400px width) via `getResizedPhotoUrl()`
 
 **Performance:**
@@ -176,6 +172,8 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
   - Responsive grid layout (sidebar + content)
   - Gear list and philosophy text
   - Styled with photography theme variables (Crimson Text, Work Sans)
+
+> The photography homepage now renders its short biography inline at the bottom of the curated edit. `PhotoAbout.astro` remains available for legacy/secondary placements and should not be reintroduced above the work.
 
 ### `ViewfinderSVG` (Astro + React)
 - **Locations:** `src/components/photo/ViewfinderSVG.astro`, `src/components/react/ViewfinderSVG.tsx`

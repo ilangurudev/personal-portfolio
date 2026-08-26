@@ -21,23 +21,25 @@ The codebase strictly separates two distinct "spaces" via Layouts. This is a fun
     ```
 
 ### Photography Space (`PhotoLayout.astro`)
-- **Theme:** Editorial (Light/Cream, Serif/Sans, Amber/Terracotta accents).
-- **Fonts:** `Crimson Text` (Headings), `Work Sans` (Body).
+- **Theme:** Gallery editorial (warm paper, near-black ink, signal-orange accent).
+- **Fonts:** `Instrument Serif` (display/headings), `Manrope` (body/UI).
 - **Key Features:**
-  - **Viewfinder:** SVG corners overlay on photo hover.
-  - **Shared Styles:** Imports `photo-card.css` for consistent photo card styling across all photography pages.
+  - **Compact Header:** A 76px sticky desktop bar (64px mobile) keeps navigation subordinate to the work.
+  - **Navigation Language:** Work, Stories, Archive, About, and AI/Engineering expose the revised information architecture.
+  - **Mobile Menu:** Full-screen editorial index using the same navigation vocabulary.
   - **Scoped Variables:**
     ```css
     :root {
-      --cream: #FFFBF5;
-      --amber: #D97706;
+      --paper: #f1eee7;
+      --ink: #161513;
+      --signal: #f04a24;
       /* ...defined locally in PhotoLayout.astro */
     }
     ```
 
 ## 3. Shared Styles
 
-- `src/styles/photo-card.css`: Base photo card styling (hover states, viewfinder overlay, aspect ratio) imported globally by `PhotoLayout.astro`.
+- `src/styles/photo-card.css`: Legacy/shared card utilities. New editorial pages may override these locally to preserve natural image ratios.
 - `src/styles/photo-gallery-shared.css`: Gallery layout helpers + virtualization overrides imported by `PhotoLayout.astro` so photography pages share a single source of truth:
   - `.gallery-container` spacing/flex behavior
   - `.gallery-container :global(.photo-card) { position: absolute; }` to support react-window

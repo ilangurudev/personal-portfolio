@@ -1,10 +1,10 @@
 ---
 title: "DC Spring - 2025"
-description: "A spring day in and around the national arboretum."
+description: "New growth, open paths, and quiet encounters around the National Arboretum."
 coverPhoto: "dc-spring-2025/DSC00115.jpg"
 date: 2025-03-09
 featured: true
 order_score: 1
 ---
 
-A spring day in and around the national arboretum.
+New growth, open paths, and quiet encounters around the National Arboretum.

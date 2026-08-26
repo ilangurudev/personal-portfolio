@@ -407,17 +407,16 @@ const runKeyboardOnPhotosPage = async (page, { label, applyTag = false }) => {
   //   await page.waitForTimeout(400);
   // }
 
-  // Test 16: Verify focus lock animation on photo click
-  console.log('\n📍 Test 16: Verify Focus Lock Animation');
-  // Re-click the photo to check for viewfinder animation
+  // Test 16: Verify progressive technical disclosure
+  console.log('\n📍 Test 16: Verify Progressive Technical Disclosure');
   await firstPhoto.click();
-  await page.waitForTimeout(100);
-
-  const viewfinder = await firstPhoto.locator('.viewfinder-corners');
-  const hasFocusLock = await viewfinder.evaluate(el => el.classList.contains('focus-locked'));
-  console.log(`   ✓ Focus lock animation triggered: ${hasFocusLock ? '✓' : 'may have passed'}`);
-
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(300);
+  const technical = page.locator('[data-lightbox-technical]');
+  const hiddenByDefault = !(await technical.isVisible());
+  console.log(`   ✓ Technical data hidden by default: ${hiddenByDefault ? '✓' : '✗'}`);
+  await page.locator('.lightbox-see-more').click();
+  const shownOnRequest = await technical.isVisible();
+  console.log(`   ✓ Technical data shown on request: ${shownOnRequest ? '✓' : '✗'}`);
 
   // Test 17: Verify body scroll is locked when lightbox is open
   console.log('\n📍 Test 17: Verify Body Scroll Lock');

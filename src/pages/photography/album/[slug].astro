@@ -13,6 +13,8 @@ import PhotoLightbox from '../../../components/photo/PhotoLightbox.astro';
 import PhotoIcons from '../../../components/photo/PhotoIcons.astro';
 import { FilteredPhotoGallery } from '../../../components/react/FilteredPhotoGallery';
 import TagFilterBar from '../../../components/photo/TagFilterBar.astro';
+import { getResizedPhotoUrl } from '../../../utils/url-helper';
+import { FEATURED_STORIES } from '../../../data/photo-curation';
 
 export async function getStaticPaths() {
   const albums = await getCollection('albums');
@@ -35,30 +37,37 @@ const galleryPhotos = sortedPhotos.map(p => serializePhotoForGallery(
   { ...p, data: { ...p.data, albumTitle: album.data.title } },
   albumTitleMap
 ));
+const storyDirection = FEATURED_STORIES.find(story => story.slug === slug);
 ---
 
 <PhotoLayout title={album.data.title} description={album.data.description}>
   <PhotoIcons />
-  <div class="album-page">
-    <div class="album-header">
-      <h1 class="album-title">{album.data.title}</h1>
-      <p class="album-description">{album.data.description}</p>
-      <time class="album-date" datetime={album.data.date.toISOString()}>
-        {album.data.date.toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })}
-      </time>
-    </div>
+  <div class="album-page" data-story-page>
+    <header class="album-header">
+      <img class="album-hero-image" src={getResizedPhotoUrl(album.data.coverPhoto, 1800)} alt="" fetchpriority="high" />
+      <div class="album-hero-overlay"></div>
+      <a class="back-to-stories" href="/photography/albums">← All stories</a>
+      <div class="album-heading">
+        <p>{storyDirection?.kicker || `Notebook / ${album.data.date.getFullYear()}`}</p>
+        <h1 class="album-title">{album.data.title}</h1>
+        <span>{String(sortedPhotos.length).padStart(2, '0')} photographs</span>
+      </div>
+    </header>
+
+    <section class="album-introduction">
+      <p>THE NOTEBOOK</p>
+      <h2>{storyDirection?.statement || album.data.description}</h2>
+      <div>
+        <time class="album-date" datetime={album.data.date.toISOString()}>{album.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</time>
+        <span>Sequenced chronologically</span>
+      </div>
+    </section>
 
     {sortedPhotos.length === 0 ? (
       <p class="no-photos">No photos in this album yet.</p>
     ) : (
       <>
-        {albumTags.length > 0 && (
-          <TagFilterBar tags={albumTags} photos={galleryPhotos} />
-        )}
+        {albumTags.length > 0 && <TagFilterBar tags={albumTags} photos={galleryPhotos} />}
         <div class="gallery-container" data-date-sort-order={album.data.dateSortOrder}>
           <FilteredPhotoGallery 
             client:load
@@ -72,80 +81,34 @@ const galleryPhotos = sortedPhotos.map(p => serializePhotoForGallery(
   </div>
 
   <style>
-    .album-page {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
-      display: flex;
-      flex-direction: column;
-      min-height: 0; /* Allow flex child to shrink */
-    }
-
-    .album-header {
-      text-align: center;
-      margin-bottom: 2rem; /* Reduced from 4rem to give more space to gallery */
-      padding-bottom: 2rem;
-      border-bottom: 1px solid rgba(28, 25, 23, 0.1);
-      flex-shrink: 0;
-    }
-
-    .album-title {
-      font-family: 'Crimson Text', serif;
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: var(--charcoal);
-      margin: 0 0 1rem;
-      letter-spacing: -0.02em;
-    }
-
-    .album-description {
-      font-size: 1.25rem;
-      color: var(--gray);
-      line-height: 1.6;
-      margin: 0 0 1rem;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .album-date {
-      color: var(--amber);
-      font-size: 1rem;
-      font-weight: 500;
-    }
-
-    .no-photos {
-      text-align: center;
-      color: var(--gray);
-      font-size: 1.125rem;
-      padding: 4rem 2rem;
-    }
-
-    @media (max-width: 768px) {
-      .album-page {
-        padding: 1.5rem 1rem;
-      }
-
-      .album-title {
-        font-size: 2.5rem;
-      }
-
-      .album-description {
-        font-size: 1.125rem;
-      }
-
-      .tag-filter-controls {
-        justify-content: center;
-      }
-
-      .tag-pills {
-        gap: 0.5rem;
-      }
-
-      .tag-pill {
-        font-size: 0.8rem;
-        padding: 0.4rem 0.8rem;
-      }
+    .album-page { width: 100%; }
+    .album-header { position: relative; min-height: calc(100svh - 76px); overflow: hidden; background: #171614; color: var(--paper); }
+    .album-hero-image, .album-hero-overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .album-hero-image { object-fit: cover; filter: saturate(.78) contrast(1.04); }
+    .album-hero-overlay { background: linear-gradient(0deg, rgba(0,0,0,.72), transparent 65%), linear-gradient(90deg, rgba(0,0,0,.3), transparent 55%); }
+    .back-to-stories { position: absolute; top: 28px; left: 28px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,.6); font-size: 9px; font-weight: 700; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
+    .album-heading { position: absolute; inset: auto 28px 50px; display: grid; grid-template-columns: 160px 1fr auto; align-items: end; gap: 28px; }
+    .album-heading > p, .album-heading > span, .album-introduction > p { margin: 0; color: #ff6848; font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    .album-title { margin: 0; color: var(--paper) !important; font-size: clamp(82px, 12vw, 170px); line-height: .75; }
+    .album-heading > span { color: var(--paper); writing-mode: vertical-rl; }
+    .album-introduction { padding: 110px 28px 128px; display: grid; grid-template-columns: 160px minmax(0, 1fr) 180px; gap: 36px; border-bottom: 1px solid var(--line); }
+    .album-introduction h2 { max-width: 980px; margin: 0; font-family: 'Instrument Serif', serif; font-size: clamp(46px, 6vw, 84px); font-weight: 400; line-height: .96; letter-spacing: -.035em; }
+    .album-introduction > div { display: flex; flex-direction: column; gap: 10px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .album-date { color: var(--signal); }
+    :global(.album-page > .tag-filter-container) { margin: 62px 28px 0; }
+    :global(.album-page .gallery-container) { padding: 34px 28px 120px; }
+    .no-photos { padding: 100px 28px; color: var(--muted); }
+    @media (max-width: 900px) {
+      .album-header { min-height: calc(92svh - 64px); }
+      .back-to-stories { top: 18px; left: 16px; }
+      .album-heading { inset: auto 16px 30px; display: block; }
+      .album-heading > p { margin-bottom: 24px; }
+      .album-title { font-size: 74px; line-height: .8; }
+      .album-heading > span { display: block; margin-top: 24px; writing-mode: initial; }
+      .album-introduction { padding: 72px 16px 82px; display: block; }
+      .album-introduction h2 { margin: 30px 0 46px; font-size: 48px; }
+      :global(.album-page > .tag-filter-container) { margin: 44px 16px 0; }
+      :global(.album-page .gallery-container) { padding: 26px 16px 80px; }
     }
   </style>
 

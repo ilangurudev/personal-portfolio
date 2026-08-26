@@ -41,29 +41,21 @@ async function getCardData(page) {
 
     console.log('🧪 Testing Photo Sorting...\n');
 
-    // Test 0: Home (Photography) Sorting
-    console.log('📍 Test 0: Photography Home Sorting (first visible batch)');
+    // Test 0: Home uses a manually authored sequence, independent of archive sorting.
+    console.log('📍 Test 0: Photography Home Curated Sequence');
     await page.goto(`${TARGET_URL}/photography`);
-    const homeCards = await getCardData(page);
-
-    console.log('   Visible photos:', homeCards.length);
-    console.log('   First 3 IDs:', homeCards.slice(0, 3).map(c => c.id));
-
-    if (homeCards.length === 0) {
-        console.error('   ✗ No photos found on photography home');
-        process.exitCode = 1;
+    await page.waitForSelector('[data-curated-photo]');
+    const homeIds = await page.$$eval('[data-curated-photo]', cards => cards.map(card => card.getAttribute('data-photo-id')));
+    const expectedOpening = [
+      'new-york-2025/AR53824.md',
+      'georgetown-metro-2025/20250914-_AR50392.md',
+      'dc-hot-summer/20250623-_AR55740.md'
+    ];
+    if (homeIds.length !== 20 || homeIds.slice(0, 3).join('|') !== expectedOpening.join('|')) {
+      console.error('   Curated homepage sequence changed unexpectedly');
+      process.exitCode = 1;
     } else {
-        const expectedHomeOrder = sortByRules(homeCards).map(card => card.id);
-        const actualHomeOrder = homeCards.map(card => card.id);
-
-        if (actualHomeOrder.join('|') === expectedHomeOrder.join('|')) {
-            console.log('   ✓ Home photos sorted by order_score, then date desc');
-        } else {
-            console.error('   ✗ Home photos not sorted correctly');
-            console.error('     Actual first 5:', actualHomeOrder.slice(0, 5));
-            console.error('     Expected first 5:', expectedHomeOrder.slice(0, 5));
-            process.exitCode = 1;
-        }
+      console.log('   ✓ Manual 20-photo sequence begins with the approved opening rhythm');
     }
 
     // Test 1: Album View Sorting (3 random albums)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getResizedPhotoUrl } from '../../utils/url-helper';
 import { ViewfinderSVG } from './ViewfinderSVG';
 
@@ -79,18 +79,14 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
   }, [visibleCount, photos.length, loadMoreCount]);
 
   const visiblePhotos = photos.slice(0, visibleCount);
-  const itemWidth = containerRef.current
-    ? (containerRef.current.offsetWidth - (columnCount - 1) * GAP) / columnCount
-    : MIN_COLUMN_WIDTH;
-  const itemHeight = itemWidth / (3 / 2); // Aspect ratio 3:2
-
   return (
     <div
       ref={containerRef}
       style={{
         width: '100%',
         display: 'grid',
-        gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
+        gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+        alignItems: 'start',
         gap: `${GAP}px`,
         padding: '1rem 0'
       }}
@@ -108,8 +104,8 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
           }
           style={{
             width: '100%',
-            aspectRatio: '3/2',
-            position: 'relative'
+            position: 'relative',
+            alignSelf: 'start'
           }}
         >
           <div className="photo-image">
@@ -135,8 +131,9 @@ export const InfinitePhotoGallery: React.FC<InfinitePhotoGalleryProps> = ({
         <div
           ref={sentinelRef}
           style={{
-            gridColumn: `1 / -1`,
+            gridColumn: '1 / -1',
             height: '100px',
+            width: '100%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'

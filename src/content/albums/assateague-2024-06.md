@@ -1,10 +1,10 @@
 ---
 title: "Assateague - 2024"
-description: "A collection of photography in Assateague Island."
+description: "Wind, dunes, and wild horses along Assateague's Atlantic edge."
 coverPhoto: "assateague-2024-06/DSC05683.jpg"
 date: 2024-06-15
 featured: true
 order_score: 1
 ---
 
-A collection of photography in Assateague Island.
+Wind, dunes, and wild horses along Assateague's Atlantic edge.

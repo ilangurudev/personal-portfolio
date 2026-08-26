@@ -1,159 +1,99 @@
 ---
-import PhotoLayout from "../../layouts/PhotoLayout.astro";
-import { getCollection } from "astro:content";
-import { getResizedPhotoUrl } from "../../utils/url-helper";
-import { sortAlbums } from "../../utils/photo-helpers";
+import PhotoLayout from '../../layouts/PhotoLayout.astro';
+import { getCollection } from 'astro:content';
+import { getResizedPhotoUrl } from '../../utils/url-helper';
+import { sortAlbums } from '../../utils/photo-helpers';
+import { FEATURED_STORIES } from '../../data/photo-curation';
 
-const albums = await getCollection("albums");
-const sortedAlbums = sortAlbums(albums);
+const albums = sortAlbums(await getCollection('albums'));
+const albumMap = new Map(albums.map(album => [album.slug, album]));
+const featuredSlugs = new Set(FEATURED_STORIES.map(story => story.slug));
+const archiveAlbums = albums.filter(album => !featuredSlugs.has(album.slug));
 ---
 
-<PhotoLayout title="Albums" description="Photo albums by Guru">
-  <div class="albums-container">
-    <h1 class="albums-title">Albums</h1>
+<PhotoLayout title="Stories" description="Photographic stories by Gurudev Ilangovan.">
+  <section class="stories-masthead">
+    <p class="stories-label">STORIES / 2024—2025</p>
+    <h1>Places,<br /><em>given time.</em></h1>
+    <p>Photographic notebooks shaped by atmosphere, gesture, and the rhythm of being there.</p>
+  </section>
 
-    {
-      sortedAlbums.length === 0 ? (
-        <p class="no-albums">No albums yet. Check back soon!</p>
-      ) : (
-        <div class="albums-grid">
-          {sortedAlbums.map((album) => (
-            <a
-              href={`/photography/album/${album.slug}`}
-              class="album-card"
-              data-album-card
-              data-album-slug={album.slug}
-            >
-              <div class="album-cover">
-                <img
-                  src={getResizedPhotoUrl(album.data.coverPhoto, 600)}
-                  alt={album.data.title}
-                  loading="lazy"
-                />
-              </div>
-              <div class="album-info">
-                <h2 class="album-title">{album.data.title}</h2>
-                <p class="album-description">{album.data.description}</p>
-                <time
-                  class="album-date"
-                  datetime={album.data.date.toISOString()}
-                >
-                  {album.data.date.toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </time>
-              </div>
-            </a>
-          ))}
-        </div>
-      )
-    }
-  </div>
+  <section class="featured-stories" aria-label="Featured photographic stories">
+    {FEATURED_STORIES.map((story, index) => {
+      const album = albumMap.get(story.slug);
+      if (!album) return null;
+      return (
+        <a href={`/photography/album/${story.slug}`} class="album-card featured-story" data-featured-story data-album-card data-album={story.slug} data-album-slug={story.slug}>
+          <div class="featured-story-image"><img src={getResizedPhotoUrl(album.data.coverPhoto, 1400)} alt={album.data.title} loading={index < 2 ? 'eager' : 'lazy'} /></div>
+          <div class="featured-story-copy">
+            <p>{story.number} / {story.kicker}</p>
+            <h2>{album.data.title}</h2>
+            <span>{story.statement}</span>
+            <time datetime={album.data.date.toISOString()}>{album.data.date.getFullYear()}</time>
+          </div>
+        </a>
+      );
+    })}
+  </section>
+
+  <section class="story-archive" data-story-archive>
+    <header>
+      <p>THE NOTEBOOKS</p>
+      <h2>More places,<br />more weather.</h2>
+    </header>
+    <div class="story-archive-grid">
+      {archiveAlbums.map((album, index) => (
+        <a href={`/photography/album/${album.slug}`} class="album-card archive-story" data-album-card data-album={album.slug} data-album-slug={album.slug}>
+          <div class="archive-story-image"><img src={getResizedPhotoUrl(album.data.coverPhoto, 700)} alt={album.data.title} loading="lazy" /></div>
+          <p>{String(index + 7).padStart(2, '0')} / {album.data.date.getFullYear()}</p>
+          <h3>{album.data.title}</h3>
+          <span>{album.data.description}</span>
+        </a>
+      ))}
+    </div>
+  </section>
 
   <style>
-    .albums-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem;
-    }
-
-    .albums-title {
-      font-family: "Crimson Text", serif;
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: var(--charcoal);
-      margin: 0 0 3rem;
-      text-align: center;
-      letter-spacing: -0.02em;
-    }
-
-    .no-albums {
-      text-align: center;
-      color: var(--gray);
-      font-size: 1.125rem;
-      padding: 4rem 2rem;
-    }
-
-    .albums-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2.5rem;
-      margin-top: 2rem;
-    }
-
-    .album-card {
-      display: flex;
-      flex-direction: column;
-      text-decoration: none;
-      color: inherit;
-      transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-      border-radius: 4px;
-      overflow: hidden;
-      background: var(--cream-dark);
-    }
-
-    .album-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    }
-
-    .album-cover {
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      overflow: hidden;
-      background: var(--cream);
-    }
-
-    .album-cover img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center top;
-      transition: transform 0.3s ease;
-    }
-
-    .album-card:hover .album-cover img {
-      transform: scale(1.05);
-    }
-
-    .album-info {
-      padding: 1.5rem;
-    }
-
-    .album-title {
-      font-family: "Crimson Text", serif;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: var(--charcoal);
-      margin: 0 0 0.5rem;
-    }
-
-    .album-description {
-      color: var(--gray);
-      font-size: 0.9375rem;
-      line-height: 1.6;
-      margin: 0 0 1rem;
-    }
-
-    .album-date {
-      color: var(--amber);
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    @media (max-width: 768px) {
-      .albums-title {
-        font-size: 2.5rem;
-      }
-
-      .albums-grid {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-      }
+    .stories-masthead { min-height: 72vh; padding: 80px 28px 64px; display: grid; grid-template-columns: 160px 1fr 280px; align-items: end; gap: 40px; border-bottom: 1px solid var(--line); }
+    .stories-label, .featured-story-copy > p, .story-archive header > p, .archive-story > p { margin: 0; color: var(--signal); font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    .stories-masthead h1 { margin: 0; font-family: 'Instrument Serif', serif; font-size: clamp(92px, 13vw, 188px); font-weight: 400; line-height: .72; letter-spacing: -.055em; }
+    .stories-masthead h1 em { color: var(--signal); font-weight: 400; }
+    .stories-masthead > p:last-child { margin: 0 0 10px; color: var(--muted); font-size: 15px; line-height: 1.7; }
+    .featured-stories { padding: 120px 28px 140px; }
+    .featured-story { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, .65fr); gap: clamp(30px, 6vw, 90px); align-items: center; margin-bottom: 140px; text-decoration: none; }
+    .featured-story:nth-child(even) { grid-template-columns: minmax(280px, .65fr) minmax(0, 1.55fr); }
+    .featured-story:nth-child(even) .featured-story-image { grid-column: 2; }
+    .featured-story:nth-child(even) .featured-story-copy { grid-column: 1; grid-row: 1; }
+    .featured-story-image { overflow: hidden; background: #d7d1c8; }
+    .featured-story-image img { display: block; width: 100%; height: auto; transition: transform .7s cubic-bezier(.22,1,.36,1); }
+    .featured-story:hover img { transform: scale(1.015); }
+    .featured-story-copy h2 { margin: 20px 0 26px; font-family: 'Instrument Serif', serif; font-size: clamp(54px, 6vw, 88px); font-weight: 400; line-height: .86; letter-spacing: -.04em; }
+    .featured-story-copy > span { display: block; max-width: 440px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .featured-story-copy time { display: block; margin-top: 46px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+    .story-archive { padding: 110px 28px 140px; background: var(--night); color: var(--paper); }
+    .story-archive header { display: grid; grid-template-columns: 160px 1fr; margin-bottom: 72px; }
+    .story-archive header h2 { margin: 0; font-family: 'Instrument Serif', serif; font-size: clamp(58px, 7vw, 100px); font-weight: 400; line-height: .88; }
+    .story-archive-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 58px 22px; }
+    .archive-story { text-decoration: none; }
+    .archive-story-image { aspect-ratio: 4 / 3; overflow: hidden; background: #252321; }
+    .archive-story-image img { width: 100%; height: 100%; object-fit: cover; transition: filter .3s; }
+    .archive-story:hover img { filter: grayscale(1); }
+    .archive-story > p { margin-top: 16px; }
+    .archive-story h3 { margin: 8px 0; font-family: 'Instrument Serif', serif; font-size: 28px; font-weight: 400; line-height: 1; }
+    .archive-story > span { color: rgba(238,234,226,.55); font-size: 11px; line-height: 1.5; }
+    @media (max-width: 900px) {
+      .stories-masthead { min-height: 68vh; padding: 64px 16px 42px; display: block; }
+      .stories-masthead h1 { margin: 70px 0 44px; font-size: 94px; }
+      .stories-masthead > p:last-child { max-width: 300px; }
+      .featured-stories { padding: 76px 16px 90px; }
+      .featured-story, .featured-story:nth-child(even) { display: flex; flex-direction: column; align-items: stretch; margin-bottom: 88px; }
+      .featured-story:nth-child(even) .featured-story-image, .featured-story:nth-child(even) .featured-story-copy { grid-column: auto; grid-row: auto; }
+      .featured-story-copy h2 { font-size: 54px; }
+      .story-archive { padding: 76px 16px 90px; }
+      .story-archive header { display: block; }
+      .story-archive header h2 { margin-top: 20px; font-size: 58px; }
+      .story-archive-grid { grid-template-columns: 1fr 1fr; gap: 44px 14px; }
+      .archive-story h3 { font-size: 23px; }
     }
   </style>
 </PhotoLayout>

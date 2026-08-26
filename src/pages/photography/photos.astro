@@ -148,13 +148,15 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
 
 ---
 
-<PhotoLayout title="All Photos" description="Browse all photos with advanced filters">
+<PhotoLayout title="Archive" description="The complete photography archive, with filters for subject, place, date, and camera.">
   <PhotoIcons />
 
-  <div class="photos-page">
+  <div class="photos-page" data-archive-page>
     <div class="page-header">
-      <h1 class="page-title">All Photos</h1>
-      <p class="page-subtitle">{sortedPhotos.length} photos · Advanced filtering</p>
+      <p class="archive-kicker">THE WORKING ARCHIVE / 2024—2025</p>
+      <h1 class="page-title">Every frame,<br /><em>kept searchable.</em></h1>
+      <p class="page-subtitle">{sortedPhotos.length} photographs. This is the complete working index—not the portfolio edit.</p>
+      <div class="archive-links"><a href="/photography#work">View the edit ↗</a><a href="/photography/tags">Browse eight themes ↗</a></div>
       <button id="toggle-filters" class="toggle-filters-btn" aria-label="Toggle filters">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
@@ -563,7 +565,6 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
 
     // Photo filtering and progressive loading
     const BATCH_SIZE = 20;
-    console.log('EXIF Ranges:', exifRangesData);
     let currentBatchIndex = 0;
     let filteredPhotos = [...allPhotosData];
     let displayedPhotos = [];
@@ -1137,44 +1138,16 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
   </script>
 
   <style>
-    .photos-page {
-      max-width: 1800px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 0 1.5rem 2rem;
-    }
-
-    .page-header {
-      text-align: center;
-      margin-bottom: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      position: sticky;
-      top: 0;
-      background: var(--cream);
-      padding: 1rem 1.5rem 1rem;
-      z-index: 50;
-      border-bottom: 1px solid rgba(28, 25, 23, 0.1);
-    }
-
-    .page-title {
-      font-family: 'Crimson Text', serif;
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: var(--charcoal);
-      margin: 0;
-      letter-spacing: -0.03em;
-    }
-
-    .page-subtitle {
-      font-size: 1.125rem;
-      color: var(--gray);
-      margin: 0;
-      font-weight: 400;
-    }
-
+    .photos-page { padding: 0 28px 110px; }
+    .page-header { min-height: 68vh; display: grid; grid-template-columns: 160px 1fr 300px; grid-template-rows: 1fr auto auto; align-items: end; gap: 20px 40px; padding: 80px 0 58px; border-bottom: 1px solid var(--ink); }
+    .archive-kicker { grid-column: 1; margin: 0 0 12px; color: var(--signal); font-size: 9px; font-weight: 700; letter-spacing: .16em; }
+    .page-title { grid-column: 2; grid-row: 1 / span 2; align-self: end; margin: 0 !important; font-size: clamp(78px, 10vw, 148px) !important; line-height: .76 !important; }
+    .page-title em { color: var(--signal); font-weight: 400; }
+    .page-subtitle { grid-column: 3; grid-row: 2; max-width: 280px; margin: 0 0 10px !important; color: var(--muted) !important; font-size: 13px !important; line-height: 1.7; }
+    .archive-links { grid-column: 2; display: flex; gap: 28px; }
+    .archive-links a { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-decoration: none; text-transform: uppercase; }
+    .toggle-filters-btn { grid-column: 3; justify-self: start; border-radius: 0 !important; background: var(--ink) !important; color: var(--paper) !important; text-transform: uppercase; letter-spacing: .1em; }
+    .content-wrapper { margin-top: 58px; }
     .toggle-filters-btn {
       display: inline-flex;
       align-items: center;
@@ -1681,18 +1654,12 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
     }
 
     @media (max-width: 768px) {
-      .page-title {
-        font-size: 2rem;
-      }
-
-      .page-subtitle {
-        font-size: 0.875rem;
-      }
-
-      .page-header {
-        padding: 1.5rem 1rem 1rem;
-      }
-
+      .photos-page { padding: 0 16px 80px; }
+      .page-header { min-height: auto; display: block; padding: 70px 0 48px; }
+      .archive-kicker { margin-bottom: 64px; }
+      .page-title { font-size: 68px !important; }
+      .page-subtitle { margin: 32px 0 24px !important; }
+      .archive-links { margin-bottom: 32px; flex-direction: column; gap: 10px; }
       .photos-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;

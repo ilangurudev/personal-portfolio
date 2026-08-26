@@ -1,10 +1,10 @@
 ---
 title: "Cherry Blossoms - 2025"
-description: "Cherry Blossoms, Kite Festival, Petal Palooza!!"
+description: "Blossoms, kites, crowds, and the brief spectacle of spring in Washington."
 coverPhoto: "cherry-blossoms-2025/DSC01777.jpg"
 date: 2025-03-28
 featured: true
 order_score: 1
 ---
 
-Cherry Blossoms, Kite Festival, Petal Palooza!!
+Blossoms, kites, crowds, and the brief spectacle of spring in Washington.

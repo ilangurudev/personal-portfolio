@@ -317,7 +317,7 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
         }
 
         /* Mobile Styles */
-        @media (max-width: 1400px) {
+        @media (max-width: 1199px) {
           .toc-sidebar {
             display: none;
           }
@@ -385,12 +385,15 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
             border-radius: 16px 16px 0 0;
             z-index: 999;
             transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            visibility: hidden;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.3s;
             overflow: hidden;
           }
 
           .toc-drawer.toc-drawer-open {
             transform: translateY(0);
+            visibility: visible;
+            transition-delay: 0s;
           }
 
           .toc-drawer-header {

@@ -1,104 +1,34 @@
-/**
- * Photo Filter Toggle Tests
- *
- * Tests the All|Street|Landscape filter toggle on the photography landing page.
- * Verifies that photos are correctly filtered based on their tags.
- */
-
+/** Public discovery tests for the curated photography experience. */
 const { chromium } = require('playwright');
-
-const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
+const TARGET_URL = process.env.TEST_URL || 'http://127.0.0.1:4321';
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: process.env.HEADLESS === 'true',
-    slowMo: 100
-  });
+  const browser = await chromium.launch({ headless: process.env.HEADLESS !== 'false' });
   const page = await browser.newPage();
+  console.log('Testing curated work and public theme discovery...');
 
-  console.log('🧪 Testing Photo Filter Toggle...\n');
-
-  // Test 1: Navigate to Photography Landing Page
-  console.log('📍 Test 1: Navigate to Photography Landing Page');
   await page.goto(`${TARGET_URL}/photography`);
   await page.waitForLoadState('networkidle');
+  assert(await page.locator('[data-curated-photo]').count() === 20, 'Homepage edit is not the curated 20-image sequence.');
 
-  const pageTitle = await page.title();
-  console.log(`   ✓ Page loaded: ${pageTitle}`);
+  await page.goto(`${TARGET_URL}/photography/tags`);
+  await page.waitForLoadState('networkidle');
+  assert(await page.locator('[data-public-theme]').count() === 8, 'Expected eight public themes.');
 
-  // Test 2: Verify Filter Toggle Group Exists
-  console.log('\n📍 Test 2: Verify Filter Toggle Group');
-  const filterToggle = await page.locator('.filter-toggle-group');
-  const toggleCount = await filterToggle.count();
-  console.log(`   ✓ Filter toggle group found: ${toggleCount > 0 ? '✓' : '✗'}`);
+  const firstTheme = page.locator('[data-public-theme]').first();
+  const destination = await firstTheme.getAttribute('href');
+  await firstTheme.click();
+  await page.waitForLoadState('networkidle');
+  assert(page.url().includes(destination), 'Theme did not navigate to its photo collection.');
+  await page.waitForSelector('.photo-card[data-photo-id]');
 
-  const allButton = await page.locator('.filter-toggle-option[data-filter="all"]');
-  const streetButton = await page.locator('.filter-toggle-option[data-filter="street"]');
-  const landscapeButton = await page.locator('.filter-toggle-option[data-filter="landscape"]');
+  await page.goto(`${TARGET_URL}/photography/photos`);
+  await page.waitForLoadState('networkidle');
+  assert(await page.locator('#toggle-filters').count() === 1, 'Archive filter entry point is missing.');
+  await page.locator('#toggle-filters').click();
+  assert(await page.locator('#filter-panel').isVisible(), 'Archive filters did not open.');
 
-  const allExists = await allButton.count() > 0;
-  const streetExists = await streetButton.count() > 0;
-  const landscapeExists = await landscapeButton.count() > 0;
-
-  console.log(`   ✓ All button exists: ${allExists ? '✓' : '✗'}`);
-  console.log(`   ✓ Street button exists: ${streetExists ? '✓' : '✗'}`);
-  console.log(`   ✓ Landscape button exists: ${landscapeExists ? '✓' : '✗'}`);
-
-  // Test 3: Verify Default State (All)
-  console.log('\n📍 Test 3: Verify Default State');
-  const allButtonActive = await allButton.evaluate(el => el.classList.contains('active'));
-  console.log(`   ✓ All button is active by default: ${allButtonActive ? '✓' : '✗'}`);
-
-  const totalPhotos = await page.locator('.photo-card').count();
-  const visiblePhotos = await page.locator('.photo-card:visible').count();
-  console.log(`   ✓ Total photos: ${totalPhotos}`);
-  console.log(`   ✓ Visible photos (All): ${visiblePhotos}`);
-
-  // Test 4: Click Street Filter
-  console.log('\n📍 Test 4: Test Street Filter');
-  await streetButton.click();
-  await page.waitForTimeout(300); // Wait for filtering animation
-
-  const streetButtonActive = await streetButton.evaluate(el => el.classList.contains('active'));
-  console.log(`   ✓ Street button is active: ${streetButtonActive ? '✓' : '✗'}`);
-
-  const visibleStreetPhotos = await page.locator('.photo-card:visible').count();
-  console.log(`   ✓ Visible photos (Street): ${visibleStreetPhotos}`);
-  console.log(`   ✓ Filter reduced photos: ${visibleStreetPhotos < totalPhotos ? '✓' : '✗'}`);
-
-  // Test 5: Click Landscape Filter
-  console.log('\n📍 Test 5: Test Landscape Filter');
-  await landscapeButton.click();
-  await page.waitForTimeout(300); // Wait for filtering animation
-
-  const landscapeButtonActive = await landscapeButton.evaluate(el => el.classList.contains('active'));
-  console.log(`   ✓ Landscape button is active: ${landscapeButtonActive ? '✓' : '✗'}`);
-
-  const visibleLandscapePhotos = await page.locator('.photo-card:visible').count();
-  console.log(`   ✓ Visible photos (Landscape): ${visibleLandscapePhotos}`);
-  console.log(`   ✓ Filter reduced photos: ${visibleLandscapePhotos < totalPhotos ? '✓' : '✗'}`);
-
-  // Test 6: Click All to Reset
-  console.log('\n📍 Test 6: Test All Filter (Reset)');
-  await allButton.click();
-  await page.waitForTimeout(300); // Wait for filtering animation
-
-  const allButtonActiveAgain = await allButton.evaluate(el => el.classList.contains('active'));
-  console.log(`   ✓ All button is active: ${allButtonActiveAgain ? '✓' : '✗'}`);
-
-  const visibleAllPhotos = await page.locator('.photo-card:visible').count();
-  console.log(`   ✓ Visible photos (All): ${visibleAllPhotos}`);
-  console.log(`   ✓ All photos visible again: ${visibleAllPhotos === totalPhotos ? '✓' : '✗'}`);
-
-  // Test 7: Verify Only One Button Active at a Time
-  console.log('\n📍 Test 7: Verify Exclusive Button States');
-  await streetButton.click();
-  await page.waitForTimeout(100);
-
-  const activeButtons = await page.locator('.filter-toggle-option.active').count();
-  console.log(`   ✓ Only one button active at a time: ${activeButtons === 1 ? '✓' : '✗'}`);
-
-  console.log('\n✅ Photo filter toggle tests passed!\n');
-
+  console.log('Curated work and public theme discovery tests passed.');
   await browser.close();
-})();
+})().catch(error => { console.error(error); process.exit(1); });

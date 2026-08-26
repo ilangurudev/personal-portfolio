@@ -33,7 +33,7 @@
 ### Two-Theme System
 - **Completely Separate Design Systems:**
   - Professional: Dark (slate-950), terminal-green/cyan/yellow, monospace (JetBrains Mono)
-  - Photography: Light (cream #FFFBF5), amber/terracotta, sans/serif (Work Sans, Crimson Text)
+  - Photography: Warm paper/near-black editorial system with signal-orange accents, Instrument Serif display type, and Manrope UI type
 - **Space Toggle:** In-header navigation switches between `/` ↔ `/photography`
 - **No Cross-Contamination:** Each layout defines its own CSS variables and theme
 
@@ -55,7 +55,7 @@
 
 ### Performance Patterns
 - **Infinite Scroll:** Batch loading (20 photos/batch) via Intersection Observer
-- **Responsive Column Grid:** Max 3 columns, adapts to viewport (300px min column width)
+- **Stable Story Grid:** Natural-aspect cards flow left-to-right in responsive rows; progressive batches append below without rebalancing or moving photographs already on screen
 - **CDN + Resizing:** Thumbnails use Cloudflare `/cdn-cgi/image/width=400,quality=85,format=jpg/`
 - **Image Preloading:** Lightbox preloads adjacent photos for smooth navigation
 - **LocalStorage:** Filter panel collapse state persists across sessions
@@ -167,3 +167,12 @@
 - **Photography photo titles:** Photo search cards show the album name with a folder icon (links to album) instead of the photo filename/title to reduce noise.
 - **Photography album cards:** Album search results render the album description/snippet with a 2-line clamp + ellipsis to match the album listing cards.
 - **Photography lightbox:** Photo results now hydrate the global lightbox; clicking a photo card opens the lightbox instead of navigating away (links still work as a no-JS fallback).
+
+### Photography Information Architecture
+- **`/photography`:** A fixed, manually sequenced 20-frame edit from `src/data/photo-curation.ts`; the work appears before biography or utility UI. A separate hero image opens the page and must never repeat in the edit.
+- **`/photography/albums`:** Editorially presented as **Stories**, with six featured bodies of work followed by the complete notebook archive.
+- **`/photography/tags`:** A small public-facing set of eight themes. It intentionally does not expose the full internal keyword taxonomy.
+- **`/photography/photos`:** The complete searchable/filterable **Archive**, where technical discovery tools belong.
+- **Album detail:** Opens with a full-bleed story cover and short editorial statement, then reveals the filterable notebook.
+- **Curation rule:** Do not derive the homepage from `featured`, timestamps, or score. Choose `HERO_PHOTO` separately, keep it out of the edit, and author desktop rhythm through `CURATED_EDIT_GROUPS`. Feature groups are full-width anchors; pair groups are aligned equal-width rows. `CURATED_EDIT_IDS` is derived from those groups.
+- **Taxonomy rule:** Frontmatter tags are lowercase and correctly spelled; omit unknown locations rather than storing invalid coordinate placeholders.
