@@ -36,13 +36,23 @@ async function nextPaint(page) {
   await desktop.waitForSelector('html[data-photography-motion="ready"]');
 
   const heroImage = desktop.locator('[data-home-hero] img');
-  const heroTransformAtTop = await heroImage.evaluate(el => getComputedStyle(el).transform);
+  const heroTransformAtTop = await heroImage.evaluate(el => {
+    const transform = getComputedStyle(el).transform;
+    const matrix = new DOMMatrixReadOnly(transform);
+    return { transform, scale: matrix.a };
+  });
   await desktop.evaluate(() => window.scrollTo(0, 480));
+  await desktop.waitForFunction(() => window.scrollY >= 450);
   await nextPaint(desktop);
   const heroTransformAfterScroll = await heroImage.evaluate(el => getComputedStyle(el).transform);
-  assert(heroTransformAtTop !== 'none', 'The desktop hero should begin with a restrained cinematic settle.');
-  assert(heroTransformAfterScroll !== heroTransformAtTop,
+  const heroCopyOpacityAfterScroll = Number(await desktop.locator('.hero-copy').evaluate(el => getComputedStyle(el).opacity));
+  assert(heroTransformAtTop.transform !== 'none', 'The desktop hero should begin with a restrained cinematic settle.');
+  assert(heroTransformAtTop.scale >= 1.055,
+    `The hero settle should be clearly perceptible without becoming a zoom effect; found scale ${heroTransformAtTop.scale}.`);
+  assert(heroTransformAfterScroll !== heroTransformAtTop.transform,
     'The desktop hero should respond subtly as the visitor begins scrolling.');
+  assert(heroCopyOpacityAfterScroll <= 0.8,
+    `The hero copy should noticeably recede as the edit approaches; found opacity ${heroCopyOpacityAfterScroll}.`);
 
   const openingMovement = desktop.locator('[data-motion-sequence="opening"]');
   assert(await openingMovement.count() === 3,
@@ -56,8 +66,14 @@ async function nextPaint(page) {
   await desktop.evaluate(() => window.scrollTo(0, 0));
   await nextPaint(desktop);
   const quietSceneBefore = Number(await quietScene.evaluate(el => getComputedStyle(el).opacity));
+  const quietSceneTravel = await quietScene.evaluate(el => {
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+    return matrix.f;
+  });
   assert(quietSceneBefore < 0.1,
     'Later photographs should wait below the fold instead of arriving all at once.');
+  assert(quietSceneTravel >= 54 && quietSceneTravel <= 72,
+    `Later photographs should have a noticeable but restrained entrance; found ${quietSceneTravel}px of travel.`);
   await quietScene.scrollIntoViewIfNeeded();
   await desktop.waitForFunction(
     element => Number(getComputedStyle(element).opacity) > 0.95,
