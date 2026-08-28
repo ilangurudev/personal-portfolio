@@ -78,7 +78,7 @@ export const CURATED_EDIT_GROUPS = [
     kind: 'pair',
     ids: [
       'puerto-rico-2025/20251214-_AR54764.md',
-      'puerto-rico-2025/20251213-_AR53931.md',
+      'puerto-rico-2025/20251212-_AR53225.md',
     ],
   },
   {
@@ -120,7 +120,7 @@ export const CURATED_PHOTO_DIMENSIONS = {
   'miami-2024/DSC04805.md': { width: 1000, height: 666 },
   'cherry-blossoms-2025/DSC00949.md': { width: 1000, height: 666 },
   'puerto-rico-2025/20251214-_AR54764.md': { width: 1000, height: 666 },
-  'puerto-rico-2025/20251213-_AR53931.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251212-_AR53225.md': { width: 1000, height: 666 },
   'puerto-rico-2025/20251214-_AR54842.md': { width: 1000, height: 666 },
   'olympic-2025/20250708-_AR57853.md': { width: 1000, height: 666 },
   'miami-2024/DSC08293.md': { width: 1600, height: 1066 },

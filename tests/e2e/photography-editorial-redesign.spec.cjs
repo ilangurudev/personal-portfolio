@@ -93,7 +93,7 @@ function assert(condition, message) {
     'miami-2024/DSC04805.md',
     'cherry-blossoms-2025/DSC00949.md',
     'puerto-rico-2025/20251214-_AR54764.md',
-    'puerto-rico-2025/20251213-_AR53931.md',
+    'puerto-rico-2025/20251212-_AR53225.md',
     'puerto-rico-2025/20251214-_AR54842.md',
     'olympic-2025/20250708-_AR57853.md',
     'miami-2024/DSC08293.md',
@@ -112,7 +112,7 @@ function assert(condition, message) {
     ['feature', ['puerto-rico-2025/20251213-_AR53645.md']],
     ['feature', ['tampa-2025/20251111-_AR52140.md']],
     ['pair', ['miami-2024/DSC04805.md', 'cherry-blossoms-2025/DSC00949.md']],
-    ['pair', ['puerto-rico-2025/20251214-_AR54764.md', 'puerto-rico-2025/20251213-_AR53931.md']],
+    ['pair', ['puerto-rico-2025/20251214-_AR54764.md', 'puerto-rico-2025/20251212-_AR53225.md']],
     ['pair', ['puerto-rico-2025/20251214-_AR54842.md', 'olympic-2025/20250708-_AR57853.md']],
     ['feature', ['miami-2024/DSC08293.md']],
   ];
