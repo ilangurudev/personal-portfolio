@@ -31,20 +31,37 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
 <div id="photo-lightbox" class="lightbox" style="display: none;">
   <div class="lightbox-backdrop"></div>
   <div class="shutter-overlay"></div>
-  <button class="lightbox-close" aria-label="Close lightbox">&times;</button>
+  <button class="lightbox-close" aria-label="Close lightbox">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"></path>
+    </svg>
+  </button>
   
   <div class="lightbox-content">
     <button class="lightbox-nav lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
     <div class="lightbox-image-container">
-      <img class="lightbox-image" src="" alt="" />
+      <img
+        class="lightbox-image"
+        src=""
+        alt=""
+        role="button"
+        tabindex="0"
+        aria-pressed="false"
+        aria-label="Zoom in on photograph"
+      />
       <div class="lightbox-info">
-        <div class="lightbox-tags-and-album">
-          <div class="lightbox-album"></div>
-          <div class="lightbox-tags"></div>
-        </div>
         <div class="lightbox-metadata-row">
-          <div class="lightbox-metadata" data-lightbox-technical style="display: none;"></div>
-          <button class="lightbox-see-more" aria-label="Show technical details" style="display: none;">Details</button>
+          <button
+            class="lightbox-info-toggle"
+            aria-label="Show photo information"
+            aria-expanded="false"
+            aria-controls="lightbox-info-panel"
+            title="Photo information"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 7.5h.01M12 11v5"></path>
+            </svg>
+          </button>
           <div class="lightbox-counter-controls">
             <div class="lightbox-counter"></div>
             <button class="lightbox-story-btn" aria-label="View photo story" title="Story" style="display: none;">
@@ -74,6 +91,13 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
               </div>
             </div>
           </div>
+        </div>
+        <div id="lightbox-info-panel" class="lightbox-info-panel" data-lightbox-info-panel style="display: none;">
+          <div class="lightbox-tags-and-album">
+            <div class="lightbox-album"></div>
+            <div class="lightbox-tags"></div>
+          </div>
+          <div class="lightbox-metadata" data-lightbox-technical></div>
         </div>
       </div>
     </div>
@@ -111,6 +135,9 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   class PhotoLightbox {
     private lightbox: HTMLElement | null;
     private image: HTMLImageElement | null;
+    private closeBtn: HTMLButtonElement | null;
+    private prevBtn: HTMLButtonElement | null;
+    private nextBtn: HTMLButtonElement | null;
     private tags: HTMLElement | null;
     private album: HTMLElement | null;
     private metadata: HTMLElement | null;
@@ -132,8 +159,10 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     private transitionTimeout: number | null = null;
     private imageLoadTimeout: number | null = null;
     private imageContainer: HTMLElement | null;
-    private seeMoreBtn: HTMLElement | null;
-    private metadataExpanded: boolean = false;
+    private infoToggle: HTMLButtonElement | null;
+    private infoPanel: HTMLElement | null;
+    private infoExpanded: boolean = false;
+    private isZoomed: boolean = false;
     private storyBtn: HTMLElement | null;
     private storyDrawer: HTMLElement | null;
     private storyContent: HTMLElement | null;
@@ -154,6 +183,9 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       this.lightbox = document.getElementById('photo-lightbox');
       this.shutterOverlay = this.lightbox?.querySelector('.shutter-overlay') as HTMLElement;
       this.image = this.lightbox?.querySelector('.lightbox-image') as HTMLImageElement;
+      this.closeBtn = this.lightbox?.querySelector('.lightbox-close') as HTMLButtonElement;
+      this.prevBtn = this.lightbox?.querySelector('.lightbox-prev') as HTMLButtonElement;
+      this.nextBtn = this.lightbox?.querySelector('.lightbox-next') as HTMLButtonElement;
       this.tags = this.lightbox?.querySelector('.lightbox-tags') as HTMLElement;
       this.album = this.lightbox?.querySelector('.lightbox-album') as HTMLElement;
       this.metadata = this.lightbox?.querySelector('.lightbox-metadata') as HTMLElement;
@@ -161,7 +193,8 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       this.slideshowBtn = this.lightbox?.querySelector('.lightbox-slideshow-btn') as HTMLElement;
       this.slideshowDropdown = this.lightbox?.querySelector('.lightbox-slideshow-dropdown') as HTMLElement;
       this.imageContainer = this.lightbox?.querySelector('.lightbox-image-container') as HTMLElement;
-      this.seeMoreBtn = this.lightbox?.querySelector('.lightbox-see-more') as HTMLElement;
+      this.infoToggle = this.lightbox?.querySelector('.lightbox-info-toggle') as HTMLButtonElement;
+      this.infoPanel = this.lightbox?.querySelector('.lightbox-info-panel') as HTMLElement;
       this.storyBtn = this.lightbox?.querySelector('.lightbox-story-btn') as HTMLElement;
       this.storyDrawer = this.lightbox?.querySelector('.lightbox-story-drawer') as HTMLElement;
       this.storyContent = this.lightbox?.querySelector('.lightbox-story-content') as HTMLElement;
@@ -173,18 +206,15 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       if (!this.lightbox) return;
 
       // Close button
-      const closeBtn = this.lightbox.querySelector('.lightbox-close');
-      closeBtn?.addEventListener('click', () => this.close());
+      this.closeBtn?.addEventListener('click', () => this.close());
 
       // Backdrop click
       const backdrop = this.lightbox.querySelector('.lightbox-backdrop');
       backdrop?.addEventListener('click', () => this.close());
 
       // Navigation buttons
-      const prevBtn = this.lightbox.querySelector('.lightbox-prev');
-      const nextBtn = this.lightbox.querySelector('.lightbox-next');
-      prevBtn?.addEventListener('click', () => this.prev());
-      nextBtn?.addEventListener('click', () => this.next());
+      this.prevBtn?.addEventListener('click', () => this.prev());
+      this.nextBtn?.addEventListener('click', () => this.next());
 
       // Keyboard navigation
       document.addEventListener('keydown', (e) => this.handleKeydown(e));
@@ -228,10 +258,10 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
         }
       });
 
-      // See more button for mobile
-      this.seeMoreBtn?.addEventListener('click', (e) => {
+      // Photo information toggle
+      this.infoToggle?.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.toggleMetadataExpanded();
+        this.toggleInfoExpanded();
       });
 
       // Story button
@@ -257,6 +287,14 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       // Handle image load to detect orientation
       if (this.image) {
         this.image.addEventListener('load', () => this.updateImageOrientation());
+        this.image.addEventListener('click', (e) => this.toggleZoom(e));
+        this.image.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleZoom();
+          }
+        });
       }
 
       // Handle window resize to update orientation
@@ -389,6 +427,9 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       this.currentIndex = index;
       this.isOpen = true;
       this.isTransitioning = false;
+      this.infoExpanded = false;
+      this.syncInfoExpandedState();
+      this.resetZoom();
       this.lockScroll();
 
       // Ensure story drawer is closed when opening a new photo
@@ -422,6 +463,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     public close() {
       this.isOpen = false;
       this.stopSlideshow();
+      this.resetZoom();
       // Close story drawer when closing lightbox to prevent stale state
       this.closeStoryDrawer();
       if (this.lightbox) {
@@ -481,8 +523,10 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       if (index < 0 || index >= this.photos.length || index === this.currentIndex) return;
       if (!this.isOpen || !this.image) return;
 
-      // Reset metadata expanded state when switching photos
-      this.metadataExpanded = false;
+      // Reset information state when switching photos
+      this.infoExpanded = false;
+      this.syncInfoExpandedState();
+      this.resetZoom();
 
       // Remember if drawer was open before navigation
       const wasDrawerOpen = this.storyDrawerOpen;
@@ -627,6 +671,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       // Update current image
       this.image.src = photo.url;
       this.image.alt = photo.data.title;
+      this.syncZoomState();
 
       // Update metadata
       this.updateImageMetadata();
@@ -641,26 +686,107 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       if (!this.image || !this.imageContainer) return;
 
       const isPortrait = this.image.naturalHeight > this.image.naturalWidth;
-      const isMobile = window.innerWidth <= 768;
-
-      if (isMobile && isPortrait) {
-        this.imageContainer.classList.add('portrait-orientation');
-      } else {
-        this.imageContainer.classList.remove('portrait-orientation');
-      }
+      this.imageContainer.classList.toggle('portrait-orientation', isPortrait);
+      this.imageContainer.classList.toggle('landscape-orientation', !isPortrait);
+      requestAnimationFrame(() => this.positionImageControls());
     }
 
-    private toggleMetadataExpanded() {
-      this.metadataExpanded = !this.metadataExpanded;
-      const metadata = this.lightbox?.querySelector('.lightbox-metadata') as HTMLElement;
-      if (metadata && this.seeMoreBtn) {
-        if (this.metadataExpanded) {
-          metadata.style.display = 'flex';
-          this.seeMoreBtn.textContent = 'Close details';
-        } else {
-          metadata.style.display = 'none';
-          this.seeMoreBtn.textContent = 'Details';
-        }
+    private toggleInfoExpanded() {
+      this.infoExpanded = !this.infoExpanded;
+      this.syncInfoExpandedState();
+    }
+
+    private syncInfoExpandedState() {
+      if (this.infoPanel) {
+        this.infoPanel.style.display = this.infoExpanded ? 'flex' : 'none';
+      }
+      if (this.infoToggle) {
+        this.infoToggle.setAttribute('aria-expanded', String(this.infoExpanded));
+        this.infoToggle.setAttribute('aria-label', this.infoExpanded ? 'Hide photo information' : 'Show photo information');
+        this.infoToggle.classList.toggle('is-active', this.infoExpanded);
+      }
+      this.imageContainer?.classList.toggle('info-expanded', this.infoExpanded);
+      requestAnimationFrame(() => this.positionImageControls());
+    }
+
+    private positionImageControls() {
+      if (!this.isOpen || !this.image || !this.closeBtn || !this.prevBtn || !this.nextBtn) return;
+
+      const imageBounds = this.image.getBoundingClientRect();
+      if (imageBounds.width <= 0 || imageBounds.height <= 0) return;
+
+      const viewportWidth = window.innerWidth;
+      const previousWidth = this.prevBtn.offsetWidth || 32;
+      const nextWidth = this.nextBtn.offsetWidth || 32;
+      const closeWidth = this.closeBtn.offsetWidth || 32;
+      const closeHeight = this.closeBtn.offsetHeight || 32;
+      const sideInset = 4;
+      const rightMargin = viewportWidth - imageBounds.right;
+      const hasSideNavigationMargins = imageBounds.left >= previousWidth + sideInset * 2
+        && rightMargin >= nextWidth + sideInset * 2;
+      const previousLeft = hasSideNavigationMargins
+        ? (imageBounds.left - previousWidth) / 2
+        : 12;
+      const nextRight = hasSideNavigationMargins
+        ? (rightMargin - nextWidth) / 2
+        : 12;
+      const navigationTop = hasSideNavigationMargins
+        ? imageBounds.top + imageBounds.height / 2
+        : Math.min(window.innerHeight - 28, imageBounds.bottom + 32);
+
+      this.prevBtn.style.left = `${previousLeft}px`;
+      this.prevBtn.style.right = 'auto';
+      this.prevBtn.style.top = `${navigationTop}px`;
+      this.nextBtn.style.left = 'auto';
+      this.nextBtn.style.right = `${nextRight}px`;
+      this.nextBtn.style.top = `${navigationTop}px`;
+
+      const hasRightCloseMargin = rightMargin >= closeWidth + sideInset * 2;
+      const closeLeft = hasRightCloseMargin
+        ? imageBounds.right + (rightMargin - closeWidth) / 2
+        : viewportWidth - closeWidth - 12;
+      const closeTop = hasRightCloseMargin
+        ? imageBounds.top
+        : Math.max(12, imageBounds.top - closeHeight - 12);
+      this.closeBtn.style.left = `${closeLeft}px`;
+      this.closeBtn.style.right = 'auto';
+      this.closeBtn.style.top = `${closeTop}px`;
+    }
+
+    private toggleZoom(event?: MouseEvent) {
+      if (!this.image) return;
+
+      if (!this.isZoomed && event) {
+        const bounds = this.image.getBoundingClientRect();
+        const originX = ((event.clientX - bounds.left) / bounds.width) * 100;
+        const originY = ((event.clientY - bounds.top) / bounds.height) * 100;
+        this.image.style.setProperty('--lightbox-zoom-origin-x', `${Math.max(0, Math.min(100, originX))}%`);
+        this.image.style.setProperty('--lightbox-zoom-origin-y', `${Math.max(0, Math.min(100, originY))}%`);
+      }
+
+      this.isZoomed = !this.isZoomed;
+      this.syncZoomState();
+    }
+
+    private resetZoom() {
+      this.isZoomed = false;
+      this.syncZoomState();
+    }
+
+    private syncZoomState() {
+      if (!this.image) return;
+
+      this.image.classList.toggle('is-zoomed', this.isZoomed);
+      this.image.setAttribute('aria-pressed', String(this.isZoomed));
+      const title = this.photos[this.currentIndex]?.data.title?.trim();
+      this.image.setAttribute(
+        'aria-label',
+        `${this.isZoomed ? 'Zoom out of' : 'Zoom in on'} ${title || 'photograph'}`
+      );
+
+      if (!this.isZoomed) {
+        this.image.style.setProperty('--lightbox-zoom-origin-x', '50%');
+        this.image.style.setProperty('--lightbox-zoom-origin-y', '50%');
       }
     }
 
@@ -789,6 +915,11 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       // Update metadata
       if (this.metadata) {
         const metadataItems: string[] = [];
+
+        if (photo.data.title && photo.data.title.trim()) {
+          const titleIcon = this.getIconSVG('icon-viewfinder');
+          metadataItems.push(`<div class="lightbox-metadata-item" data-lightbox-photo-title>${titleIcon}<span>${photo.data.title.trim()}</span></div>`);
+        }
         
         // In DEV mode, show filename before camera
         if (this.env === 'DEV' && photo.data.filename) {
@@ -827,15 +958,14 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
         
         if (metadataItems.length > 0) {
           this.metadata.innerHTML = metadataItems.join('');
-          this.metadata.style.display = this.metadataExpanded ? 'flex' : 'none';
-          if (this.seeMoreBtn) {
-            this.seeMoreBtn.style.display = 'inline-flex';
-            this.seeMoreBtn.textContent = this.metadataExpanded ? 'Close details' : 'Details';
+          this.metadata.style.display = 'flex';
+          if (this.infoToggle) {
+            this.infoToggle.style.display = 'inline-flex';
           }
         } else {
           this.metadata.style.display = 'none';
-          if (this.seeMoreBtn) {
-            this.seeMoreBtn.style.display = 'none';
+          if (this.infoToggle) {
+            this.infoToggle.style.display = 'none';
           }
         }
       }
@@ -1016,7 +1146,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 9999;
+    z-index: 2147483000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1128,18 +1258,31 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
 
   .lightbox-image {
     max-width: 100%;
-    max-height: calc(100vh - 140px);
+    max-height: calc(100vh - 180px);
     width: auto;
     height: auto;
     object-fit: contain;
     border-radius: 4px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.26s cubic-bezier(0.2, 0.7, 0.2, 1);
     opacity: 1;
+    cursor: zoom-in;
+    transform-origin: var(--lightbox-zoom-origin-x, 50%) var(--lightbox-zoom-origin-y, 50%);
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
+  }
+
+  .lightbox-image.is-zoomed {
+    transform: scale(2);
+    cursor: zoom-out;
+    z-index: 2;
+  }
+
+  .lightbox-image:focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 4px;
   }
 
   @keyframes fadeInScale {
@@ -1154,7 +1297,7 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   }
 
   .lightbox-info {
-    margin-top: 1.5rem;
+    margin-top: 0.75rem;
     text-align: center;
     color: var(--cream);
     max-width: 95vw;
@@ -1177,24 +1320,52 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     width: 100%;
   }
 
-  .lightbox-see-more {
-    display: none;
-    padding: 0.375rem 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    color: rgba(255, 251, 245, 0.9);
-    font-size: 0.75rem;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  .lightbox-info-toggle {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    color: rgba(255, 251, 245, 0.42);
     cursor: pointer;
     transition: all 0.2s ease;
     align-items: center;
     justify-content: center;
   }
 
-  .lightbox-see-more:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+  .lightbox-info-toggle svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+  }
+
+  .lightbox-info-toggle:hover,
+  .lightbox-info-toggle.is-active {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.58);
+    color: rgba(255, 251, 245, 0.98);
+  }
+
+  .lightbox-info-toggle:focus-visible {
+    outline: none;
+    background: rgba(221, 75, 42, 0.26);
+    border-color: var(--signal);
+    color: rgba(255, 251, 245, 1);
+  }
+
+  .lightbox-info-panel {
+    width: min(100%, 1120px);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    max-height: 128px;
+    overflow-y: auto;
   }
 
   .lightbox-metadata {
@@ -1237,17 +1408,16 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
   }
 
   .lightbox-tags {
-    display: contents !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
   }
 
   .lightbox-album {
     display: flex;
     align-items: center;
     justify-content: center;
-    visibility: visible !important;
-    opacity: 1 !important;
   }
 
   .lightbox-album-link {
@@ -1509,10 +1679,9 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       font-size: 0.625rem;
     }
 
-    .lightbox-see-more {
-      display: inline-flex;
-      font-size: 0.75rem;
-      padding: 0.375rem 0.75rem;
+    .lightbox-info-toggle {
+      width: 30px;
+      height: 30px;
     }
 
     .lightbox-counter {
@@ -1584,9 +1753,9 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
       font-size: 0.5625rem;
     }
 
-    .lightbox-see-more {
-      font-size: 0.6875rem;
-      padding: 0.25rem 0.5rem;
+    .lightbox-info-toggle {
+      width: 28px;
+      height: 28px;
     }
 
     .lightbox-counter {
@@ -1735,15 +1904,33 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     }
   }
 
-  /* Editorial viewer: image first, context second, technical data on request. */
+  /* Editorial viewer: image first, all context disclosed beneath it on request. */
   .lightbox { background: #11100f; }
   .lightbox-backdrop { background: rgba(17, 16, 15, .98); backdrop-filter: none; }
-  .lightbox-content { padding: 24px 76px; }
-  .lightbox-image { max-height: calc(100vh - 126px); border-radius: 0; box-shadow: none; }
-  .lightbox-info { position: absolute; left: 0; right: 0; bottom: 14px; margin: 0; padding: 0 0 0 84px; gap: 7px; align-items: flex-start; pointer-events: none; }
-  .lightbox-tags-and-album, .lightbox-metadata-row { width: auto; justify-content: flex-start; pointer-events: auto; }
-  .lightbox-tags .lightbox-tag:nth-child(n + 4) { display: none !important; }
-  .lightbox-tag, .lightbox-album-link, .lightbox-metadata-item, .lightbox-counter, .lightbox-see-more, .lightbox-slideshow-btn, .lightbox-story-btn {
+  .lightbox-content { padding: 10px 48px; max-width: 1800px; }
+  .lightbox-image {
+    width: auto;
+    height: calc(100dvh - 74px);
+    max-width: 100%;
+    max-height: calc(100dvh - 74px);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .lightbox-image-container.info-expanded .lightbox-image {
+    height: calc(100dvh - 210px);
+    max-height: calc(100dvh - 210px);
+  }
+  .lightbox-image-container.portrait-orientation { justify-content: center; padding-top: 0; }
+  .lightbox-image-container.landscape-orientation .lightbox-image {
+    width: 100%;
+    height: auto;
+  }
+  .lightbox-image-container.info-expanded.landscape-orientation .lightbox-image {
+    height: auto;
+  }
+  .lightbox-info { position: static; margin: 6px 0 0; padding: 0; gap: 6px; align-items: center; pointer-events: auto; }
+  .lightbox-tags-and-album, .lightbox-metadata-row { width: auto; justify-content: center; pointer-events: auto; }
+  .lightbox-tag, .lightbox-album-link, .lightbox-metadata-item, .lightbox-counter, .lightbox-slideshow-btn, .lightbox-story-btn {
     border-radius: 0 !important;
     background: rgba(17, 16, 15, .76) !important;
     border-color: rgba(238, 234, 226, .28) !important;
@@ -1753,15 +1940,90 @@ const env = import.meta.env.PUBLIC_ENV || 'PROD';
     letter-spacing: .08em !important;
     text-transform: uppercase;
   }
-  .lightbox-close { top: 20px; right: 20px; border-radius: 0; background: var(--signal); color: #fff; }
-  .lightbox-nav { border: 0; border-radius: 0; background: transparent; font-family: 'Instrument Serif', serif; font-size: 44px; }
-  .lightbox-see-more { display: inline-flex; }
-  [data-lightbox-technical] { display: none; }
+  .lightbox-close {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    right: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    color: #fff;
+    line-height: 1;
+    opacity: .72;
+    backdrop-filter: none;
+    text-shadow: none;
+  }
+  .lightbox-close svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.35;
+    stroke-linecap: round;
+  }
+  .lightbox-close:hover {
+    background: transparent !important;
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  .lightbox-close:focus-visible,
+  .lightbox-nav:focus-visible {
+    outline: none;
+    color: var(--signal);
+  }
+  .lightbox-close:focus-visible { opacity: 1; }
+  .lightbox-nav {
+    width: 32px;
+    height: 48px;
+    padding: 0;
+    bottom: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    color: rgba(255, 255, 255, .88);
+    font-family: 'Instrument Serif', serif;
+    font-size: 44px;
+    backdrop-filter: none;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, .72);
+  }
+  .lightbox-nav:hover {
+    background: transparent !important;
+    transform: translateY(-50%) scale(1.08);
+  }
+  .lightbox-info-toggle { flex: 0 0 auto; }
+  .lightbox-info-panel { padding: 2px 10px 6px; }
   @media (max-width: 768px) {
-    .lightbox-content { padding: 58px 4px 92px; }
-    .lightbox-image { max-width: calc(100vw - 8px); max-height: calc(100vh - 170px); }
-    .lightbox-info { bottom: 12px; padding-left: 52px; align-items: flex-start; }
-    .lightbox-nav { bottom: 42px; }
-    .lightbox-tags .lightbox-tag:nth-child(n + 2) { display: none !important; }
+    .lightbox-content { padding: 46px 4px 42px; }
+    .lightbox-image,
+    .lightbox-image-container.portrait-orientation .lightbox-image {
+      width: auto;
+      height: calc(100dvh - 132px);
+      max-width: calc(100vw - 8px);
+      max-height: calc(100dvh - 132px);
+    }
+    .lightbox-image-container.landscape-orientation .lightbox-image {
+      width: 100%;
+      height: auto;
+      max-width: calc(100vw - 8px);
+      max-height: calc(100dvh - 132px);
+    }
+    .lightbox-image-container.info-expanded .lightbox-image,
+    .lightbox-image-container.info-expanded.portrait-orientation .lightbox-image {
+      height: calc(100dvh - 250px);
+      max-height: calc(100dvh - 250px);
+    }
+    .lightbox-image-container.info-expanded.landscape-orientation .lightbox-image {
+      height: auto;
+      max-height: calc(100dvh - 250px);
+    }
+    .lightbox-image-container.portrait-orientation { justify-content: center; padding-top: 0; }
+    .lightbox-info { margin-top: 6px; align-items: center; }
+    .lightbox-info-panel { max-height: 160px; padding-inline: 4px; }
+    .lightbox-nav { bottom: auto; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lightbox-image { transition: opacity 0.01ms linear, transform 0.01ms linear; }
   }
 </style>

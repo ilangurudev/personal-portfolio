@@ -27,6 +27,7 @@ The codebase strictly separates two distinct "spaces" via Layouts. This is a fun
   - **Compact Header:** A 76px sticky desktop bar (64px mobile) keeps navigation subordinate to the work.
   - **Navigation Language:** Desktop and mobile expose the same photography index—Work, Stories, Archive, Themes, Search, and About—while AI/Engineering remains a separate space switch. Homepage media above hash targets must reserve intrinsic space so Work/About links stay anchored while lazy images load. The `#about` target belongs on `.about-copy`, not the enclosing portrait-first section, so mobile navigation reveals the biography rather than stopping on the portrait.
   - **Mobile Menu:** Full-screen editorial index using the same navigation vocabulary.
+  - **Photo Affordance:** Shared `.photo-card` styles provide the 2px-offset signal-orange hover frame and zoom-in cursor for homepage, album, tag, and Archive photographs without changing the image treatment or card geometry.
   - **Scoped Variables:**
     ```css
     :root {

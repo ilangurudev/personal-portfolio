@@ -69,6 +69,8 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
   - Keyboard: Arrow keys (prev/next), Escape (close)
   - Touch: Swipe gestures for mobile
   - Mouse: Click arrows or outside to close
+  - Previous/next controls are bare white chevrons centered in the photograph's side margins; when those margins are too narrow they share the black control margin below the image. The blur/glass button surface is intentionally removed
+  - Close is a custom 18px thin-line SVG at restrained white opacity inside an invisible 40px hit target. It sits in the right margin aligned to the photograph's top edge; on narrow screens it moves into the upper black margin, with no red tile, shadow, or glass surface
 - **Scroll Lock:** Pins the body at its captured scroll position while the lightbox is open, prevents background reflow from shifting the page during navigation, and restores the exact position immediately on close (temporarily bypassing the photography layout's smooth document scrolling)
 - **Shutter Animation:** Film-style opening animation
 - **Preloading:** Adjacent photos pre-fetched for instant navigation
@@ -83,7 +85,10 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
   - Content formatted as paragraphs (splits on `\n\n`)
   - Positioned to left of slideshow button
 - **Metadata Display:**
-  - Hidden by default behind a `Details` disclosure so the photograph remains primary
+  - Album, tags, title, and technical metadata are all hidden by default so the photograph remains primary
+  - A single-ring, icon-only `i` control toggles the complete information panel; its dark/bright state and `aria-expanded` communicate closed/open without changing to `Close details` text
+  - The information panel stays in normal flow immediately below the photograph rather than overlaying it
+  - Photo title/name
   - Album name (clickable link)
   - Tags (clickable links to tag pages)
   - Camera model
@@ -91,7 +96,8 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
   - Focal length (with icon)
   - Location (with icon)
   - Film counter: "5 / 42"
-- **Mobile Optimizations:** Portrait orientation detection, the same explicit `Details` disclosure, and touch-optimized controls
+- **Immersive Viewing:** The closed-information state lets the photograph fill the available viewport axis with compact margins. Clicking/tapping the photograph magnifies it by 100% to 2× scale around the selected point; clicking again restores it, the cursor alternates between zoom-in/zoom-out, and zoom resets on navigation or close.
+- **Mobile Optimizations:** Portrait orientation detection, the same icon-only information disclosure below the photograph, and touch-optimized controls
 
 **Architecture:**
 - Singleton class: `PhotoLightbox` (Astro component with inline `<script>`)
@@ -139,6 +145,7 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 - Motion is registered by the shared `PhotoLayout` controller, including React rows appended after hydration.
 - Editorial row and card boxes never transform. Only opacity and image content animate so anchor width, justified-row coordinates, lightbox order, and infinite-scroll stability remain measurable and unchanged throughout a reveal.
 - Reveal keys are based on the planned photo IDs so already-seen rows do not replay after React/filter updates.
+- Album/tag story cards and Archive cards inherit the shared `PhotoLayout` click affordance: a 1px signal-orange frame offset by 2px on hover, without changing image filter or transform. Motion transitions must retain the frame fade.
 
 ## 5. Dual-Space Toggle
 

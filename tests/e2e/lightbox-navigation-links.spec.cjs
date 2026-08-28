@@ -71,6 +71,9 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
     foundPhotoWithTags = true;
     console.log(`   ✓ Found photo with ${tagCount} tags after ${attempts} navigation(s)`);
 
+    await page.locator('.lightbox-info-toggle').click();
+    await page.waitForTimeout(150);
+
     // Test 4: Get tag information
     console.log('\n📍 Test 4: Verify Tag Clickability');
     const firstTag = await tags.first();
@@ -135,6 +138,9 @@ const TARGET_URL = process.env.TEST_URL || 'http://localhost:4321';
   if (albumLinkCount > 0) {
     foundPhotoWithAlbum = true;
     console.log(`   ✓ Found photo with album after ${attempts} navigation(s)`);
+
+    await page.locator('.lightbox-info-toggle').click();
+    await page.waitForTimeout(150);
 
     // Test 8: Get album information
     console.log('\n📍 Test 8: Verify Album Link Clickability');

@@ -10,7 +10,7 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
 
   await page.goto(`${TARGET_URL}/photography`);
   await page.waitForLoadState('networkidle');
-  assert(await page.locator('[data-curated-photo]').count() === 20, 'Homepage edit is not the curated 20-image sequence.');
+  assert(await page.locator('[data-curated-photo]').count() === 22, 'Homepage edit is not the curated 22-image sequence.');
 
   await page.goto(`${TARGET_URL}/photography/tags`);
   await page.waitForLoadState('networkidle');

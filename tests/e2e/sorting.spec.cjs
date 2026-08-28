@@ -44,15 +44,15 @@ async function getCardData(page) {
     await page.waitForSelector('[data-curated-photo]');
     const homeIds = await page.$$eval('[data-curated-photo]', cards => cards.map(card => card.getAttribute('data-photo-id')));
     const expectedOpening = [
-      'new-york-2025/AR53824.md',
-      'georgetown-metro-2025/20250914-_AR50392.md',
-      'dc-hot-summer/20250623-_AR55740.md'
+      'miami-2024/DJI_20241229174619_0019_D-Enhanced-NR.md',
+      'olympic-2025/20250706-_AR56992.md',
+      'olympic-2025/20250708-_AR58026.md'
     ];
-    if (homeIds.length !== 20 || homeIds.slice(0, 3).join('|') !== expectedOpening.join('|')) {
+    if (homeIds.length !== 22 || homeIds.slice(0, 3).join('|') !== expectedOpening.join('|')) {
       console.error('   Curated homepage sequence changed unexpectedly');
       process.exitCode = 1;
     } else {
-      console.log('   ✓ Manual 20-photo sequence begins with the approved opening rhythm');
+      console.log('   ✓ Manual 22-photo sequence begins with the approved opening rhythm');
     }
 
     // Test 1: Album View Sorting (3 random albums)

@@ -2,17 +2,32 @@
 import PhotoLayout from '../../layouts/PhotoLayout.astro';
 import PhotoLightbox from '../../components/photo/PhotoLightbox.astro';
 import { getAlbumTitleMap, getPhotosWithExif, transformForLightbox } from '../../utils/photo-helpers';
-import { getResizedPhotoUrl } from '../../utils/url-helper';
+import { getPhotoUrl, getResizedPhotoUrl } from '../../utils/url-helper';
 import { CURATED_EDIT_GROUPS, CURATED_EDIT_IDS, CURATED_PHOTO_DIMENSIONS, FEATURED_STORIES, HERO_PHOTO } from '../../data/photo-curation';
 import { getCollection } from 'astro:content';
 
 const allPhotos = await getPhotosWithExif();
 const photoMap = new Map(allPhotos.map(photo => [photo.id, photo]));
 const curatedPhotos = CURATED_EDIT_IDS.map(id => photoMap.get(id)).filter(Boolean);
-const curatedGroups = CURATED_EDIT_GROUPS.map(group => ({
-  ...group,
-  photos: group.ids.map(id => photoMap.get(id)).filter(Boolean),
-}));
+const motionChapterByNumber = {
+  A: 'beyond-measure',
+  B: 'one-among-many',
+  C: 'at-human-distance',
+} as const;
+type MotionChapter = (typeof motionChapterByNumber)[keyof typeof motionChapterByNumber];
+let activeMotionChapter: MotionChapter = motionChapterByNumber.A;
+const curatedGroups = CURATED_EDIT_GROUPS.map(group => {
+  const chapter = 'chapter' in group ? group.chapter : undefined;
+  if (chapter) {
+    activeMotionChapter = motionChapterByNumber[chapter.number];
+  }
+
+  return {
+    ...group,
+    motionChapter: activeMotionChapter,
+    photos: group.ids.map(id => photoMap.get(id)).filter(Boolean),
+  };
+});
 const albums = await getCollection('albums');
 const albumMap = new Map(albums.map(album => [album.slug, album]));
 const albumTitleMap = await getAlbumTitleMap(albums);
@@ -27,8 +42,8 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
     </div>
     <div class="hero-scrim"></div>
     <div class="hero-copy">
-      <p class="eyebrow">WASHINGTON, D.C. / AVAILABLE LIGHT</p>
-      <h1>Life, briefly<br /><em>held still.</em></h1>
+      <p class="eyebrow">TAMPA / GULF COAST</p>
+      <h1>Distance,<br /><em>made human.</em></h1>
       <div class="hero-deck">
         <p>Photographs of people, place, weather, and the spaces between.</p>
         <a href="#work">Enter the edit <span aria-hidden="true">↓</span></a>
@@ -39,7 +54,7 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
 
   <section class="manifesto" data-scroll-reveal="section" aria-labelledby="manifesto-title">
     <p class="section-label">00 / POINT OF VIEW</p>
-    <h2 id="manifesto-title">I photograph places at the moment they become <em>stages</em>—figures crossing pools of light, architecture framing weather, and crowds resolving into small gestures.</h2>
+    <h2 id="manifesto-title">I photograph the distance between <em>intimacy and immensity</em>, using the human experience to turn monuments, mountains, crowds, and coastlines into lived space.</h2>
     <div class="manifesto-meta">
       <p>Based in Washington, D.C.</p>
       <p>Street / Landscape / Observational</p>
@@ -50,19 +65,19 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
     <header class="edit-header" data-scroll-reveal="section">
       <div>
         <p class="section-label">01 / THE EDIT</p>
-        <h2 id="edit-title">Twenty photographs.<br />One way of seeing.</h2>
+        <h2 id="edit-title">Twenty-two photographs.<br />One human measure.</h2>
       </div>
-      <p>Three movements—motion, structure, and distance—sequenced by gesture, geometry, and light.</p>
+      <p>Three movements—beyond measure, one among many, and at human distance—sequenced from immensity toward intimacy.</p>
     </header>
 
     <div class="editorial-grid">
-      {curatedGroups.map((group, groupIndex) => (
+      {curatedGroups.map((group) => (
         <div
           class={`edit-group edit-group--${group.kind}`}
           data-edit-group={group.kind}
           data-scroll-reveal="edit-group"
-          data-motion-sequence={groupIndex < 3 ? 'opening' : undefined}
-          data-motion-variant={groupIndex < 3 ? (group.kind === 'feature' ? 'anchor' : 'pair') : 'quiet'}
+          data-motion-chapter={group.motionChapter}
+          data-motion-variant={group.kind}
         >
           {'chapter' in group && group.chapter && (
             <div class="edit-chapter" data-edit-chapter>
@@ -76,7 +91,7 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
               const dimensions = CURATED_PHOTO_DIMENSIONS[photo.id as keyof typeof CURATED_PHOTO_DIMENSIONS];
               return (
                 <button type="button" class="photo-card editorial-photo" data-curated-photo data-photo-id={photo.id} aria-label={`Open photograph ${index + 1} of ${curatedPhotos.length}`}>
-                  <img src={getResizedPhotoUrl(photo.data.filename, group.kind === 'feature' ? 1600 : 1000)} width={dimensions.width} height={dimensions.height} alt={photo.data.location ? `${photo.data.location}, ${photo.data.date.getFullYear()}` : `Photograph ${index + 1} from ${albumTitleMap.get(photo.data.album) || photo.data.album}`} loading={index < 3 ? 'eager' : 'lazy'} />
+                  <img src={getPhotoUrl(photo.data.filename)} width={dimensions.width} height={dimensions.height} alt={photo.data.location ? `${photo.data.location}, ${photo.data.date.getFullYear()}` : `Photograph ${index + 1} from ${albumTitleMap.get(photo.data.album) || photo.data.album}`} loading={index < 3 ? 'eager' : 'lazy'} />
                   <span class="photo-number">{String(index + 1).padStart(2, '0')}</span>
                 </button>
               );
@@ -222,9 +237,8 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
     .edit-chapter p, .edit-chapter span { margin: 0; text-transform: uppercase; }
     .edit-chapter p { color: var(--signal); font-size: 10px; font-weight: 700; letter-spacing: .16em; }
     .edit-chapter span { color: var(--muted); font-size: 10px; letter-spacing: .09em; }
-    .editorial-photo { position: relative; margin: 0; padding: 0; border: 0; background: none; cursor: zoom-in; text-align: left; }
-    .editorial-photo img { display: block; width: 100%; height: auto; object-fit: contain; transition: filter .35s ease, transform .55s cubic-bezier(.22,1,.36,1); }
-    .editorial-photo:hover img { transform: scale(.992); filter: saturate(.7); }
+    .editorial-photo { position: relative; margin: 0; padding: 0; border: 0; background: none; text-align: left; }
+    .editorial-photo img { display: block; width: 100%; height: auto; object-fit: contain; }
     .photo-number { position: absolute; top: 0; left: -18px; color: var(--signal); font-size: 9px; font-weight: 700; letter-spacing: .1em; }
     .story-preview { padding: 112px 28px 132px; background: var(--night); color: var(--paper); }
     .stories-header { display: grid; grid-template-columns: 160px 1fr auto; align-items: end; gap: 28px; margin-bottom: 72px; }
@@ -274,53 +288,91 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
       opacity: 1;
       transform: none;
     }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'] .editorial-photo {
-      transition:
-        transform 1.15s cubic-bezier(.22, 1, .36, 1),
-        opacity .9s cubic-bezier(.22, 1, .36, 1);
-    }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='anchor']:not([data-reveal-state='visible']) .editorial-photo {
-      transform: scale(.975);
-    }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='anchor'] .editorial-photo img {
-      clip-path: inset(0 0 20% 0);
-      transform: scale(1.022);
-      transform-origin: 50% 35%;
-      transition:
-        clip-path 1.3s cubic-bezier(.22, 1, .36, 1),
-        transform 1.45s cubic-bezier(.22, 1, .36, 1),
-        filter .35s ease;
-    }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='anchor'][data-reveal-state='visible'] .editorial-photo img {
-      clip-path: inset(0);
-      transform: none;
-    }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo:first-child {
-      opacity: 0;
-    }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo:last-child {
-      opacity: 0;
-    }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='pair'] .editorial-photo img {
-      transition:
-        transform 1.15s cubic-bezier(.22, 1, .36, 1),
-        filter .35s ease;
-    }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo:first-child img {
-      transform: translate3d(-26px, 0, 0) scale(1.018);
-    }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo:last-child img {
-      transform: translate3d(26px, 0, 0) scale(1.018);
-    }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='pair'][data-reveal-state='visible'] .editorial-photo {
+    :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'] {
       opacity: 1;
       transform: none;
     }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='pair'][data-reveal-state='visible'] .editorial-photo img {
+    :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'] .edit-chapter {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0);
+      transition:
+        opacity .72s cubic-bezier(.22, 1, .36, 1),
+        transform .9s cubic-bezier(.22, 1, .36, 1);
+    }
+    :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'] .editorial-photo {
+      opacity: 0;
+      transition:
+        outline-color .2s ease,
+        opacity .9s cubic-bezier(.22, 1, .36, 1),
+        transform 1.15s cubic-bezier(.22, 1, .36, 1);
+      will-change: opacity, transform;
+    }
+    :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'] .editorial-photo img {
+      transition:
+        clip-path 1.25s cubic-bezier(.22, 1, .36, 1),
+        transform 1.35s cubic-bezier(.22, 1, .36, 1);
+      will-change: clip-path, transform;
+    }
+    :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'][data-reveal-state='visible'] .edit-chapter,
+    :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'][data-reveal-state='visible'] .editorial-photo {
+      opacity: 1;
       transform: none;
     }
-    :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'][data-motion-variant='pair'][data-reveal-state='visible'] .editorial-photo:last-child {
-      transition-delay: .18s;
+    :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'][data-reveal-state='visible'] .editorial-photo img {
+      clip-path: inset(0);
+      transform: none;
+    }
+
+    /* Beyond Measure: photographs open outward into scale and atmosphere. */
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='beyond-measure'][data-motion-variant='feature']:not([data-reveal-state='visible']) .editorial-photo {
+      transform: translate3d(0, 22px, 0) scale(.972);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='beyond-measure'][data-motion-variant='feature']:not([data-reveal-state='visible']) .editorial-photo img {
+      clip-path: inset(0 0 20% 0);
+      transform: scale(1.024);
+      transform-origin: 50% 35%;
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='beyond-measure'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo:first-child {
+      transform: translate3d(-32px, 24px, 0) scale(.985);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='beyond-measure'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo:last-child {
+      transform: translate3d(32px, 24px, 0) scale(.985);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='beyond-measure'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo img {
+      transform: scale(1.016);
+    }
+
+    /* One Among Many: figures resolve from repeated, compressed frames. */
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='one-among-many'][data-motion-variant='feature']:not([data-reveal-state='visible']) .editorial-photo {
+      transform: translate3d(0, 38px, 0) scale(.965);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='one-among-many'][data-motion-variant='feature']:not([data-reveal-state='visible']) .editorial-photo img {
+      clip-path: inset(0 9% 0 9%);
+      transform: scale(1.014);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='one-among-many'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo {
+      transform: translate3d(0, 42px, 0) scale(.982);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='one-among-many'][data-motion-variant='pair'] .editorial-photo:last-child {
+      transition-delay: .16s;
+    }
+
+    /* At Human Distance: the final movement approaches more gently. */
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='at-human-distance'][data-motion-variant='feature']:not([data-reveal-state='visible']) .editorial-photo {
+      transform: translate3d(0, 26px, 0) scale(1.018);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='at-human-distance'][data-motion-variant='feature']:not([data-reveal-state='visible']) .editorial-photo img {
+      clip-path: inset(6% 0 6% 0);
+      transform: scale(1.012);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='at-human-distance'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo:first-child {
+      transform: translate3d(-16px, 28px, 0);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='at-human-distance'][data-motion-variant='pair']:not([data-reveal-state='visible']) .editorial-photo:last-child {
+      transform: translate3d(16px, 28px, 0);
+    }
+    :global(html[data-photography-motion='ready']) [data-motion-chapter='at-human-distance'][data-motion-variant='pair'] .editorial-photo:last-child {
+      transition-delay: .12s;
     }
     @media (max-width: 980px) {
       .home-hero { min-height: calc(100svh - 64px); }
@@ -358,19 +410,31 @@ const curatedIndex = new Map(curatedPhotos.map((photo, index) => [photo.id, inde
       :global(html[data-photography-motion='ready']) .hero-copy { transform: none; opacity: 1; will-change: auto; }
       :global(html[data-photography-motion='ready']) [data-scroll-reveal] { transform: translate3d(0, 24px, 0); transition-duration: .8s; }
       :global(html[data-photography-motion='ready']) [data-scroll-reveal][data-reveal-state='visible'] { transform: none; }
-      :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'] .editorial-photo,
-      :global(html[data-photography-motion='ready']) [data-motion-sequence='opening'] .editorial-photo img {
+      :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'] .editorial-photo {
+        opacity: 0;
+        transform: translate3d(0, 24px, 0);
+        transition-delay: 0s;
+        transition-duration: .8s;
+      }
+      :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'] .editorial-photo:last-child {
+        transition-delay: .1s;
+      }
+      :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'] .editorial-photo img {
         clip-path: none;
         transform: none;
-        transition-delay: 0s;
+      }
+      :global(html[data-photography-motion='ready']) [data-scroll-reveal='edit-group'][data-reveal-state='visible'] .editorial-photo {
+        opacity: 1;
+        transform: none;
       }
     }
     @media (prefers-reduced-motion: reduce) {
       .hero-image-wrap img,
       .hero-copy,
       [data-scroll-reveal],
-      [data-motion-sequence='opening'] .editorial-photo,
-      [data-motion-sequence='opening'] .editorial-photo img {
+      [data-scroll-reveal='edit-group'] .edit-chapter,
+      [data-scroll-reveal='edit-group'] .editorial-photo,
+      [data-scroll-reveal='edit-group'] .editorial-photo img {
         opacity: 1 !important;
         clip-path: none !important;
         transform: none !important;

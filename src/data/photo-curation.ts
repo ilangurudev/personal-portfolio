@@ -1,6 +1,6 @@
 export const HERO_PHOTO = {
   id: 'tampa-2025/20251109-_AR51732.md',
-  alt: 'A figure in yellow leaning across a balcony above blue water',
+  alt: 'An older woman in yellow pointing down from a balcony above the Gulf',
 } as const;
 
 /**
@@ -11,77 +11,86 @@ export const HERO_PHOTO = {
 export const CURATED_EDIT_GROUPS = [
   {
     kind: 'feature',
-    chapter: { number: 'A', title: 'Motion', note: 'The city in transit.' },
-    ids: ['new-york-2025/AR53824.md'],
+    chapter: { number: 'A', title: 'Beyond Measure', note: 'Figures against mountain, sea, and weather.' },
+    ids: ['miami-2024/DJI_20241229174619_0019_D-Enhanced-NR.md'],
   },
   {
     kind: 'pair',
     ids: [
-      'georgetown-metro-2025/20250914-_AR50392.md',
-      'dc-hot-summer/20250623-_AR55740.md',
+      'olympic-2025/20250706-_AR56992.md',
+      'olympic-2025/20250708-_AR58026.md',
     ],
   },
   {
     kind: 'pair',
     ids: [
-      'new-york-2025/AR54015.md',
-      'new-york-2025/AR54108.md',
-    ],
-  },
-  {
-    kind: 'pair',
-    chapter: { number: 'B', title: 'Structure', note: 'Frames found and crossed.' },
-    ids: [
-      'puerto-rico-2025/20251213-_AR53645.md',
-      'glenstone-2024/DSC02462.md',
-    ],
-  },
-  {
-    kind: 'pair',
-    ids: [
-      'seattle-2025/20250705-_AR56655.md',
-      'dc-hot-summer/20250623-_AR55928.md',
-    ],
-  },
-  {
-    kind: 'pair',
-    ids: [
-      'puerto-rico-2025/20251213-_AR53410.md',
-      'tysons-foggy-2024/DSC03152.md',
+      'puerto-rico-2025/20251214-_AR54596.md',
+      'puerto-rico-2025/20251214-_AR54553.md',
     ],
   },
   {
     kind: 'feature',
-    chapter: { number: 'C', title: 'Distance', note: 'Weather, horizon, and scale.' },
-    ids: ['olympic-2025/20250708-_AR57915.md'],
+    ids: ['rainier-2025/20250711-_AR58804.md'],
+  },
+  {
+    kind: 'feature',
+    chapter: { number: 'B', title: 'One Among Many', note: 'Individuals inside crowds, systems, and repeated forms.' },
+    ids: ['new-york-2025/AR53141.md'],
   },
   {
     kind: 'pair',
     ids: [
-      'rainier-2025/20250711-_AR58685.md',
-      'cherry-blossoms-2025/DSC01700.md',
+      'new-york-2025/AR53856.md',
+      'olympic-2025/20250708-_AR58023.md',
     ],
   },
   {
     kind: 'pair',
     ids: [
-      'miami-2024/DSC08657.md',
-      'tampa-2025/20251109-_AR51599.md',
+      'dc-spring-2025/DSC00115.md',
+      'puerto-rico-2025/20251214-_AR54253.md',
     ],
   },
   {
     kind: 'pair',
     ids: [
-      'puerto-rico-2025/20251213-_AR53972.md',
-      'blackwater-2024/DSC01645.md',
+      'tampa-2025/20251108-_AR51547.md',
+      'tampa-2025/20251111-_AR52171.md',
+    ],
+  },
+  {
+    kind: 'feature',
+    ids: ['puerto-rico-2025/20251213-_AR53645.md'],
+  },
+  {
+    kind: 'feature',
+    chapter: { number: 'C', title: 'At Human Distance', note: 'Gesture, work, play, and private attention.' },
+    ids: ['tampa-2025/20251111-_AR52140.md'],
+  },
+  {
+    kind: 'pair',
+    ids: [
+      'miami-2024/DSC04805.md',
+      'cherry-blossoms-2025/DSC00949.md',
     ],
   },
   {
     kind: 'pair',
     ids: [
-      'assateague-2024-06/DSC05873.md',
-      'miami-2024/DSC08293.md',
+      'puerto-rico-2025/20251214-_AR54764.md',
+      'puerto-rico-2025/20251213-_AR53931.md',
     ],
+  },
+  {
+    kind: 'pair',
+    ids: [
+      'puerto-rico-2025/20251214-_AR54842.md',
+      'olympic-2025/20250708-_AR57853.md',
+    ],
+  },
+  {
+    kind: 'feature',
+    ids: ['miami-2024/DSC08293.md'],
   },
 ] as const;
 
@@ -93,35 +102,36 @@ export const CURATED_EDIT_IDS = CURATED_EDIT_GROUPS.flatMap(group => group.ids);
  * sections and hash-link destinations stable as images arrive.
  */
 export const CURATED_PHOTO_DIMENSIONS = {
-  'new-york-2025/AR53824.md': { width: 1600, height: 1066 },
-  'georgetown-metro-2025/20250914-_AR50392.md': { width: 1000, height: 666 },
-  'dc-hot-summer/20250623-_AR55740.md': { width: 1000, height: 666 },
-  'new-york-2025/AR54015.md': { width: 1000, height: 666 },
-  'new-york-2025/AR54108.md': { width: 1000, height: 666 },
-  'puerto-rico-2025/20251213-_AR53645.md': { width: 1000, height: 666 },
-  'glenstone-2024/DSC02462.md': { width: 1000, height: 666 },
-  'seattle-2025/20250705-_AR56655.md': { width: 1000, height: 666 },
-  'dc-hot-summer/20250623-_AR55928.md': { width: 1000, height: 666 },
-  'puerto-rico-2025/20251213-_AR53410.md': { width: 1000, height: 666 },
-  'tysons-foggy-2024/DSC03152.md': { width: 1000, height: 772 },
-  'olympic-2025/20250708-_AR57915.md': { width: 1600, height: 1066 },
-  'rainier-2025/20250711-_AR58685.md': { width: 1000, height: 666 },
-  'cherry-blossoms-2025/DSC01700.md': { width: 1000, height: 666 },
-  'miami-2024/DSC08657.md': { width: 1000, height: 666 },
-  'tampa-2025/20251109-_AR51599.md': { width: 1000, height: 666 },
-  'puerto-rico-2025/20251213-_AR53972.md': { width: 1000, height: 666 },
-  'blackwater-2024/DSC01645.md': { width: 1000, height: 562 },
-  'assateague-2024-06/DSC05873.md': { width: 1000, height: 562 },
-  'miami-2024/DSC08293.md': { width: 1000, height: 666 },
+  'miami-2024/DJI_20241229174619_0019_D-Enhanced-NR.md': { width: 1600, height: 899 },
+  'olympic-2025/20250706-_AR56992.md': { width: 1000, height: 666 },
+  'olympic-2025/20250708-_AR58026.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251214-_AR54596.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251214-_AR54553.md': { width: 1000, height: 666 },
+  'rainier-2025/20250711-_AR58804.md': { width: 1600, height: 1066 },
+  'new-york-2025/AR53856.md': { width: 1000, height: 666 },
+  'olympic-2025/20250708-_AR58023.md': { width: 1000, height: 666 },
+  'dc-spring-2025/DSC00115.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251213-_AR53645.md': { width: 1600, height: 1066 },
+  'tampa-2025/20251108-_AR51547.md': { width: 1000, height: 666 },
+  'tampa-2025/20251111-_AR52171.md': { width: 1000, height: 666 },
+  'new-york-2025/AR53141.md': { width: 1600, height: 1066 },
+  'puerto-rico-2025/20251214-_AR54253.md': { width: 1000, height: 666 },
+  'tampa-2025/20251111-_AR52140.md': { width: 1600, height: 1066 },
+  'miami-2024/DSC04805.md': { width: 1000, height: 666 },
+  'cherry-blossoms-2025/DSC00949.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251214-_AR54764.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251213-_AR53931.md': { width: 1000, height: 666 },
+  'puerto-rico-2025/20251214-_AR54842.md': { width: 1000, height: 666 },
+  'olympic-2025/20250708-_AR57853.md': { width: 1000, height: 666 },
+  'miami-2024/DSC08293.md': { width: 1600, height: 1066 },
 } as const satisfies Record<(typeof CURATED_EDIT_IDS)[number], { width: number; height: number }>;
 
 export const FEATURED_STORIES = [
   { slug: 'puerto-rico-2025', number: '01', kicker: 'Coast / Old San Juan', statement: 'Hard light, sea air, and the geometry of an old city at the edge of the Atlantic.' },
   { slug: 'new-york-2025', number: '02', kicker: 'Street / New York', statement: 'Crowds, interruptions, reflections, and brief alignments inside the restless city.' },
-  { slug: 'georgetown-metro-2025', number: '03', kicker: 'Transit / Washington', statement: 'The choreography of platforms, passing trains, and people suspended between places.' },
+  { slug: 'olympic-2025', number: '03', kicker: 'Wild / Olympic', statement: 'Sea stacks, rainforests, beaches, and mountains across the Olympic Peninsula.' },
   { slug: 'rainier-2025', number: '04', kicker: 'Altitude / Rainier', statement: 'Snow, distance, and scale rendered in a quieter register.' },
-  { slug: 'tysons-foggy-2024', number: '05', kicker: 'Weather / Virginia', statement: 'A familiar suburb briefly made strange by winter fog.' },
-  { slug: 'miami-2024', number: '06', kicker: 'Street / Miami', statement: 'Heat, color, ritual, and the private gestures of a public city.' },
+  { slug: 'miami-2024', number: '05', kicker: 'Street / Miami', statement: 'Heat, color, ritual, and the private gestures of a public city.' },
 ] as const;
 
 export const PUBLIC_THEMES = [

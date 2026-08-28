@@ -190,9 +190,13 @@ const currentYear = new Date().getFullYear();
       .footer-meta { display: grid; grid-template-columns: repeat(2, auto); gap: 10px 36px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
       .footer-meta a { text-decoration: none; }
       .footer-meta p { grid-column: 1 / -1; margin-top: 24px; }
-      .photo-card { background: transparent; border-radius: 0; box-shadow: none; }
+      .photo-card { background: transparent; border-radius: 0; box-shadow: none; outline: 1px solid transparent; outline-offset: 2px; cursor: zoom-in; transition: outline-color .2s ease; }
       .photo-card:hover { transform: none; box-shadow: none; }
       .photo-card:hover .photo-image img { transform: none; }
+      .photo-card:focus-visible { outline-color: var(--signal); }
+      @media (hover: hover) and (pointer: fine) {
+        .photo-card:hover { outline-color: var(--signal); }
+      }
       .photo-image { position: relative; width: 100%; overflow: hidden; background: #d8d3ca; }
       .photo-image img { position: static; display: block; width: 100%; height: auto; object-fit: contain; }
       .viewfinder-overlay { display: none; }
@@ -202,7 +206,8 @@ const currentYear = new Date().getFullYear();
         transform: translate3d(0, 28px, 0);
         transition:
           opacity .82s cubic-bezier(.22, 1, .36, 1),
-          transform .94s cubic-bezier(.22, 1, .36, 1);
+          transform .94s cubic-bezier(.22, 1, .36, 1),
+          outline-color .2s ease;
         will-change: opacity, transform;
       }
       html[data-photo-motion='ready'] [data-photo-reveal='story-anchor'] {
@@ -225,7 +230,8 @@ const currentYear = new Date().getFullYear();
       html[data-photo-motion='ready'] [data-photo-reveal='story-card'] {
         opacity: 0;
         transition:
-          opacity .76s cubic-bezier(.22, 1, .36, 1);
+          opacity .76s cubic-bezier(.22, 1, .36, 1),
+          outline-color .2s ease;
       }
       html[data-photo-motion='ready'] [data-photo-reveal='story-row'] .photo-card img,
       html[data-photo-motion='ready'] [data-photo-reveal='story-card'] img {

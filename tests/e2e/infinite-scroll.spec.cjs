@@ -28,7 +28,7 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
   await page.goto(`${TARGET_URL}/photography`);
   await page.waitForLoadState('networkidle');
   const curated = page.locator('[data-curated-photo]');
-  assert(await curated.count() === 20, 'Homepage should stay finite at twenty curated photographs.');
+  assert(await curated.count() === 22, 'Homepage should stay finite at twenty-two curated photographs.');
   assert(await curated.first().locator('img').count() === 1, 'Curated photo markup is incomplete.');
   assert((await curated.first().locator('img').getAttribute('src'))?.length > 0, 'Curated photo URL is missing.');
 

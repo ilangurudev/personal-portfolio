@@ -43,6 +43,7 @@ npm run test:albums       # Album pages functionality
 npm run test:sorting      # Photo sorting
 npm run test:css-leaks    # CSS rendering leak detection
 npm run test:viewfinder   # Viewfinder overlay CSS functionality
+npm run test:photo-hover  # Shared color-preserving frame across homepage, album, tag, and Archive photographs
 npm run test:photo-editorial # Curated photography IA and editorial acceptance contract
 npm run test:photo-scroll-story # Homepage motion hierarchy, reduced motion, and natural scrolling
 npm run test:photo-motion # Shared motion profiles across stories, indexes, Archive, and search
@@ -65,8 +66,8 @@ npm run test:about-anchor # About hash remains stable while homepage photographs
 |------|-------------|-----------------|
 | `dual-space-navigation.spec.js` | Space toggle | Professional ↔ Photography switching |
 | `photo-filter-toggle.spec.cjs` | Photography structure | Fixed curated edit, public themes, Archive filter availability |
-| `photography-editorial-redesign.spec.cjs` | Editorial acceptance | Non-cemetery hero, hero/edit uniqueness, balanced desktop groups and frame-number gutters, 20-frame sequence, Stories, public themes, Archive, mobile hero, progressive lightbox details |
-| `photography-scroll-story.spec.cjs` | Homepage scroll story | Desktop hero settling, three-scene opening movement, one-shot later reveals, natural scrolling, reduced-motion completeness, and quieter mobile behavior |
+| `photography-editorial-redesign.spec.cjs` | Editorial acceptance | Exact Tampa balcony hero, hero/edit uniqueness, original-resolution sources for every Edit photograph, balanced desktop groups and frame-number gutters, the 22-frame **Distance, made human.** sequence and three movements, the exact five-story feature edit and New York cover, Other Notebooks, public themes, Archive, mobile hero crop, immersive lightbox sizing, responsive margin-positioned bare navigation/close glyphs that never cover the image, a 100% magnification (2× scale) zoom toggle with matching cursors, and a single-ring information control that reveals album, tags, title, and technical metadata below the photograph |
+| `photography-scroll-story.spec.cjs` | Homepage scroll story | Desktop hero settling, an individual entrance for all 22 Edit photographs, distinct motion signatures for all three story chapters, natural scrolling, reduced-motion completeness, and simplified mobile behavior |
 | `photography-motion-system.spec.cjs` | Photography motion system | Row-level album/tag reveals, Stories/Themes indexes, dynamically inserted Archive/search cards, compact mobile stories, and reduced-motion completeness |
 | `about-anchor-navigation.spec.cjs` | Homepage About anchor | Staggered lazy-image loading cannot push the desktop biography out of view; a clean mobile reload lands on the biography copy rather than the portrait |
 | `responsive-design.spec.js` | Responsive layouts | Mobile/tablet/desktop, hamburger + space toggle in mobile menu |
@@ -92,7 +93,8 @@ npm run test:about-anchor # About hash remains stable while homepage photographs
 | `lightbox-interactions.spec.cjs` | Lightbox core | Open/close, navigation, metadata, keyboard (home + all-photos + all-photos after tag filter + first album + first tag pages from listings) |
 | `lightbox-scroll-lock.spec.cjs` | Lightbox scroll lock | Body scroll disabled while open and restored after closing |
 | `css-rendering-leaks.spec.cjs` | CSS leak detection | Regression test for CSS code appearing as plain text before header on photography pages |
-| `viewfinder-css.spec.cjs` | Composition preservation | Responsive photo-card rendering, lazy loading, and viewfinder overlay behavior |
+| `viewfinder-css.spec.cjs` | Composition preservation | Responsive photo-card rendering, lazy loading, and the homepage Edit's color-preserving signal-orange hover/focus frame |
+| `photography-hover-affordance.spec.cjs` | Cross-gallery photo affordance | Album stories, tag stories, and Archive cards share the 2px-offset signal-orange hover frame without changing image color or geometry |
 | `toc-navigation.spec.cjs` | TOC Navigation | Desktop sidebar visibility, mobile drawer, link clicking, scroll highlighting |
 
 **Note:** Tests are run via Playwright. Ensure the dev server is running (`npm run dev`) before running tests. The Playwright runner now watches for any `✗` output or `console.error` in specs and exits non-zero so failures are visible.

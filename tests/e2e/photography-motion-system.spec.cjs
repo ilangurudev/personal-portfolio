@@ -57,7 +57,7 @@ async function expectReveal(page, locator, label) {
   await desktop.waitForSelector('html[data-photo-motion="ready"]');
   const featuredStories = desktop.locator('[data-photo-reveal="index-feature"]');
   const notebookCards = desktop.locator('[data-photo-reveal="index-card"]');
-  assert(await featuredStories.count() === 6,
+  assert(await featuredStories.count() === 5,
     'Every authored featured story should receive the composed index reveal.');
   assert(await notebookCards.count() >= 8,
     'Notebook archive cards should receive the quieter index treatment.');

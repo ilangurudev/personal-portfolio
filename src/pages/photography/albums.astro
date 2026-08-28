@@ -38,14 +38,14 @@ const archiveAlbums = albums.filter(album => !featuredSlugs.has(album.slug));
 
   <section class="story-archive" data-story-archive>
     <header data-photo-reveal="index-header" data-photo-reveal-key="stories:notebooks-header">
-      <p>THE NOTEBOOKS</p>
-      <h2>More places,<br />more weather.</h2>
+      <p>OTHER NOTEBOOKS</p>
+      <h2>Other Notebooks</h2>
     </header>
     <div class="story-archive-grid">
       {archiveAlbums.map((album, index) => (
         <a href={`/photography/album/${album.slug}`} class="album-card archive-story" data-album-card data-album={album.slug} data-album-slug={album.slug} data-photo-reveal="index-card" data-photo-reveal-key={`story-card:${album.slug}`}>
           <div class="archive-story-image"><img src={getResizedPhotoUrl(album.data.coverPhoto, 700)} alt={album.data.title} loading="lazy" /></div>
-          <p>{String(index + 7).padStart(2, '0')} / {album.data.date.getFullYear()}</p>
+          <p>{String(index + FEATURED_STORIES.length + 1).padStart(2, '0')} / {album.data.date.getFullYear()}</p>
           <h3>{album.data.title}</h3>
           <span>{album.data.description}</span>
         </a>

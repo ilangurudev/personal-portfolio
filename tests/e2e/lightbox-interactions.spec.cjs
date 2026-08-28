@@ -410,16 +410,16 @@ const runKeyboardOnPhotosPage = async (page, { label, applyTag = false }) => {
   //   await page.waitForTimeout(400);
   // }
 
-  // Test 16: Verify progressive technical disclosure
-  console.log('\n📍 Test 16: Verify Progressive Technical Disclosure');
+  // Test 16: Verify progressive photo information disclosure
+  console.log('\n📍 Test 16: Verify Progressive Photo Information Disclosure');
   await firstPhoto.click();
   await page.waitForTimeout(300);
-  const technical = page.locator('[data-lightbox-technical]');
-  const hiddenByDefault = !(await technical.isVisible());
-  console.log(`   ✓ Technical data hidden by default: ${hiddenByDefault ? '✓' : '✗'}`);
-  await page.locator('.lightbox-see-more').click();
-  const shownOnRequest = await technical.isVisible();
-  console.log(`   ✓ Technical data shown on request: ${shownOnRequest ? '✓' : '✗'}`);
+  const photoInfo = page.locator('[data-lightbox-info-panel]');
+  const hiddenByDefault = !(await photoInfo.isVisible());
+  console.log(`   ✓ Photo information hidden by default: ${hiddenByDefault ? '✓' : '✗'}`);
+  await page.locator('.lightbox-info-toggle').click();
+  const shownOnRequest = await photoInfo.isVisible();
+  console.log(`   ✓ Photo information shown on request: ${shownOnRequest ? '✓' : '✗'}`);
 
   // Test 17: Verify body scroll is locked when lightbox is open
   console.log('\n📍 Test 17: Verify Body Scroll Lock');

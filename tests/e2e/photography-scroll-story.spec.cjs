@@ -54,30 +54,48 @@ async function nextPaint(page) {
   assert(heroCopyOpacityAfterScroll <= 0.8,
     `The hero copy should noticeably recede as the edit approaches; found opacity ${heroCopyOpacityAfterScroll}.`);
 
-  const openingMovement = desktop.locator('[data-motion-sequence="opening"]');
-  assert(await openingMovement.count() === 3,
-    'The first movement should contain exactly three signature scroll scenes.');
-  assert(await openingMovement.nth(0).getAttribute('data-motion-variant') === 'anchor',
-    'The opening movement should begin with one photographic anchor.');
-  assert(await openingMovement.nth(1).getAttribute('data-motion-variant') === 'pair',
-    'The anchor should be followed by a quieter paired reveal.');
-
-  const quietScene = desktop.locator('[data-scroll-reveal="edit-group"]').last();
   await desktop.evaluate(() => window.scrollTo(0, 0));
   await nextPaint(desktop);
-  const quietSceneBefore = Number(await quietScene.evaluate(el => getComputedStyle(el).opacity));
-  const quietSceneTravel = await quietScene.evaluate(el => {
-    const matrix = new DOMMatrixReadOnly(getComputedStyle(el).transform);
-    return matrix.f;
-  });
-  assert(quietSceneBefore < 0.1,
-    'Later photographs should wait below the fold instead of arriving all at once.');
-  assert(quietSceneTravel >= 54 && quietSceneTravel <= 72,
-    `Later photographs should have a noticeable but restrained entrance; found ${quietSceneTravel}px of travel.`);
-  await quietScene.scrollIntoViewIfNeeded();
+
+  const editPhotos = desktop.locator('[data-curated-edit] .editorial-photo');
+  assert(await editPhotos.count() === 22,
+    'The complete Distance, made human. edit should contain 22 animated photographs.');
+
+  const initialPhotoMotion = await editPhotos.evaluateAll(photos => photos.map((photo, index) => {
+    const cardStyle = getComputedStyle(photo);
+    const imageStyle = getComputedStyle(photo.querySelector('img'));
+    return {
+      index: index + 1,
+      opacity: Number(cardStyle.opacity),
+      transform: cardStyle.transform,
+      clipPath: imageStyle.clipPath,
+    };
+  }));
+  const staticPhotos = initialPhotoMotion.filter(photo =>
+    photo.opacity >= 0.99
+    && photo.transform === 'none'
+    && (photo.clipPath === 'none' || photo.clipPath === 'inset(0px)')
+  );
+  assert(staticPhotos.length === 0,
+    `Every Edit photograph should have its own staged entrance; static frames: ${staticPhotos.map(photo => photo.index).join(', ') || 'none'}.`);
+
+  const chapterLeads = desktop.locator('.edit-group:has(.edit-chapter) .editorial-photo');
+  assert(await chapterLeads.count() === 3,
+    'Beyond Measure, One Among Many, and At Human Distance should each have one lead photograph.');
+  const chapterSignatures = await chapterLeads.evaluateAll(photos => photos.map(photo => {
+    const cardStyle = getComputedStyle(photo);
+    const imageStyle = getComputedStyle(photo.querySelector('img'));
+    return [cardStyle.opacity, cardStyle.transform, imageStyle.clipPath].join('|');
+  }));
+  assert(new Set(chapterSignatures).size === 3,
+    'Each chapter lead should establish a distinct motion language rather than repeating the opening effect.');
+
+  const finalPhoto = editPhotos.last();
+  await finalPhoto.scrollIntoViewIfNeeded();
   await desktop.waitForFunction(
-    element => Number(getComputedStyle(element).opacity) > 0.95,
-    await quietScene.elementHandle(),
+    element => Number(getComputedStyle(element).opacity) > 0.95
+      && getComputedStyle(element).transform === 'none',
+    await finalPhoto.elementHandle(),
   );
 
   const overflowY = await desktop.locator('body').evaluate(el => getComputedStyle(el).overflowY);
@@ -90,9 +108,11 @@ async function nextPaint(page) {
   await reduced.goto(`${TARGET_URL}/photography`);
   await reduced.waitForLoadState('networkidle');
   await reduced.waitForSelector('html[data-photography-motion="reduced"]');
-  const reducedLastScene = reduced.locator('[data-scroll-reveal="edit-group"]').last();
-  assert(Number(await reducedLastScene.evaluate(el => getComputedStyle(el).opacity)) === 1,
+  const reducedLastPhoto = reduced.locator('[data-curated-edit] .editorial-photo').last();
+  assert(Number(await reducedLastPhoto.evaluate(el => getComputedStyle(el).opacity)) === 1,
     'Reduced-motion visitors must receive the complete edit without hidden reveal states.');
+  assert(await reducedLastPhoto.evaluate(el => getComputedStyle(el).transform) === 'none',
+    'Reduced-motion visitors must not receive staged photo transforms.');
   assert(await reduced.locator('[data-home-hero] img').evaluate(el => getComputedStyle(el).transform) === 'none',
     'Reduced-motion visitors must not receive scroll-linked hero movement.');
 
@@ -105,6 +125,13 @@ async function nextPaint(page) {
   await mobile.waitForSelector('html[data-photography-motion="ready"]');
   assert(await mobile.locator('[data-home-hero] img').evaluate(el => getComputedStyle(el).transform) === 'none',
     'Mobile should use the quieter motion treatment without hero parallax.');
+  const mobileLastPhoto = mobile.locator('[data-curated-edit] .editorial-photo').last();
+  const mobileLastPhotoState = await mobileLastPhoto.evaluate(el => ({
+    opacity: Number(getComputedStyle(el).opacity),
+    transform: getComputedStyle(el).transform,
+  }));
+  assert(mobileLastPhotoState.opacity < 0.99 || mobileLastPhotoState.transform !== 'none',
+    'Every mobile Edit photograph should retain a simplified individual entrance.');
 
   await browser.close();
   console.log('Photography homepage scroll-story acceptance test passed.');
