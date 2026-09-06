@@ -22,11 +22,16 @@ export type StoryPlanOptions = {
 export type StoryDateSortOrder = 'asc' | 'desc';
 
 export function sortStoryPhotosByDate<
-  T extends { data: { date: Date } }
+  T extends { data: { date: Date; filename?: string } }
 >(photos: T[], dateSortOrder: StoryDateSortOrder = 'asc'): T[] {
   const direction = dateSortOrder === 'asc' ? 1 : -1;
   return [...photos].sort((first, second) =>
-    direction * (first.data.date.getTime() - second.data.date.getTime())
+    direction * (
+      (first.data.date.getTime() - second.data.date.getTime()) ||
+      (first.data.filename?.split('/').pop() ?? '').localeCompare(
+        second.data.filename?.split('/').pop() ?? '', 'en', { numeric: true }
+      )
+    )
   );
 }
 

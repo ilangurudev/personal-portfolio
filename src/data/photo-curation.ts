@@ -127,11 +127,12 @@ export const CURATED_PHOTO_DIMENSIONS = {
 } as const satisfies Record<(typeof CURATED_EDIT_IDS)[number], { width: number; height: number }>;
 
 export const FEATURED_STORIES = [
-  { slug: 'puerto-rico-2025', number: '01', kicker: 'Coast / Old San Juan', statement: 'Hard light, sea air, and the geometry of an old city at the edge of the Atlantic.' },
-  { slug: 'new-york-2025', number: '02', kicker: 'Street / New York', statement: 'Crowds, interruptions, reflections, and brief alignments inside the restless city.' },
-  { slug: 'olympic-2025', number: '03', kicker: 'Wild / Olympic', statement: 'Sea stacks, rainforests, beaches, and mountains across the Olympic Peninsula.' },
-  { slug: 'rainier-2025', number: '04', kicker: 'Altitude / Rainier', statement: 'Snow, distance, and scale rendered in a quieter register.' },
-  { slug: 'miami-2024', number: '05', kicker: 'Street / Miami', statement: 'Heat, color, ritual, and the private gestures of a public city.' },
+  { slug: 'las-vegas-2026', number: '01', kicker: 'Desert / Las Vegas', statement: 'Las Vegas and the desert beyond, in summer heat and warm earth tones.' },
+  { slug: 'puerto-rico-2025', number: '02', kicker: 'Coast / Old San Juan', statement: 'Hard light, sea air, and the geometry of an old city at the edge of the Atlantic.' },
+  { slug: 'new-york-2025', number: '03', kicker: 'Street / New York', statement: 'Crowds, interruptions, reflections, and brief alignments inside the restless city.' },
+  { slug: 'olympic-2025', number: '04', kicker: 'Wild / Olympic', statement: 'Sea stacks, rainforests, beaches, and mountains across the Olympic Peninsula.' },
+  { slug: 'rainier-2025', number: '05', kicker: 'Altitude / Rainier', statement: 'Snow, distance, and scale rendered in a quieter register.' },
+  { slug: 'miami-2024', number: '06', kicker: 'Street / Miami', statement: 'Heat, color, ritual, and the private gestures of a public city.' },
 ] as const;
 
 export const PUBLIC_THEMES = [

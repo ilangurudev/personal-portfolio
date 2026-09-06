@@ -84,6 +84,17 @@ test('supporting runs vary their row rhythm without changing photo order or crea
   );
 });
 
+test('equal-date stories follow filename order independently of input order and album folder', () => {
+  const photos = [
+    { id: 'ten', data: { date: new Date('2026-08-01'), filename: 'a/DSC10.jpg' } },
+    { id: 'next-day', data: { date: new Date('2026-08-02'), filename: 'a/DSC1.jpg' } },
+    { id: 'two', data: { date: new Date('2026-08-01'), filename: 'z/DSC2.jpg' } }
+  ];
+  assert.deepEqual(sortStoryPhotosByDate(photos).map(p => p.id), ['two', 'ten', 'next-day']);
+  assert.deepEqual(sortStoryPhotosByDate(photos, 'desc').map(p => p.id), ['next-day', 'ten', 'two']);
+  assert.deepEqual(photos.map(p => p.id), ['ten', 'next-day', 'two']);
+});
+
 test('story source order follows date instead of importance score', () => {
   const photos = [
     { id: 'late-important', data: { featured: true, order_score: 25, date: new Date('2025-01-03') } },

@@ -199,6 +199,7 @@ function assert(condition, message) {
     stories.map(story => story.getAttribute('data-album-slug')),
   );
   assert(JSON.stringify(featuredStorySlugs) === JSON.stringify([
+    'las-vegas-2026',
     'puerto-rico-2025',
     'new-york-2025',
     'olympic-2025',
@@ -223,7 +224,7 @@ function assert(condition, message) {
   assert(otherNotebookSlugs.includes('seattle-2025')
     && otherNotebookSlugs.includes('georgetown-metro-2025')
     && otherNotebookSlugs.includes('tysons-foggy-2024'),
-  'Albums outside the five-story edit must appear in Other Notebooks.');
+  'Albums outside the six-story edit must appear in Other Notebooks.');
 
   await page.goto(`${TARGET_URL}/photography/tags`);
   await page.waitForLoadState('networkidle');

@@ -83,7 +83,7 @@ npm run test:about-anchor # About hash remains stable while homepage photographs
 | `infinite-scroll.spec.cjs` | Loading and sequence stability | Finite homepage edit, progressive Archive loading, complete planned story rows, fixed anchor order, justified row stability, refresh rhythm variation, and editorial lightbox navigation |
 | `story-layout-full-scroll.spec.cjs` | Randomized story reflow | Three complete Puerto Rico refresh/scroll passes; full composition visibility, transparent wrappers, justified rows, no overlaps, stable editorial order, safe quiet solos, and footer spacing |
 | `story-featured-anchors.spec.cjs` | Featured story hierarchy | Every metadata-featured photo remains a full-width original-resolution anchor, including portraits; complete support-row separation, stable anchors and lightbox order, resized supporting images, and varied rhythms over three refreshes |
-| `tests/unit/story-layout-plan.test.ts` | Story planner interface | Consecutive and tail-anchor support borrowing, support-row variation without solo leftovers, and date-first story source ordering |
+| `tests/unit/story-layout-plan.test.ts` | Story planner interface | Consecutive and tail-anchor support borrowing, support-row variation without solo leftovers, and date-then-filename source ordering in both directions, independent of input order and album folder |
 | `advanced-filters.spec.cjs` | Filter panel | All 8 dimensions, persistence, clear all |
 | `exif-filters.spec.cjs` | EXIF sliders | Aperture/shutter/ISO sliders reduce results (regression guard) |
 | `slideshow-mode.spec.cjs` | Slideshow | Intervals, auto-advance, stop on close |
@@ -98,6 +98,8 @@ npm run test:about-anchor # About hash remains stable while homepage photographs
 | `toc-navigation.spec.cjs` | TOC Navigation | Desktop sidebar visibility, mobile drawer, link clicking, scroll highlighting |
 
 **Note:** Tests are run via Playwright. Ensure the dev server is running (`npm run dev`) before running tests. The Playwright runner now watches for any `✗` output or `console.error` in specs and exits non-zero so failures are visible.
+
+`tests/unit/vegas-capture-dates.test.ts` verifies all 169 Las Vegas timestamps retain the recorded timezone and that the Hoover Dam/casino sequence survives the camera filename counter rollover, including the editorial layout pass.
 
 ## 3. Build Gotchas
 

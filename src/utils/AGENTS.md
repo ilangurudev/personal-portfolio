@@ -62,7 +62,8 @@ const sortedPhotos = sortPhotos(photos);
 
 // Sort photos with configurable date direction (for album pages)
 const albumPhotos = sortStoryPhotosByDate(photos, 'asc');
-// → Album story source order ignores order_score; featured emphasis is applied by createStoryPlan()
+// → Album/tag story source order uses date, then natural filename order (excluding album folder), both in the requested direction.
+// → Ignores order_score; featured emphasis and layout-driven reordering are applied by createStoryPlan().
 
 // Sort albums by featured status, then order_score, then date
 const sortedAlbums = sortAlbums(albums);

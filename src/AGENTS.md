@@ -55,7 +55,7 @@
 
 ### Performance Patterns
 - **Infinite Scroll:** Archive grids load in 20-photo batches; desktop stories extend the target count to the end of the next planned row so already-rendered rows never split or reflow.
-- **Stable Story Reflow:** Desktop album and photography tag-detail stories begin from a date-only source sequence (album-configured direction; tag pages newest first), then apply a deterministic editorial spacing pass: `featured: true` photos become full-width anchors, support photos are reserved and moved across an anchor boundary when needed, and every pair of anchors is separated by a complete support row. Featured and support photos each retain their own relative order. Supporting row sizes (two to four) vary on refresh without changing the planned photo sequence. Source aspect ratios determine support-row column widths, so full photographs remain visible directly on the page with no cover crop, matte, or fixed-height frame. Full-width anchors use the original photo URL; support rows use 900px derivatives. Smaller viewports and non-story galleries keep the natural row-major grid.
+- **Stable Story Reflow:** Desktop album and photography tag-detail stories begin from a date-then-filename source sequence (album-configured direction; tag pages newest first), then apply a deterministic editorial spacing pass: `featured: true` photos become full-width anchors, support photos are reserved and moved across an anchor boundary when needed, and every pair of anchors is separated by a complete support row. Featured and support photos each retain their own relative order. Supporting row sizes (two to four) vary on refresh without changing the planned photo sequence. Source aspect ratios determine support-row column widths, so full photographs remain visible directly on the page with no cover crop, matte, or fixed-height frame. Full-width anchors use the original photo URL; support rows use 900px derivatives. Smaller viewports and non-story galleries keep the natural row-major grid.
 - **CDN + Resizing:** Thumbnails use Cloudflare `/cdn-cgi/image/width=400,quality=85,format=jpg/`
 - **Image Preloading:** Lightbox preloads adjacent photos for smooth navigation
 - **LocalStorage:** Filter panel collapse state persists across sessions
@@ -97,7 +97,7 @@
 }
 ```
 **Sorting:** Featured → Order Score (desc) → Date (desc)
-**Photo Sorting Within Album:** Date only (configurable via `dateSortOrder`, default: `asc`) establishes the story source. `featured` controls visual emphasis rather than source order; the story planner may make bounded local sequencing exceptions to keep anchors separated.
+**Photo Sorting Within Album:** Date, then natural filename order excluding the album folder (both configurable via `dateSortOrder`, default: `asc`), establishes the story source. `featured` controls visual emphasis rather than source order; the story planner may make bounded local sequencing exceptions to keep anchors separated.
 
 #### `photos` Collection
 ```typescript
@@ -120,6 +120,10 @@
 }
 ```
 **CRITICAL:** Frontmatter values override EXIF. Always use `getPhotosWithExif()` helper to ensure EXIF is available.
+
+**Las Vegas capture dates:** All 169 `las-vegas-2026` photo dates preserve the JPEG's full `DateTimeOriginal` and `OffsetTimeOriginal` as ISO timestamps. Sort by that instant, with filename as the tie-breaker; the August 7 camera counter rollover makes date-only filename ordering unreliable. Editorial spacing still applies. Other albums have not yet received this timestamp repair.
+
+**Archive date filters:** Date input bounds use UTC, matching their ISO-derived values. Expand the upper bound with `setUTCHours(23, 59, 59, 999)` so clearing filters includes captures throughout the final day regardless of the browser timezone.
 
 #### `blog` Collection
 ```typescript
@@ -173,7 +177,7 @@
 - **Homepage motion:** `/photography` progressively enhances all 22 Edit photographs with chapter-aware, one-shot entrances: **Beyond Measure** opens outward into scale and atmosphere, **One Among Many** resolves from compressed/repeated frames, and **At Human Distance** approaches more gently. The desktop hero still settles as the visitor enters the edit, but the page never pins, locks, or hijacks vertical scrolling. Mobile preserves an individual entrance for every photograph with a simpler rise; reduced-motion and no-`IntersectionObserver` environments receive the complete static edit immediately.
 - **Photography photo affordance:** Click-to-open photographs on the homepage Edit, album stories, tag stories, and Archive preserve their original color and geometry during interaction. Hover-capable pointers reveal the same offset signal-orange frame everywhere; keyboard-focusable cards receive the same frame, and the zoom-in cursor remains as a secondary desktop cue.
 - **Photography motion system:** All secondary photography surfaces use the shared progressive controller in `src/utils/client/photo-motion.ts`, with global profiles in `PhotoLayout.astro`. Album and tag stories animate complete editorial rows while keeping card coordinates immovable; Stories/Themes indexes use composed feature/list reveals; Archive and search use short utility reveals for dynamically inserted cards. Stable reveal keys prevent filtered or reinserted items from being restaged within a page visit. Reduced-motion and missing-`IntersectionObserver` environments render every target immediately.
-- **`/photography/albums`:** Editorially presented as **Stories**, with five manually curated featured bodies of work followed by every remaining album in **Other Notebooks**. The featured edit is Puerto Rico, New York, Olympic, Rainier, and Miami; its order is authored in `src/data/photo-curation.ts`.
+- **`/photography/albums`:** Editorially presented as **Stories**, with six manually curated featured bodies of work followed by every remaining album in **Other Notebooks**. The featured edit is Las Vegas, Puerto Rico, New York, Olympic, Rainier, and Miami; its order is authored in `src/data/photo-curation.ts`.
 - **`/photography/tags`:** A small public-facing set of eight themes. It intentionally does not expose the full internal keyword taxonomy.
 - **`/photography/tag/[tag]`:** A newest-first editorial story for the selected theme. It uses the same featured-anchor/support-row planner and lightbox order as album stories while retaining progressive loading and tag refinement.
 - **`/photography/photos`:** The complete searchable/filterable **Archive**, where technical discovery tools belong.

@@ -589,7 +589,7 @@ exifRanges.focalLength = alignRangeToStep(exifRanges.focalLength, RANGE_STEPS.fo
 
       const dateMin = new Date(document.getElementById('date-min').value);
       const dateMax = new Date(document.getElementById('date-max').value);
-      dateMax.setHours(23, 59, 59, 999); // Include entire last day
+      dateMax.setUTCHours(23, 59, 59, 999); // Date inputs parse as UTC; include the entire last day in that same timezone.
 
       const apertureMin = parseFloat(document.getElementById('aperture-min').value);
       const apertureMax = parseFloat(document.getElementById('aperture-max').value);
