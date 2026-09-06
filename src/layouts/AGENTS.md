@@ -21,7 +21,9 @@ The codebase strictly separates two distinct "spaces" via Layouts. This is a fun
     ```
 
 ### Photography Space (`PhotoLayout.astro`)
-- **Theme:** Gallery editorial (warm paper, near-black ink, signal-orange accent).
+- **Theme:** Gallery editorial with warm-paper light mode and warm-charcoal dark mode, ivory text, and brighter orange accents. `PhotoLayout.astro` owns both palettes; never invert or dim photographs.
+- **Appearance:** One 44px moon/sun button stays in the header on desktop and mobile. Its stable accessible name is `Dark mode`; `aria-pressed` reports the current state. The inline head script resolves `photography-theme` (`light`/`dark`) before paint, otherwise follows the system preference live. Explicit choices persist across routes and tabs; blocked storage falls back to in-memory state. Without JavaScript, the toggle is hidden and the light theme remains usable.
+- **Color roles:** `--paper`/`--ink` adapt to the theme; `--on-night` stays light for permanent dark story sections, image-overlay titles, menus, footers, and the lightbox. Utility controls use `--surface`, `--soft-fill`, `--control-line`, and `--on-signal`.
 - **Fonts:** `Instrument Serif` (display/headings), `Manrope` (body/UI).
 - **Key Features:**
   - **Compact Header:** A 76px sticky desktop bar (64px mobile) keeps navigation subordinate to the work.

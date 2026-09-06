@@ -62,7 +62,7 @@ The "Islands" architecture relies on these window-scoped globals to glue separat
 
 ## 3. Photo Lightbox
 
-**Editorial Image Viewer** with progressive technical detail and navigation.
+**Editorial Image Viewer** with progressive technical detail and navigation. The viewer remains dark in either photography theme; light text uses `--on-night` rather than the adaptive page background token.
 
 **Features:**
 - **Navigation:**
@@ -196,6 +196,7 @@ Individual album pages (`/photography/album/{slug}`) have simplified tag filteri
 - **Usage:** Import in Astro pages/components for markup; the all-photos page also consumes it via a `<template id="viewfinder-template">` for JS-inserted cards to avoid duplicated SVG strings.
 
 ### `TagFilterBar.astro`
+- Theme-aware control surfaces, borders, and selected-state text inherit the photography layout tokens.
 - **Location:** `src/components/photo/TagFilterBar.astro`
 - **Purpose:** Shared, collapsible tag filter bar for album + tag pages (pills + AND/OR toggle).
 - **Behavior:** Uses `setupTagLogicToggle` from `src/utils/client/tag-utils` for DRY toggle handling, dispatches `tagFilterChange` on pill or mode changes, manages tag availability in AND mode, and optionally locks an initial tag (for tag pages) while keeping the clear button state in sync.

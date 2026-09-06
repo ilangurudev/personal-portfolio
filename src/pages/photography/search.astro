@@ -483,8 +483,8 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
 
     .search-form input {
       flex: 1;
-      background: white;
-      border: 1px solid rgba(28, 25, 23, 0.15);
+      background: var(--surface);
+      border: 1px solid var(--control-line);
       border-radius: 10px;
       padding: 0.9rem 1rem;
       font-size: 1rem;
@@ -508,7 +508,7 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
 
     .search-form button {
       background: var(--amber);
-      color: white;
+      color: var(--on-signal);
       border: none;
       border-radius: 10px;
       padding: 0.9rem 1.2rem;
@@ -526,10 +526,10 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
     .shortcut {
       color: var(--gray);
       text-decoration: none;
-      border: 1px solid rgba(28, 25, 23, 0.12);
+      border: 1px solid var(--control-line);
       padding: 0.65rem 0.8rem;
       border-radius: 10px;
-      background: white;
+      background: var(--surface);
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
       font-weight: 600;
       font-size: 0.95rem;
@@ -537,10 +537,10 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
 
     .empty {
       padding: 2rem;
-      border: 1px dashed rgba(28, 25, 23, 0.15);
+      border: 1px dashed var(--control-line);
       border-radius: 12px;
       color: var(--gray);
-      background: rgba(255, 251, 245, 0.6);
+      background: var(--paper-bright);
       text-align: center;
     }
 
@@ -551,13 +551,13 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
     }
 
     :global(.search-card) {
-      background: white;
+      background: var(--surface);
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
       display: flex;
       flex-direction: column;
-      border: 1px solid rgba(28, 25, 23, 0.08);
+      border: 1px solid var(--control-line);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -597,7 +597,7 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
       padding: 0.35rem 0.7rem;
       border-radius: 999px;
       background: rgba(28, 25, 23, 0.75);
-      color: white;
+      color: #fff;
       font-weight: 500;
       font-size: 0.8rem;
       letter-spacing: 0.04em;
@@ -605,7 +605,8 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
     }
 
     :global(.search-card.album-card .kind-pill) {
-      background: rgba(217, 119, 6, 0.9);
+      background: var(--signal);
+      color: var(--on-signal);
     }
 
     :global(.search-card .info) {
@@ -692,14 +693,14 @@ import PhotoLayout from '../../layouts/PhotoLayout.astro';
       right: 0;
       bottom: 0;
       padding-left: 0.3rem;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95));
+      background: linear-gradient(90deg, transparent, var(--surface));
       color: var(--charcoal);
       font-weight: 700;
     }
 
     :global(.search-card .tag) {
       color: var(--charcoal);
-      background: rgba(28, 25, 23, 0.06);
+      background: var(--soft-fill);
       padding: 0.22rem 0.5rem;
       border-radius: 8px;
       font-weight: 500;

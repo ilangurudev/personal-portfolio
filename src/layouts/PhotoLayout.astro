@@ -12,7 +12,7 @@ const currentYear = new Date().getFullYear();
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-photo-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -22,6 +22,39 @@ const currentYear = new Date().getFullYear();
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <meta name="theme-color" content="#eeeae2" />
+    <script is:inline>
+      (() => {
+        const key = 'photography-theme';
+        const system = window.matchMedia('(prefers-color-scheme: dark)');
+        let preference;
+        try { preference = localStorage.getItem(key); } catch {}
+        const valid = value => value === 'dark' || value === 'light';
+        const apply = () => {
+          const theme = valid(preference) ? preference : system.matches ? 'dark' : 'light';
+          document.documentElement.dataset.photoTheme = theme;
+          document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1c1b19' : '#eeeae2');
+          const button = document.querySelector('[data-photo-theme-toggle]');
+          button?.setAttribute('aria-pressed', String(theme === 'dark'));
+          button?.setAttribute('title', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+        };
+        apply(); // Resolve the palette before the page can paint.
+        system.addEventListener('change', apply);
+        window.addEventListener('storage', event => {
+          if (event.key === key || event.key === null) { preference = event.newValue; apply(); }
+        });
+        document.addEventListener('DOMContentLoaded', () => {
+          apply();
+          const button = document.querySelector('[data-photo-theme-toggle]');
+          if (button) button.hidden = false;
+          button?.addEventListener('click', () => {
+            preference = document.documentElement.dataset.photoTheme === 'dark' ? 'light' : 'dark';
+            try { localStorage.setItem(key, preference); } catch {}
+            apply();
+          });
+        }, { once: true });
+      })();
+    </script>
     <GoogleAnalytics />
   </head>
   <body class="photo-space">
@@ -42,9 +75,15 @@ const currentYear = new Date().getFullYear();
           <a class="professional-link" href="/">AI / Engineering <span aria-hidden="true">↗</span></a>
         </nav>
 
-        <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu">
-          <span></span><span></span>
-        </button>
+        <div class="header-actions">
+          <button class="photo-theme-toggle" data-photo-theme-toggle hidden aria-label="Dark mode" aria-pressed="false" title="Switch to dark mode">
+            <svg class="theme-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.5 13.1A8.5 8.5 0 0 1 10.9 3.5 8.5 8.5 0 1 0 20.5 13.1Z" /></svg>
+            <svg class="theme-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></svg>
+          </button>
+          <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu">
+            <span></span><span></span>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -137,6 +176,13 @@ const currentYear = new Date().getFullYear();
 
     <style is:global>
       :root {
+        color-scheme: light;
+        --on-night: #eeeae2;
+        --surface: #fff;
+        --soft-fill: rgba(28, 25, 23, 0.05);
+        --control-line: rgba(28, 25, 23, 0.2);
+        --on-signal: #fff;
+        --image-placeholder: #d8d3ca;
         --paper: #eeeae2;
         --paper-bright: #f7f4ed;
         --ink: #11100f;
@@ -151,6 +197,30 @@ const currentYear = new Date().getFullYear();
         --charcoal: var(--ink);
         --gray: var(--muted);
       }
+      :root[data-photo-theme='dark'] {
+        color-scheme: dark;
+        --paper: #1c1b19;
+        --paper-bright: #242320;
+        --ink: #eeeae2;
+        --muted: #b0aaa0;
+        --line: rgba(238, 234, 226, .2);
+        --signal: #ff7959;
+        --cream-dark: #282622;
+        --surface: #302d28;
+        --soft-fill: rgba(238, 234, 226, .07);
+        --control-line: rgba(238, 234, 226, .32);
+        --on-signal: #1c1b19;
+        --image-placeholder: #302d28;
+      }
+      .header-actions { display: flex; align-items: center; gap: 12px; }
+      .desktop-nav { margin-left: auto; }
+      .photo-theme-toggle { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: transparent; cursor: pointer; }
+      .photo-theme-toggle[hidden] { display: none; }
+      .photo-theme-toggle:hover { background: var(--cream-dark); border-color: var(--muted); }
+      .photo-space :is(button, a, input, select):focus-visible { outline: 2px solid var(--signal); outline-offset: 4px; }
+      .theme-sun { display: none; }
+      [data-photo-theme='dark'] .theme-sun { display: block; }
+      [data-photo-theme='dark'] .theme-moon { display: none; }
       *, *::before, *::after { box-sizing: border-box; }
       html { scroll-behavior: smooth; background: var(--paper); }
       body.photo-space { margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink); font-family: 'Manrope', sans-serif; font-weight: 400; line-height: 1.5; overflow-x: hidden; }
@@ -173,7 +243,7 @@ const currentYear = new Date().getFullYear();
       .mobile-menu.active { visibility: visible; pointer-events: auto; }
       .mobile-menu-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.45); opacity: 0; transition: opacity .3s; }
       .mobile-menu.active .mobile-menu-overlay { opacity: 1; }
-      .mobile-menu-content { position: absolute; inset: 0 0 0 auto; width: min(92vw, 430px); padding: 24px; background: var(--night); color: var(--paper); transform: translateX(100%); transition: transform .35s cubic-bezier(.22,1,.36,1); display: flex; flex-direction: column; }
+      .mobile-menu-content { position: absolute; inset: 0 0 0 auto; width: min(92vw, 430px); padding: 24px; background: var(--night); color: var(--on-night); transform: translateX(100%); transition: transform .35s cubic-bezier(.22,1,.36,1); display: flex; flex-direction: column; }
       .mobile-menu.active .mobile-menu-content { transform: none; }
       .mobile-menu-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,.22); }
       .mobile-menu-header p { margin: 0; color: var(--signal); font-size: 11px; font-weight: 700; letter-spacing: .2em; }
@@ -184,9 +254,9 @@ const currentYear = new Date().getFullYear();
       .mobile-space-toggle { margin-top: auto; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.22); }
       .mobile-space-toggle a { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-decoration: none; text-transform: uppercase; }
       .photo-main { width: 100%; min-height: 60vh; }
-      .photo-footer { min-height: 270px; padding: 56px 28px 28px; background: var(--night); color: var(--paper); display: flex; justify-content: space-between; align-items: flex-start; gap: 40px; }
+      .photo-footer { min-height: 270px; padding: 56px 28px 28px; background: var(--night); color: var(--on-night); display: flex; justify-content: space-between; align-items: flex-start; gap: 40px; }
       .photo-footer p { margin: 0 0 8px; color: rgba(238,234,226,.64); max-width: 420px; }
-      .photo-footer .footer-mark { color: var(--paper); font-size: 14px; font-weight: 700; letter-spacing: .08em; }
+      .photo-footer .footer-mark { color: var(--on-night); font-size: 14px; font-weight: 700; letter-spacing: .08em; }
       .footer-meta { display: grid; grid-template-columns: repeat(2, auto); gap: 10px 36px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
       .footer-meta a { text-decoration: none; }
       .footer-meta p { grid-column: 1 / -1; margin-top: 24px; }
@@ -197,7 +267,7 @@ const currentYear = new Date().getFullYear();
       @media (hover: hover) and (pointer: fine) {
         .photo-card:hover { outline-color: var(--signal); }
       }
-      .photo-image { position: relative; width: 100%; overflow: hidden; background: #d8d3ca; }
+      .photo-image { position: relative; width: 100%; overflow: hidden; background: var(--image-placeholder); }
       .photo-image img { position: static; display: block; width: 100%; height: auto; object-fit: contain; }
       .viewfinder-overlay { display: none; }
       .page-title, .albums-title, .tags-title, .search-title, .album-title { font-family: 'Instrument Serif', serif !important; font-weight: 400 !important; letter-spacing: -.035em !important; }
@@ -290,7 +360,7 @@ const currentYear = new Date().getFullYear();
       html[data-photo-motion='ready'] [data-photo-reveal='story-card'][data-photo-reveal-state='visible'] img {
         transform: none;
       }
-      @media (max-width: 980px) {
+      @media (max-width: 1200px) {
         .photo-header { height: 64px; }
         .header-content { padding: 0 16px; }
         .desktop-nav { display: none; }

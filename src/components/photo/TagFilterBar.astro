@@ -288,7 +288,7 @@ const normalizedInitialTag = initialActiveTag ? initialActiveTag.toLowerCase().t
 
   .tag-logic-toggle {
     display: flex;
-    background: rgba(28, 25, 23, 0.05);
+    background: var(--soft-fill);
     border-radius: 20px;
     padding: 2px;
     gap: 2px;
@@ -314,7 +314,7 @@ const normalizedInitialTag = initialActiveTag ? initialActiveTag.toLowerCase().t
 
   .tag-logic-toggle .toggle-option[aria-pressed="true"] {
     background: var(--amber);
-    color: white;
+    color: var(--on-signal);
   }
 
   .tag-pills {
@@ -327,8 +327,8 @@ const normalizedInitialTag = initialActiveTag ? initialActiveTag.toLowerCase().t
   .tag-pill {
     padding: 0.5rem 1rem;
     border-radius: 9999px;
-    border: 1px solid rgba(28, 25, 23, 0.1);
-    background: white;
+    border: 1px solid var(--control-line);
+    background: var(--surface);
     color: var(--charcoal);
     font-weight: 600;
     font-size: 0.9rem;
@@ -343,7 +343,7 @@ const normalizedInitialTag = initialActiveTag ? initialActiveTag.toLowerCase().t
 
   .tag-pill.active {
     background: var(--amber);
-    color: white;
+    color: var(--on-signal);
     border-color: var(--amber);
   }
 

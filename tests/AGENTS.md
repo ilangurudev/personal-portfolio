@@ -64,6 +64,7 @@ npm run test:about-anchor # About hash remains stable while homepage photographs
 
 | File | Description | Features Tested |
 |------|-------------|-----------------|
+| `photography-theme.spec.cjs` | Photography appearance | Keyboard toggle, mobile availability, persistence across all photography route types, live system preference, blocked storage, and professional-space isolation |
 | `dual-space-navigation.spec.js` | Space toggle | Professional ↔ Photography switching |
 | `photo-filter-toggle.spec.cjs` | Photography structure | Fixed curated edit, public themes, Archive filter availability |
 | `photography-editorial-redesign.spec.cjs` | Editorial acceptance | Exact Tampa balcony hero, hero/edit uniqueness, original-resolution sources for every Edit photograph, balanced desktop groups and frame-number gutters, the 22-frame **Distance, made human.** sequence and three movements, the exact five-story feature edit and New York cover, Other Notebooks, public themes, Archive, mobile hero crop, immersive lightbox sizing, responsive margin-positioned bare navigation/close glyphs that never cover the image, a 100% magnification (2× scale) zoom toggle with matching cursors, and a single-ring information control that reveals album, tags, title, and technical metadata below the photograph |
